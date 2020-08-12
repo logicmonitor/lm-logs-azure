@@ -1,0 +1,16 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "FUNCTIONS_WORKER_RUNTIME": "java",
+        "FUNCTIONS_EXTENSION_VERSION": "~3",
+        "FUNCTIONS_WORKER_PROCESS_COUNT": "1",
+        "AzureWebJobsStorage": "<Web Storage connection string>",
+        "LogsEventHubConnectionString": "<Event Hub connection string>",
+        "LogicMonitorCompanyName": "<LogicMonitor company name>",
+        "LogicMonitorAccessId": "<LogicMonitor access ID>",
+        "LogicMonitorAccessKey": "<LogicMonitor access key>",
+        "LogApiClientConnectTimeout": "10000",
+        "LogApiClientReadTimeout": "10000",
+        "LogApiClientDebugging": "false"
+    }
+}

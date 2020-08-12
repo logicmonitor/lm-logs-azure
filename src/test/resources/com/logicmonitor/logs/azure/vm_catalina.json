@@ -1,0 +1,14 @@
+[
+  {
+    "time": "2020-07-17T13:29:32Z",
+    "resourceId": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1",
+    "properties": {
+      "Msg": "17-Jul-2020 13:29:32.954 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in 1164 ms",
+      "FileTag": "opt.tomcat.logs.catalina.out",
+      "FluentdIngestTimestamp": "2020-07-17T13:29:32Z"
+    },
+    "category": "Unknown",
+    "level": "Unknown",
+    "operationName": "Unknown"
+  }
+]

@@ -1,0 +1,116 @@
+[
+  {
+    "records": [
+      {
+        "time": "2020-08-07T09:15:46.1935151Z",
+        "resourceId": "/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.WEB/SERVERFARMS/ASP-1",
+        "operationName": "MICROSOFT.WEB/SERVERFARMS/WRITE",
+        "category": "Administrative",
+        "resultType": "Start",
+        "resultSignature": "Started.",
+        "durationMs": 0,
+        "callerIpAddress": "10.10.10.10",
+        "correlationId": "386a93a0-1220-46fa-aea8-e437143b93db",
+        "identity": {
+          "authorization": {
+            "scope": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourcegroups/resource-group-1/providers/Microsoft.Web/serverfarms/ASP-1",
+            "action": "Microsoft.Web/serverfarms/write",
+            "evidence": {
+              "role": "Subscription Admin"
+            }
+          },
+          "claims": {
+            "aud": "https://management.core.windows.net/",
+            "iss": "https://sts.windows.net/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/",
+            "iat": "1596791185",
+            "nbf": "1596791185",
+            "exp": "1596795085",
+            "http://schemas.microsoft.com/claims/authnclassreference": "1",
+            "aio": "AUQAu/8QAAAABVTAy+pK7smfDsZ6nxTA/81/63mcrFrPzKNf+u4T0L9zDVsIbO6jMQo4ndQ971fuqLwG5nH6usoDvVpLi/VeQg\u003d\u003d",
+            "altsecid": "1:live.com:00034001FC7FD962",
+            "http://schemas.microsoft.com/claims/authnmethodsreferences": "pwd",
+            "appid": "c44b4083-3bb0-49c1-b47d-974e53cbdf3c",
+            "appidacr": "2",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": "azure@test.com",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname": "Development",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname": "Azure",
+            "groups": "9f6ad26d-83e0-4a33-b906-c88a3b412efa",
+            "http://schemas.microsoft.com/identity/claims/identityprovider": "live.com",
+            "ipaddr": "10.10.10.10",
+            "name": "Azure Dev",
+            "http://schemas.microsoft.com/identity/claims/objectidentifier": "47540252-d45b-475b-b294-0f4c8a20f340",
+            "puid": "1003BFFD9BA1588F",
+            "http://schemas.microsoft.com/identity/claims/scope": "user_impersonation",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier": "hmsbFGX1p4s0zCbEDKm6f1hVtcIdHjGYymIBpxEa9UY",
+            "http://schemas.microsoft.com/identity/claims/tenantid": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name": "live.com#azure@test.com",
+            "uti": "47g9FJQSQ0O8p_ZeMqebAA",
+            "ver": "1.0",
+            "wids": "62e90394-69f5-4237-9190-012177145e10",
+            "xms_tcdt": "1477611114"
+          }
+        },
+        "level": "Information",
+        "properties": {
+          "eventCategory": "Administrative"
+        }
+      },
+      {
+        "time": "2020-08-07T09:15:59.5480665Z",
+        "resourceId": "/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.WEB/SERVERFARMS/ASP-1",
+        "operationName": "MICROSOFT.WEB/SERVERFARMS/WRITE",
+        "category": "Administrative",
+        "resultType": "Success",
+        "resultSignature": "Succeeded.OK",
+        "durationMs": 13354,
+        "callerIpAddress": "10.10.10.10",
+        "correlationId": "386a93a0-1220-46fa-aea8-e437143b93db",
+        "identity": {
+          "authorization": {
+            "scope": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourcegroups/resource-group-1/providers/Microsoft.Web/serverfarms/ASP-1",
+            "action": "Microsoft.Web/serverfarms/write",
+            "evidence": {
+              "role": "Subscription Admin"
+            }
+          },
+          "claims": {
+            "aud": "https://management.core.windows.net/",
+            "iss": "https://sts.windows.net/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/",
+            "iat": "1596791185",
+            "nbf": "1596791185",
+            "exp": "1596795085",
+            "http://schemas.microsoft.com/claims/authnclassreference": "1",
+            "aio": "AUQAu/8QAAAABVTAy+pK7smfDsZ6nxTA/81/63mcrFrPzKNf+u4T0L9zDVsIbO6jMQo4ndQ971fuqLwG5nH6usoDvVpLi/VeQg\u003d\u003d",
+            "altsecid": "1:live.com:00034001FC7FD962",
+            "http://schemas.microsoft.com/claims/authnmethodsreferences": "pwd",
+            "appid": "c44b4083-3bb0-49c1-b47d-974e53cbdf3c",
+            "appidacr": "2",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": "azure@test.com",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname": "Development",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname": "Azure",
+            "groups": "9f6ad26d-83e0-4a33-b906-c88a3b412efa",
+            "http://schemas.microsoft.com/identity/claims/identityprovider": "live.com",
+            "ipaddr": "10.10.10.10",
+            "name": "Azure Dev",
+            "http://schemas.microsoft.com/identity/claims/objectidentifier": "47540252-d45b-475b-b294-0f4c8a20f340",
+            "puid": "1003BFFD9BA1588F",
+            "http://schemas.microsoft.com/identity/claims/scope": "user_impersonation",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier": "hmsbFGX1p4s0zCbEDKm6f1hVtcIdHjGYymIBpxEa9UY",
+            "http://schemas.microsoft.com/identity/claims/tenantid": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name": "live.com#azure@test.com",
+            "uti": "47g9FJQSQ0O8p_ZeMqebAA",
+            "ver": "1.0",
+            "wids": "62e90394-69f5-4237-9190-012177145e10",
+            "xms_tcdt": "1477611114"
+          }
+        },
+        "level": "Information",
+        "properties": {
+          "statusCode": "OK",
+          "serviceRequestId": "78d04383-1d1c-4e60-a5d9-08321ecf9d76",
+          "eventCategory": "Administrative"
+        }
+      }
+    ]
+  }
+]
