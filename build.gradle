@@ -50,7 +50,9 @@ test {
 jar.dependsOn tasks.test
 
 azurefunctions {
-    appName = rootProject.name
+    subscription = System.properties["azureSubsription"]
+    resourceGroup = System.properties["azureResourceGroup"]
+    appName = System.properties["azureFunction"]
 
     runtime {
         os = "linux"
