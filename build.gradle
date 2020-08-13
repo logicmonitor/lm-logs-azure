@@ -1,0 +1,68 @@
+plugins {
+    id "java"
+    id "com.microsoft.azure.azurefunctions" version "1.4.0"
+}
+
+group "com.logicmonitor"
+version "1.0"
+
+def jerseyVersion = "2.31"
+def junitVersion = "5.6.2"
+
+compileJava.options.encoding = "UTF-8"
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    implementation (
+        "com.microsoft.azure.functions:azure-functions-java-library:1.3.1",
+        "com.logicmonitor:lm-logs-sdk-java:1.0",
+        "com.google.code.gson:gson:2.8.6"
+    )
+    testImplementation (
+        "org.junit.jupiter:junit-jupiter:${junitVersion}",
+        "com.github.stefanbirkner:system-lambda:1.0.0",
+        "org.mockito:mockito-core:3.4.4",
+        "org.glassfish.jersey.test-framework:jersey-test-framework-core:${jerseyVersion}",
+        "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:${jerseyVersion}"
+    )
+    testCompileOnly(
+        "junit:junit:4.12"
+    )
+    testRuntimeOnly(
+        "org.junit.vintage:junit-vintage-engine:${junitVersion}"
+    )
+}
+
+clean {
+    delete "${rootDir}/bin"
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+jar.dependsOn tasks.test
+
+azurefunctions {
+    subscription = System.properties["azureSubsription"]
+    resourceGroup = System.properties["azureResourceGroup"]
+    appName = System.properties["azureFunction"]
+
+    runtime {
+        os = "linux"
+        javaVersion = "11"
+    }
+
+    authentication {
+        type = "azure_cli"
+    }
+
+    allowTelemetry = false
+    localDebug = "transport=dt_socket,server=y,suspend=n,address=5005"
+}

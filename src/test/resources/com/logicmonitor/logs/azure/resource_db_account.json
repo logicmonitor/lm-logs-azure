@@ -1,0 +1,83 @@
+[
+  {
+    "records": [
+      {
+        "time": "2020-08-07T06:41:37.1315199Z",
+        "resourceId": "/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.DOCUMENTDB/DATABASEACCOUNTS/ACCOUNT-1",
+        "category": "DataPlaneRequests",
+        "operationName": "Read",
+        "properties": {
+          "activityId": "7040c832-c2b2-4a92-aa2b-a339f33aca0b",
+          "requestResourceType": "OfferFeed",
+          "requestResourceId": "/offers",
+          "collectionRid": "",
+          "databaseRid": "",
+          "statusCode": "200",
+          "duration": "6.537000",
+          "userAgent": "Azure Portal",
+          "clientIpAddress": "10.10.10.10",
+          "requestCharge": "2.000000",
+          "requestLength": "0",
+          "responseLength": "464",
+          "resourceTokenUserRid": "",
+          "region": "East US",
+          "partitionId": "",
+          "connectionMode": "Gateway"
+        }
+      },
+      {
+        "time": "2020-08-07T06:41:36.3889917Z",
+        "resourceId": "/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.DOCUMENTDB/DATABASEACCOUNTS/ACCOUNT-2",
+        "category": "DataPlaneRequests",
+        "operationName": "Read",
+        "properties": {
+          "activityId": "91cd258c-9d43-4f92-9710-675c75f8877e",
+          "requestResourceType": "CollectionFeed",
+          "requestResourceId": "/dbs/TEpVAA\u003d\u003d/colls/",
+          "collectionRid": "",
+          "databaseRid": "",
+          "statusCode": "200",
+          "duration": "7.964900",
+          "userAgent": "Azure Portal",
+          "clientIpAddress": "10.10.10.10",
+          "requestCharge": "2.000000",
+          "requestLength": "0",
+          "responseLength": "856",
+          "resourceTokenUserRid": "",
+          "region": "East US",
+          "partitionId": "",
+          "connectionMode": "Gateway"
+        }
+      }
+    ]
+  },
+  {
+    "records": [
+      {
+        "time": "2020-08-07T06:42:18.5042965Z",
+        "resourceId": "/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.DOCUMENTDB/DATABASEACCOUNTS/ACCOUNT-2",
+        "subscriptionId": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+        "operationName": "AccountUpdateStart",
+        "category": "ControlPlaneRequests",
+        "properties": {
+          "activityId": "25ddee47-2f83-4277-b4cd-82c9fd957037",
+          "httpstatusCode": "202",
+          "result": "Accepted",
+          "httpMethod": "PUT",
+          "ipRangeFilter": "",
+          "enableVirtualNetworkFilter": "false",
+          "virtualNetworkResourceEntries": "",
+          "enablePrivateEndpointConnection": "false",
+          "privateEndpointConnections": "",
+          "privateEndpointArmUrl": "",
+          "defaultConsistencyLevel": "Session",
+          "enableAutomaticFailover": "false",
+          "maxStalenessIntervalInSeconds": "5",
+          "maxStalenessPrefix": "100",
+          "enableMultipleWriteLocations": "false",
+          "cors": ""
+        }
+      }
+    ]
+  }
+]

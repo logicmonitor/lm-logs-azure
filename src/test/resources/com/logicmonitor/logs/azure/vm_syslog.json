@@ -1,0 +1,40 @@
+[
+  {
+    "time": "2020-08-07T05:45:33Z",
+    "resourceId": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1",
+    "properties": {
+      "ident": "sshd",
+      "pid": "103891",
+      "Ignore": "syslog",
+      "Facility": "auth",
+      "Severity": "info",
+      "EventTime": "2020-08-07T07:45:33+02:00",
+      "SendingHost": "localhost",
+      "Msg": "message repeated 2 times: [ Failed password for root from 10.10.10.10 port 42002 ssh2]",
+      "hostname": "vm-1",
+      "FluentdIngestTimestamp": "2020-08-07T05:45:33Z"
+    },
+    "category": "auth",
+    "level": "info",
+    "operationName": "LinuxSyslogEvent"
+  },
+  {
+    "time": "2020-08-07T05:45:36Z",
+    "resourceId": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1",
+    "properties": {
+      "ident": "sshd",
+      "pid": "103897",
+      "Ignore": "syslog",
+      "Facility": "auth",
+      "Severity": "info",
+      "EventTime": "2020-08-07T07:45:36+02:00",
+      "SendingHost": "localhost",
+      "Msg": "Failed password for root from 10.10.10.10 port 44539 ssh2",
+      "hostname": "vm-1",
+      "FluentdIngestTimestamp": "2020-08-07T05:45:36Z"
+    },
+    "category": "auth",
+    "level": "info",
+    "operationName": "LinuxSyslogEvent"
+  }
+]

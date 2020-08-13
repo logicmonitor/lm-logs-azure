@@ -1,0 +1,100 @@
+[
+  {
+    "records": [
+      {
+        "time": "2020-08-07T10:56:34.9865408Z",
+        "resourceId": "/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.STORAGE/STORAGEACCOUNTS/ACCOUNT-1",
+        "operationName": "MICROSOFT.STORAGE/STORAGEACCOUNTS/LISTACCOUNTSAS/ACTION",
+        "category": "Administrative",
+        "resultType": "Start",
+        "resultSignature": "Started.",
+        "durationMs": 0,
+        "callerIpAddress": "10.10.10.10",
+        "correlationId": "9221a4b9-e816-418c-b178-42f2d3db44a4",
+        "identity": {
+          "authorization": {
+            "scope": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Storage/storageAccounts/account-1",
+            "action": "Microsoft.Storage/storageAccounts/ListAccountSas/action",
+            "evidence": {
+              "role": "Azure Site Recovery Service Role",
+              "roleAssignmentScope": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+              "roleAssignmentId": "b68350fec98f487b9381166d9b62ccf3",
+              "roleDefinitionId": "8a00c8ea8f1b45a78f64f4cc61eee9b6",
+              "principalId": "a0b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5",
+              "principalType": "ServicePrincipal"
+            }
+          },
+          "claims": {
+            "aud": "https://management.core.windows.net/",
+            "iss": "https://sts.windows.net/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/",
+            "iat": "1596797494",
+            "nbf": "1596797494",
+            "exp": "1596884194",
+            "aio": "E2BgYPi4s6K1dI0YM9/sOeXOfoX7AQ\u003d\u003d",
+            "appid": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+            "appidacr": "2",
+            "http://schemas.microsoft.com/identity/claims/identityprovider": "https://sts.windows.net/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/",
+            "http://schemas.microsoft.com/identity/claims/objectidentifier": "f9fb253b-bcda-441c-8f18-6783339a54e2",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier": "f9fb253b-bcda-441c-8f18-6783339a54e2",
+            "http://schemas.microsoft.com/identity/claims/tenantid": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+            "uti": "KCnRBNTW4ECV2umR7hR5AA",
+            "ver": "1.0",
+            "xms_tcdt": "1477611114"
+          }
+        },
+        "level": "Information",
+        "properties": {
+          "eventCategory": "Administrative"
+        }
+      },
+      {
+        "time": "2020-08-07T10:56:35.0365153Z",
+        "resourceId": "/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.STORAGE/STORAGEACCOUNTS/account-1",
+        "operationName": "MICROSOFT.STORAGE/STORAGEACCOUNTS/LISTACCOUNTSAS/ACTION",
+        "category": "Administrative",
+        "resultType": "Success",
+        "resultSignature": "Succeeded.OK",
+        "durationMs": 48,
+        "callerIpAddress": "10.10.10.10",
+        "correlationId": "9221a4b9-e816-418c-b178-42f2d3db44a4",
+        "identity": {
+          "authorization": {
+            "scope": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Storage/storageAccounts/account-1",
+            "action": "Microsoft.Storage/storageAccounts/ListAccountSas/action",
+            "evidence": {
+              "role": "Azure Site Recovery Service Role",
+              "roleAssignmentScope": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+              "roleAssignmentId": "b68350fec98f487b9381166d9b62ccf3",
+              "roleDefinitionId": "8a00c8ea8f1b45a78f64f4cc61eee9b6",
+              "principalId": "a0b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5",
+              "principalType": "ServicePrincipal"
+            }
+          },
+          "claims": {
+            "aud": "https://management.core.windows.net/",
+            "iss": "https://sts.windows.net/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/",
+            "iat": "1596797494",
+            "nbf": "1596797494",
+            "exp": "1596884194",
+            "aio": "E2BgYPi4s6K1dI0YM9/sOeXOfoX7AQ\u003d\u003d",
+            "appid": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+            "appidacr": "2",
+            "http://schemas.microsoft.com/identity/claims/identityprovider": "https://sts.windows.net/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/",
+            "http://schemas.microsoft.com/identity/claims/objectidentifier": "f9fb253b-bcda-441c-8f18-6783339a54e2",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier": "f9fb253b-bcda-441c-8f18-6783339a54e2",
+            "http://schemas.microsoft.com/identity/claims/tenantid": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+            "uti": "KCnRBNTW4ECV2umR7hR5AA",
+            "ver": "1.0",
+            "xms_tcdt": "1477611114"
+          }
+        },
+        "level": "Information",
+        "properties": {
+          "statusCode": "OK",
+          "serviceRequestId": "5a07b6a0-2cc0-464b-9e81-2512199ac5b1",
+          "eventCategory": "Administrative"
+        }
+      }
+    ]
+  }
+]

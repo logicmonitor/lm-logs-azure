@@ -1,0 +1,76 @@
+[
+  {
+    "records": [
+      {
+        "time": "2020-08-07T07:01:05.0729089Z",
+        "category": "AuditEvent",
+        "operationName": "VaultGet",
+        "resultType": "Success",
+        "correlationId": "e2e2e1f3-1f08-47aa-8c6c-17e2bdc31ac6",
+        "callerIpAddress": "10.10.10.10",
+        "identity": {
+          "claim": {
+            "http://schemas.microsoft.com/identity/claims/objectidentifier": "5338b0c6-a299-42b2-bacc-afde7f57ecd9",
+            "appid": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5"
+          }
+        },
+        "properties": {
+          "id": "https://vault-1.vault.azure.net/",
+          "clientInfo": "AutoRest-Java",
+          "requestUri": "https://management.azure.com/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/SarahsResources/providers/Microsoft.KeyVault/vaults/vault-1?api-version\u003d2019-09-01",
+          "httpStatusCode": 200,
+          "properties": {
+            "sku": {
+              "Family": "A",
+              "Name": "Standard"
+            },
+            "tenantId": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+            "enabledForDeployment": true,
+            "enabledForTemplateDeployment": true
+          }
+        },
+        "resourceId": "/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/VAULT-1",
+        "operationVersion": "2019-09-01",
+        "resultSignature": "OK",
+        "durationMs": "17"
+      }
+    ]
+  },
+  {
+    "records": [
+      {
+        "time": "2020-08-07T07:07:39.2869427Z",
+        "category": "AuditEvent",
+        "operationName": "VaultGet",
+        "resultType": "Success",
+        "correlationId": "4d57c66d-c86e-496a-a9aa-cf119bb3226e",
+        "callerIpAddress": "10.10.10.10",
+        "identity": {
+          "claim": {
+            "http://schemas.microsoft.com/identity/claims/objectidentifier": "68b0c59c-34bd-42eb-9ec0-0edffe7365dc",
+            "appid": "6c2c3e67-d2ee-42b7-bd35-ebddb6109f81"
+          }
+        },
+        "properties": {
+          "id": "https://vault-1.vault.azure.net/",
+          "clientInfo": "AutoRest-Java",
+          "requestUri": "https://management.azure.com/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/SarahsResources/providers/Microsoft.KeyVault/vaults/vault-1?api-version\u003d2019-09-01",
+          "httpStatusCode": 200,
+          "properties": {
+            "sku": {
+              "Family": "A",
+              "Name": "Standard"
+            },
+            "tenantId": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+            "enabledForDeployment": true,
+            "enabledForTemplateDeployment": true
+          }
+        },
+        "resourceId": "/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/VAULT-1",
+        "operationVersion": "2019-09-01",
+        "resultSignature": "OK",
+        "durationMs": "25"
+      }
+    ]
+  }
+]
