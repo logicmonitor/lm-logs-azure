@@ -22,6 +22,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -48,6 +49,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
     protected static final String TEST_ID = "testId";
     protected static final String TEST_KEY = "testKey";
     protected static final String TEST_REQUEST_ID = "testRequestId";
+    protected static final Pattern TEST_SCRUB_PATTERN = Pattern.compile("\\d");
 
     protected static ExecutionContext mockExecutionContext;
 
@@ -85,21 +87,28 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
     }
 
     @Before
-    public void overrideClientBaseUrl() throws Exception {
+    public void setupLogEventForwarder() throws Exception {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_ACCESS_ID, TEST_ID)
             .and(LogEventForwarder.PARAMETER_ACCESS_KEY, TEST_KEY)
+            .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
             .execute(() -> {
+                // initialize the api with the system properties
                 LMLogsApi api = LogEventForwarder.getApi();
+
+                // override the base URL of the api client
                 URI testBaseUrl = getBaseUri().resolve(
                         URI.create(api.getApiClient().getBasePath()).getPath());
                 api.getApiClient().setServers(List.of(
                         new ServerConfiguration(testBaseUrl.toString(), null, Map.of())));
+
+                // initialize the adapter with the system properties
+                LogEventForwarder.getAdapter();
             }
         );
     }
 
     @Test
-    public void testForward() {
+    public void testForward() throws Exception {
         JsonArray logEvents = TestJsonUtils.mergeArrays(
                 "activity_storage_account.json",
                 "activity_webapp.json",
@@ -114,11 +123,13 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
         assertAll(
             () -> assertEquals(14, LogIngestResource.receivedEntries.size()),
             () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
-                    entry.getMessage())),
+                    entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY))),
             () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
                     entry.getTimestamp())),
-            () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
-                    entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY)))
+            () -> LogIngestResource.receivedEntries.forEach(entry -> {
+                assertNotNull(entry.getMessage());
+                assertFalse(TEST_SCRUB_PATTERN.matcher(entry.getMessage()).find());
+            })
         );
     }
 

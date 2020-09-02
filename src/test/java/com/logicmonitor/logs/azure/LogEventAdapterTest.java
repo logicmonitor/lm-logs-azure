@@ -20,14 +20,11 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.logicmonitor.logs.model.LogEntry;
 
 public class LogEventAdapterTest {
-
-    private LogEventAdapter adapter = new LogEventAdapter();
 
     @ParameterizedTest
     @CsvSource({
@@ -41,22 +38,24 @@ public class LogEventAdapterTest {
     })
     public void testApply(String resourceName, int expectedEntriesCount) {
         JsonObject events = TestJsonUtils.getFirstObject(resourceName);
+        LogEventAdapter adapter = new LogEventAdapter(null);
         List<LogEntry> entries = adapter.apply(events);
         assertEquals(expectedEntriesCount, entries.size());
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-        "activity_storage_account.json",
-        "activity_webapp.json",
-        "resource_db_account.json",
-        "resource_sql.json",
-        "resource_vault.json",
-        "vm_catalina.json",
-        "vm_syslog.json",
+    @CsvSource({
+        "activity_storage_account.json,                                   ",
+        "activity_webapp.json,          [\\w-.#]+@[\\w-.]+                ",
+        "resource_db_account.json,      \\d+\\.\\d+\\.\\d+\\.\\d+         ",
+        "resource_sql.json,             '\"SubscriptionId\":\"[^\"]+\",'  ",
+        "resource_vault.json,           ''|\"                             ",
+        "vm_catalina.json,              .                                 ",
+        "vm_syslog.json,                \\d                               ",
     })
-    public void testCreateEntry(String resourceName) {
+    public void testCreateEntry(String resourceName, String regexScrub) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
+        LogEventAdapter adapter = new LogEventAdapter(regexScrub);
         LogEntry entry = adapter.createEntry(event);
         assertAll(
             () -> {
@@ -78,6 +77,9 @@ public class LogEventAdapterTest {
                     .map(properties -> properties.get("Msg"))
                     .map(JsonElement::getAsString)
                     .orElseGet(() -> TestJsonUtils.toString(event));
+                if (regexScrub != null) {
+                    message = message.replaceAll(regexScrub, "");
+                }
                 assertEquals(message, entry.getMessage());
             }
         );

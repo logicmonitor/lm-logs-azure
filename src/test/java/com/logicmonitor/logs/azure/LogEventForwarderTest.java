@@ -17,10 +17,8 @@ package com.logicmonitor.logs.azure;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import com.google.gson.JsonArray;
 import com.logicmonitor.logs.LMLogsApi;
 import com.logicmonitor.logs.LMLogsClient;
@@ -30,13 +28,14 @@ public class LogEventForwarderTest {
 
     @ParameterizedTest
     @CsvSource({
-        ",           1,      2,       true",
-        "company,    ,       0,       false",
-        "company,    0,      ,        true",
-        "company,    333,    4444,    false",
+        ",           1,      2,         true,     .                          ",
+        "company,    ,       0,         false,    \\d                        ",
+        "company,    0,      ,          true,     [\\w-.#]+@[\\w-.]+         ",
+        "company,    333,    4444,      false,    \\d+\\.\\d+\\.\\d+\\.\\d+  ",
+        "company,    55555,  666666,    false,                               ",
     })
     public void testConfigurationParameters(String companyName, Integer connectTimeout,
-            Integer readTimeout, Boolean debugging) throws Exception {
+            Integer readTimeout, Boolean debugging, String regexScrub) throws Exception {
 
         withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
             .and(LogEventForwarder.PARAMETER_ACCESS_ID, "id")
@@ -47,8 +46,10 @@ public class LogEventForwarderTest {
                     readTimeout != null ? readTimeout.toString() : null)
             .and(LogEventForwarder.PARAMETER_DEBUGGING,
                     debugging != null ? debugging.toString() : null)
+            .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, regexScrub)
             .execute(() -> {
                 LMLogsApi api = LogEventForwarder.configureApi();
+                LogEventAdapter adapter = LogEventForwarder.configureAdapter();
                 assertAll(
                     () -> assertEquals(companyName,
                             api.getApiClient().getCompany()),
@@ -57,7 +58,9 @@ public class LogEventForwarderTest {
                     () -> assertEquals(readTimeout != null ? readTimeout : LMLogsClient.DEFAULT_TIMEOUT,
                             api.getApiClient().getReadTimeout()),
                     () -> assertEquals(debugging != null ? debugging : false,
-                            api.getApiClient().isDebugging())
+                            api.getApiClient().isDebugging()),
+                    () -> assertEquals(regexScrub,
+                            regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern())
                 );
             }
         );
@@ -97,17 +100,6 @@ public class LogEventForwarderTest {
             () -> entries.forEach(entry -> assertNotNull(
                     entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY)))
         );
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-        LMLogsApi.REQUEST_ID_HEADER,
-        "x-request-id",
-        "X-REQUEST-ID",
-    })
-    public void testGetRequestId(String headerName) {
-        assertEquals("requestId",
-                LogEventForwarder.getRequestId(Map.of(headerName, List.of("requestId"))));
     }
 
 }

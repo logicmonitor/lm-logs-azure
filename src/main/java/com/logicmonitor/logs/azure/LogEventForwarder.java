@@ -15,7 +15,6 @@
 package com.logicmonitor.logs.azure;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -26,8 +25,8 @@ import java.util.stream.StreamSupport;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.logicmonitor.logs.LMLogsApi;
-import com.logicmonitor.logs.invoker.ApiException;
-import com.logicmonitor.logs.invoker.ApiResponse;
+import com.logicmonitor.logs.LMLogsApiException;
+import com.logicmonitor.logs.LMLogsApiResponse;
 import com.logicmonitor.logs.model.LogEntry;
 import com.logicmonitor.logs.model.LogResponse;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -44,6 +43,7 @@ import com.microsoft.azure.functions.annotation.FunctionName;
  * <li>{@value #PARAMETER_CONNECT_TIMEOUT} Connection timeout in milliseconds (default 10000)
  * <li>{@value #PARAMETER_READ_TIMEOUT} Read timeout in milliseconds (default 10000)
  * <li>{@value #PARAMETER_DEBUGGING} HTTP client debugging
+ * <li>{@value #PARAMETER_REGEX_SCRUB} Regex to scrub text from logs
  * </ul>
  */
 public class LogEventForwarder {
@@ -71,23 +71,48 @@ public class LogEventForwarder {
      * Parameter: HTTP client debugging.
      */
     public static final String PARAMETER_DEBUGGING = "LogApiClientDebugging";
+    /**
+     * Parameter: Regex to scrub text from logs.
+     */
+    public static final String PARAMETER_REGEX_SCRUB = "LogRegexScrub";
 
     /**
      * Transforms Azure log events into log entries.
      */
-    private static final LogEventAdapter ADAPTER = new LogEventAdapter();
+    private static LogEventAdapter adapter;
     /**
      * API for sending log requests.
      */
     private static LMLogsApi api;
 
     /**
+     * Gets the log adapter instance (initializes it when needed).
+     * @return LogEventAdapter instance
+     */
+    protected synchronized static LogEventAdapter getAdapter() {
+        // The initialization must be lazy for the testing
+        // - the test classes must set the environmental variables first.
+        if (adapter == null) {
+            adapter = configureAdapter();
+        }
+        return adapter;
+    }
+
+    /**
+     * Configures the log adapter using the environment variables.
+     * @return LogEventAdapter instance
+     */
+    protected static LogEventAdapter configureAdapter() {
+        return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB));
+    }
+
+    /**
      * Gets the API instance (initializes it when needed).
      * @return LMLogsApi instance
      */
     protected synchronized static LMLogsApi getApi() {
-        // The initialization must be lazy due to the tests
-        // - they must set the environmental variables first.
+        // The initialization must be lazy for the testing
+        // - the test classes must set the environmental variables first.
         if (api == null) {
             api = configureApi();
         }
@@ -99,18 +124,14 @@ public class LogEventForwarder {
      * @return LMLogsApi instance
      */
     protected static LMLogsApi configureApi() {
-        LMLogsApi api = new LMLogsApi(
-                System.getenv(PARAMETER_COMPANY_NAME),
-                System.getenv(PARAMETER_ACCESS_ID),
-                System.getenv(PARAMETER_ACCESS_KEY)
-        );
-        setProperty(PARAMETER_CONNECT_TIMEOUT, Integer::valueOf,
-                api.getApiClient()::setConnectTimeout);
-        setProperty(PARAMETER_READ_TIMEOUT, Integer::valueOf,
-                api.getApiClient()::setReadTimeout);
-        setProperty(PARAMETER_DEBUGGING, Boolean::valueOf,
-                api.getApiClient()::setDebugging);
-        return api;
+        LMLogsApi.Builder builder = new LMLogsApi.Builder()
+             .withCompany(System.getenv(PARAMETER_COMPANY_NAME))
+             .withAccessId(System.getenv(PARAMETER_ACCESS_ID))
+             .withAccessKey(System.getenv(PARAMETER_ACCESS_KEY));
+        setProperty(PARAMETER_CONNECT_TIMEOUT, Integer::valueOf, builder::withConnectTimeout);
+        setProperty(PARAMETER_READ_TIMEOUT, Integer::valueOf, builder::withReadTimeout);
+        setProperty(PARAMETER_DEBUGGING, Boolean::valueOf, builder::withDebugging);
+        return builder.build();
     }
 
     /**
@@ -151,11 +172,10 @@ public class LogEventForwarder {
         log(context, Level.INFO, () -> "Sending " + logEntries.size() + " log entries");
         log(context, Level.FINEST, () -> "Request body: " + logEntries);
         try {
-            ApiResponse<LogResponse> response = getApi().logIngestPostWithHttpInfo(logEntries);
-            logResponse(context, response.getData().getSuccess(), response.getStatusCode(),
-                    response.getHeaders(), response.getData());
-        } catch (ApiException e) {
-            logResponse(context, false, e.getCode(), e.getResponseHeaders(), e.getResponseBody());
+            LMLogsApiResponse<LogResponse> response = getApi().logIngestPostWithHttpInfo(logEntries);
+            logResponse(context, response.getData().getSuccess(), response);
+        } catch (LMLogsApiException e) {
+            logResponse(context, false, e.getResponse());
         }
     }
 
@@ -168,7 +188,7 @@ public class LogEventForwarder {
         return StreamSupport.stream(logEvents.spliterator(), true)
             .filter(JsonElement::isJsonObject)
             .map(JsonElement::getAsJsonObject)
-            .map(ADAPTER)
+            .map(getAdapter())
             .flatMap(List::stream)
             .collect(Collectors.toList());
     }
@@ -189,31 +209,15 @@ public class LogEventForwarder {
      * Logs a response received from LogicMonitor.
      * @param context execution context
      * @param success if the request was successful
-     * @param statusCode HTTP status code
-     * @param headers HTTP headers
-     * @param body response body
+     * @param response the response to log
      */
     private static void logResponse(final ExecutionContext context, boolean success,
-            int statusCode, Map<String, List<String>> headers, Object body) {
+            LMLogsApiResponse<?> response) {
         log(context, success ? Level.INFO : Level.WARNING,
-                () -> String.format("Received: status = %d, id = %s", statusCode, getRequestId(headers)));
+                () -> String.format("Received: status = %d, id = %s",
+                        response.getStatusCode(), response.getRequestId()));
         log(context, success ? Level.FINEST : Level.WARNING,
-                () -> "Response body: " + body);
-    }
-
-    /**
-     * Reads the request id from the headers.
-     * @param headers map of header names and their values
-     * @return the request id or null
-     */
-    protected static String getRequestId(Map<String, List<String>> headers) {
-        return headers.keySet().stream()
-            .filter(key -> LMLogsApi.REQUEST_ID_HEADER.equalsIgnoreCase(key))
-            .findAny()
-            .map(headers::get)
-            .filter(values -> !values.isEmpty())
-            .map(values -> values.get(0))
-            .orElse(null);
+                () -> "Response body: " + response.getData());
     }
 
 }

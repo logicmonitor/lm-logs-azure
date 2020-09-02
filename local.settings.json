@@ -11,6 +11,7 @@
         "LogicMonitorAccessKey": "<LogicMonitor access key>",
         "LogApiClientConnectTimeout": "10000",
         "LogApiClientReadTimeout": "10000",
-        "LogApiClientDebugging": "false"
+        "LogApiClientDebugging": "false",
+        "LogRegexScrub": "<regex pattern>"
     }
 }
