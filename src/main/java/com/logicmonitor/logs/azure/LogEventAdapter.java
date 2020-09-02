@@ -18,6 +18,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -49,6 +51,24 @@ public class LogEventAdapter implements Function<JsonObject, List<LogEntry>> {
      * GSON instance.
      */
     private static final Gson GSON = new GsonBuilder().create();
+
+    private final Pattern scrubPattern;
+
+    public LogEventAdapter(String regexScrub) throws PatternSyntaxException {
+        if (regexScrub != null) {
+            scrubPattern = Pattern.compile(regexScrub);
+        } else {
+            scrubPattern = null;
+        }
+    }
+
+    /**
+     * Gets the regex pattern used to scrub log messages.
+     * @return the pattern object
+     */
+    protected Pattern getScrubPattern() {
+        return scrubPattern;
+    }
 
     /**
      * Applies the log transformation.
@@ -89,11 +109,17 @@ public class LogEventAdapter implements Function<JsonObject, List<LogEntry>> {
             .ifPresent(entry::setTimestamp);
 
         // message: properties.Msg if present, otherwise the whole JSON
+        String message;
         if (event.getProperties().getMsg() != null) {
-            entry.setMessage(event.getProperties().getMsg());
+            message = event.getProperties().getMsg();
         } else {
-            entry.setMessage(GSON.toJson(json));
+            message = GSON.toJson(json);
         }
+
+        if (scrubPattern != null) {
+            message = scrubPattern.matcher(message).replaceAll("");
+        }
+        entry.setMessage(message);
 
         return entry;
     }

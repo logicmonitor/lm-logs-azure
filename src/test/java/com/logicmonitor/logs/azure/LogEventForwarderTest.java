@@ -28,13 +28,14 @@ public class LogEventForwarderTest {
 
     @ParameterizedTest
     @CsvSource({
-        ",           1,      2,       true",
-        "company,    ,       0,       false",
-        "company,    0,      ,        true",
-        "company,    333,    4444,    false",
+        ",           1,      2,         true,     .                          ",
+        "company,    ,       0,         false,    \\d                        ",
+        "company,    0,      ,          true,     [\\w-.#]+@[\\w-.]+         ",
+        "company,    333,    4444,      false,    \\d+\\.\\d+\\.\\d+\\.\\d+  ",
+        "company,    55555,  666666,    false,                               ",
     })
     public void testConfigurationParameters(String companyName, Integer connectTimeout,
-            Integer readTimeout, Boolean debugging) throws Exception {
+            Integer readTimeout, Boolean debugging, String regexScrub) throws Exception {
 
         withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
             .and(LogEventForwarder.PARAMETER_ACCESS_ID, "id")
@@ -45,8 +46,10 @@ public class LogEventForwarderTest {
                     readTimeout != null ? readTimeout.toString() : null)
             .and(LogEventForwarder.PARAMETER_DEBUGGING,
                     debugging != null ? debugging.toString() : null)
+            .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, regexScrub)
             .execute(() -> {
                 LMLogsApi api = LogEventForwarder.configureApi();
+                LogEventAdapter adapter = LogEventForwarder.configureAdapter();
                 assertAll(
                     () -> assertEquals(companyName,
                             api.getApiClient().getCompany()),
@@ -55,7 +58,9 @@ public class LogEventForwarderTest {
                     () -> assertEquals(readTimeout != null ? readTimeout : LMLogsClient.DEFAULT_TIMEOUT,
                             api.getApiClient().getReadTimeout()),
                     () -> assertEquals(debugging != null ? debugging : false,
-                            api.getApiClient().isDebugging())
+                            api.getApiClient().isDebugging()),
+                    () -> assertEquals(regexScrub,
+                            regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern())
                 );
             }
         );

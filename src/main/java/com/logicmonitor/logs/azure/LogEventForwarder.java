@@ -43,6 +43,7 @@ import com.microsoft.azure.functions.annotation.FunctionName;
  * <li>{@value #PARAMETER_CONNECT_TIMEOUT} Connection timeout in milliseconds (default 10000)
  * <li>{@value #PARAMETER_READ_TIMEOUT} Read timeout in milliseconds (default 10000)
  * <li>{@value #PARAMETER_DEBUGGING} HTTP client debugging
+ * <li>{@value #PARAMETER_REGEX_SCRUB} Regex to scrub text from logs
  * </ul>
  */
 public class LogEventForwarder {
@@ -70,23 +71,48 @@ public class LogEventForwarder {
      * Parameter: HTTP client debugging.
      */
     public static final String PARAMETER_DEBUGGING = "LogApiClientDebugging";
+    /**
+     * Parameter: Regex to scrub text from logs.
+     */
+    public static final String PARAMETER_REGEX_SCRUB = "LogRegexScrub";
 
     /**
      * Transforms Azure log events into log entries.
      */
-    private static final LogEventAdapter ADAPTER = new LogEventAdapter();
+    private static LogEventAdapter adapter;
     /**
      * API for sending log requests.
      */
     private static LMLogsApi api;
 
     /**
+     * Gets the log adapter instance (initializes it when needed).
+     * @return LogEventAdapter instance
+     */
+    protected synchronized static LogEventAdapter getAdapter() {
+        // The initialization must be lazy for the testing
+        // - the test classes must set the environmental variables first.
+        if (adapter == null) {
+            adapter = configureAdapter();
+        }
+        return adapter;
+    }
+
+    /**
+     * Configures the log adapter using the environment variables.
+     * @return LogEventAdapter instance
+     */
+    protected static LogEventAdapter configureAdapter() {
+        return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB));
+    }
+
+    /**
      * Gets the API instance (initializes it when needed).
      * @return LMLogsApi instance
      */
     protected synchronized static LMLogsApi getApi() {
-        // The initialization must be lazy due to the tests
-        // - they must set the environmental variables first.
+        // The initialization must be lazy for the testing
+        // - the test classes must set the environmental variables first.
         if (api == null) {
             api = configureApi();
         }
@@ -162,7 +188,7 @@ public class LogEventForwarder {
         return StreamSupport.stream(logEvents.spliterator(), true)
             .filter(JsonElement::isJsonObject)
             .map(JsonElement::getAsJsonObject)
-            .map(ADAPTER)
+            .map(getAdapter())
             .flatMap(List::stream)
             .collect(Collectors.toList());
     }

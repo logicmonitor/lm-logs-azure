@@ -26,6 +26,7 @@ Required by [Azure Functions gradle plugin](https://github.com/lenala/azure-grad
 * `LogApiClientConnectTimeout` (optional) - Connection timeout in milliseconds (default 10000)
 * `LogApiClientReadTimeout` (optional) - Read timeout in milliseconds (default 10000)
 * `LogApiClientDebugging` (optional) - HTTP client debugging: true/false (default false)
+* `LogRegexScrub` (optional) - regex pattern for removing text from the log messages
 
 [host.json](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-event-hubs-trigger?tabs=csharp#functions-2x-and-higher) - file containing Event Hub consumer settings
 
