@@ -47,12 +47,13 @@ test {
     }
 }
 
-jar.dependsOn tasks.test
+jar.dependsOn test
 
+def azureAppName = System.properties["azureFunction"] ? System.properties["azureFunction"] : rootProject.name
 azurefunctions {
     subscription = System.properties["azureSubsription"]
     resourceGroup = System.properties["azureResourceGroup"]
-    appName = System.properties["azureFunction"]
+    appName = azureAppName
 
     runtime {
         os = "linux"
@@ -66,3 +67,15 @@ azurefunctions {
     allowTelemetry = false
     localDebug = "transport=dt_socket,server=y,suspend=n,address=5005"
 }
+
+task copyPackage(type: Copy) {
+    from("build/azure-functions") {
+        include "${rootProject.name}.zip"
+    }
+    into "package"
+    eachFile { println "Copied " + it.name }
+}
+
+copyPackage.dependsOn azureFunctionsPackageZip
+build.finalizedBy copyPackage
+
