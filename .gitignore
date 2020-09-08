@@ -9,3 +9,6 @@ build
 .settings/
 azure-functions-core-tools/
 bin/
+.terraform/
+terraform.*
+
