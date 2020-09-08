@@ -96,7 +96,8 @@ resource "azurerm_function_app" "lm_logs" {
   https_only                 = true
   version                    = "~3"
   site_config {
-    always_on = true
+    always_on                = true
+    linux_fx_version         = "java|11"
   }
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME     = "java"
