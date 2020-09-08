@@ -114,3 +114,8 @@ resource "azurerm_function_app" "lm_logs" {
   }
 }
 
+resource "null_resource" "restart_function_app_after_2_minutes" {
+  provisioner "local-exec" {
+    command = "sleep 120 && az functionapp restart --resource-group ${azurerm_resource_group.lm_logs.name} --name ${azurerm_function_app.lm_logs.name}"
+  }
+}
