@@ -30,14 +30,14 @@ import com.google.gson.JsonObject;
 import com.logicmonitor.logs.model.LogEntry;
 
 /**
- * Transforms one JSON object into one or multiple log entries.<br>
+ * Transforms one JSON string into one or multiple log entries.<br>
  * The following formats are supported:
  * <ul>
  * <li> single log event
  * <li> {@value #AZURE_RECORDS_PROPERTY} = array of log events
  * </ul>
  */
-public class LogEventAdapter implements Function<JsonObject, List<LogEntry>> {
+public class LogEventAdapter implements Function<String, List<LogEntry>> {
     /**
      * Name of the JSON property containing array of log events.
      */
@@ -72,11 +72,12 @@ public class LogEventAdapter implements Function<JsonObject, List<LogEntry>> {
 
     /**
      * Applies the log transformation.
-     * @param log Azure log event
+     * @param jsonString Azure log event as JSON string
      * @return list of log entries
      */
     @Override
-    public List<LogEntry> apply(JsonObject log) {
+    public List<LogEntry> apply(String jsonString) {
+        JsonObject log = GSON.fromJson(jsonString, JsonObject.class);
         // if the JSON object contains "records" array, transform its members
         return Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
             .filter(JsonElement::isJsonArray)
@@ -103,7 +104,7 @@ public class LogEventAdapter implements Function<JsonObject, List<LogEntry>> {
         entry.putLmResourceIdItem(LM_RESOURCE_PROPERTY, event.getResourceId());
 
         // timestamp as epoch
-        Optional.of(event.getTime())
+        Optional.ofNullable(event.getTime())
             .map(Instant::parse)
             .map(Instant::getEpochSecond)
             .ifPresent(entry::setTimestamp);

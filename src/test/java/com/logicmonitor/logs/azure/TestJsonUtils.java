@@ -17,7 +17,9 @@ package com.logicmonitor.logs.azure;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import com.google.gson.Gson;
@@ -30,7 +32,7 @@ public class TestJsonUtils {
 
     private static final Gson GSON = new GsonBuilder().create();
 
-    public static JsonArray getArray(String resourceName) {
+    protected static JsonArray getArray(String resourceName) {
         try (Reader reader = new InputStreamReader(
                 TestJsonUtils.class.getResourceAsStream(resourceName))) {
             return GSON.fromJson(reader, JsonArray.class);
@@ -39,11 +41,26 @@ public class TestJsonUtils {
         }
     }
 
-    public static JsonObject getFirstObject(String resourceName) {
+    public static List<String> getJsonStringList(String resourceName) {
+        return StreamSupport.stream(getArray(resourceName).spliterator(), true)
+             .filter(JsonElement::isJsonObject)
+             .map(JsonElement::getAsJsonObject)
+             .map(TestJsonUtils::toString)
+             .collect(Collectors.toList());
+    }
+
+    protected static JsonObject getFirstObject(String resourceName) {
         return StreamSupport.stream(getArray(resourceName).spliterator(), true)
             .filter(JsonElement::isJsonObject)
             .findFirst()
             .map(JsonElement::getAsJsonObject)
+            .orElse(null);
+    }
+
+    public static String getFirstJsonString(String resourceName) {
+        JsonObject object = getFirstObject(resourceName);
+        return Optional.ofNullable(object)
+            .map(TestJsonUtils::toString)
             .orElse(null);
     }
 
@@ -61,13 +78,11 @@ public class TestJsonUtils {
         return GSON.toJson(element);
     }
 
-    public static JsonArray mergeArrays(String... resourceNames) {
+    public static List<String> mergeJsonStringList(String... resourceNames) {
         return Stream.of(resourceNames)
-            .map(TestJsonUtils::getArray)
-            .reduce(new JsonArray(), (result, element) -> {
-                result.addAll(element);
-                return result;
-            });
+            .map(TestJsonUtils::getJsonStringList)
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
     }
 
 }

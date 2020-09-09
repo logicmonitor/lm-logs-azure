@@ -37,7 +37,7 @@ public class LogEventAdapterTest {
         "vm_syslog.json,                1",
     })
     public void testApply(String resourceName, int expectedEntriesCount) {
-        JsonObject events = TestJsonUtils.getFirstObject(resourceName);
+        String events = TestJsonUtils.getFirstJsonString(resourceName);
         LogEventAdapter adapter = new LogEventAdapter(null);
         List<LogEntry> entries = adapter.apply(events);
         assertEquals(expectedEntriesCount, entries.size());

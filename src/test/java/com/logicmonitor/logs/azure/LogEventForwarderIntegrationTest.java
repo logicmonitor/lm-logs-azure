@@ -37,7 +37,6 @@ import org.glassfish.jersey.test.TestProperties;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.google.gson.JsonArray;
 import com.logicmonitor.logs.LMLogsApi;
 import com.logicmonitor.logs.invoker.ServerConfiguration;
 import com.logicmonitor.logs.model.LogEntry;
@@ -109,7 +108,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
 
     @Test
     public void testForward() throws Exception {
-        JsonArray logEvents = TestJsonUtils.mergeArrays(
+        List<String> logEvents = TestJsonUtils.mergeJsonStringList(
                 "activity_storage_account.json",
                 "activity_webapp.json",
                 "resource_db_account.json",
@@ -134,8 +133,8 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
     }
 
     @Test
-    public void testForwardEmptyArray() {
-        new LogEventForwarder().forward(new JsonArray(), mockExecutionContext);
+    public void testForwardEmptyList() {
+        new LogEventForwarder().forward(List.of(), mockExecutionContext);
 
         assertNull(LogIngestResource.receivedEntries);
     }

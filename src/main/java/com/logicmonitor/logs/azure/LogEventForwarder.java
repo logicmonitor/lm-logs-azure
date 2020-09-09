@@ -21,15 +21,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.logicmonitor.logs.LMLogsApi;
 import com.logicmonitor.logs.LMLogsApiException;
 import com.logicmonitor.logs.LMLogsApiResponse;
 import com.logicmonitor.logs.model.LogEntry;
 import com.logicmonitor.logs.model.LogResponse;
 import com.microsoft.azure.functions.ExecutionContext;
+import com.microsoft.azure.functions.annotation.Cardinality;
 import com.microsoft.azure.functions.annotation.EventHubTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
 
@@ -154,13 +152,14 @@ public class LogEventForwarder {
     /**
      * The main method of the Azure Log Forwarder, triggered by events consumed
      * from the configured Event Hub.
-     * @param logEvents JSON array containing Azure events
+     * @param logEvents list of JSON strings containing Azure events
      * @param context execution context
      */
     @FunctionName("LogForwarder")
     public void forward(
             @EventHubTrigger(name = "logEvents", eventHubName = "eventHub",
-                    connection = "LogsEventHubConnectionString") JsonArray logEvents,
+                    dataType = "string", cardinality = Cardinality.MANY,
+                    connection = "LogsEventHubConnectionString") List<String> logEvents,
             final ExecutionContext context
     ) {
         List<LogEntry> logEntries = processEvents(logEvents);
@@ -181,13 +180,11 @@ public class LogEventForwarder {
 
     /**
      * Processes the received events and produces log events.
-     * @param logEvents JSON array containing Azure events
+     * @param logEvents list of JSON strings containing Azure events
      * @return the log events
      */
-    protected static List<LogEntry> processEvents(JsonArray logEvents) {
-        return StreamSupport.stream(logEvents.spliterator(), true)
-            .filter(JsonElement::isJsonObject)
-            .map(JsonElement::getAsJsonObject)
+    protected static List<LogEntry> processEvents(List<String> logEvents) {
+        return logEvents.stream()
             .map(getAdapter())
             .flatMap(List::stream)
             .collect(Collectors.toList());

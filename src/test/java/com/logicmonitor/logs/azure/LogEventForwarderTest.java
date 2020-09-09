@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import com.google.gson.JsonArray;
 import com.logicmonitor.logs.LMLogsApi;
 import com.logicmonitor.logs.LMLogsClient;
 import com.logicmonitor.logs.model.LogEntry;
@@ -90,7 +89,7 @@ public class LogEventForwarderTest {
         "vm_syslog.json,                2",
     })
     public void testProcessEvents(String resourceName, int expectedEntriesCount) {
-        JsonArray events = TestJsonUtils.getArray(resourceName);
+        List<String> events = TestJsonUtils.getJsonStringList(resourceName);
         List<LogEntry> entries = LogEventForwarder.processEvents(events);
         assertNotNull(entries);
         assertAll(
