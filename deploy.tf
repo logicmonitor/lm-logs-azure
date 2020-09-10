@@ -107,10 +107,18 @@ resource "azurerm_function_app" "lm_logs" {
     LogicMonitorCompanyName      = var.lm_company_name
     LogicMonitorAccessId         = var.lm_access_id
     LogicMonitorAccessKey        = var.lm_access_key
-#    LogApiClientConnectTimeout   = 10000
-#    LogApiClientReadTimeout      = 10000
-#    LogApiClientDebugging        = false
-#    LogRegexScrub                = "\\d+\\.\\d+\\.\\d+\\.\\d+"
+
+    /* Uncomment to set custom connection timeout */
+    # LogApiClientConnectTimeout   = 10000
+
+    /* Uncomment to set custom read timeout */
+    # LogApiClientReadTimeout      = 10000
+
+    /* Uncomment to turn on HTTP debugging */
+    # LogApiClientDebugging        = true
+
+    /* Uncomment to remove matching text from the logs */
+    # LogRegexScrub                = "\\d+\\.\\d+\\.\\d+\\.\\d+"
   }
 }
 
