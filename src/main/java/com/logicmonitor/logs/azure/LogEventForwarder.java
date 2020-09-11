@@ -16,6 +16,7 @@ package com.logicmonitor.logs.azure;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -168,7 +169,8 @@ public class LogEventForwarder {
             return;
         }
 
-        log(context, Level.INFO, () -> "Sending " + logEntries.size() + " log entries");
+        log(context, Level.INFO, () -> "Sending " + logEntries.size() +
+                " log entries for devices " + getResourceIds(logEntries));
         log(context, Level.FINEST, () -> "Request body: " + logEntries);
         try {
             LMLogsApiResponse<LogResponse> response = getApi().logIngestPostWithHttpInfo(logEntries);
@@ -181,13 +183,25 @@ public class LogEventForwarder {
     /**
      * Processes the received events and produces log events.
      * @param logEvents list of JSON strings containing Azure events
-     * @return the log events
+     * @return the log entries
      */
     protected static List<LogEntry> processEvents(List<String> logEvents) {
         return logEvents.stream()
             .map(getAdapter())
             .flatMap(List::stream)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Gets unique resource IDs.
+     * @param logEntries log entries
+     * @return set of resource IDs
+     */
+    protected static Set<String> getResourceIds(List<LogEntry> logEntries) {
+        return logEntries.stream()
+            .map(LogEntry::getLmResourceId)
+            .map(props -> props.get(LogEventAdapter.LM_RESOURCE_PROPERTY))
+            .collect(Collectors.toSet());
     }
 
     /**
