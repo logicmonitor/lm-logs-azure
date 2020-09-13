@@ -1,3 +1,4 @@
+### Variables ###
 variable "lm_company_name" {
   description = "LogicMonitor company name"
 }
@@ -14,21 +15,27 @@ variable "azure_region" {
   description = "Azure region"
 }
 
+### Locals ###
 locals {
   namespace = "lm-logs-${var.lm_company_name}-${var.azure_region}"
   storage = lower(replace(replace(local.namespace, "2", "two"), "/[^A-Za-z]+/", ""))
 }
 
+### Providers ###
 provider "azurerm" {
   version = ">= 2.0.0"
   features {}
 }
 
+### Resources ###
+## Resource Groups ##
 resource "azurerm_resource_group" "lm_logs" {
   name = "${local.namespace}-group"
   location = var.azure_region
 }
 
+## Event Hub ##
+# Namespace #
 resource "azurerm_eventhub_namespace" "lm_logs" {
   name                = local.namespace
   resource_group_name = azurerm_resource_group.lm_logs.name
@@ -37,6 +44,7 @@ resource "azurerm_eventhub_namespace" "lm_logs" {
   capacity            = 1
 }
 
+# Event Hub #
 resource "azurerm_eventhub" "lm_logs" {
   name                = "log-hub"
   resource_group_name = azurerm_resource_group.lm_logs.name
@@ -45,6 +53,7 @@ resource "azurerm_eventhub" "lm_logs" {
   message_retention   = 1
 }
 
+# Event Hub Authorization Sender Role #
 resource "azurerm_eventhub_authorization_rule" "lm_logs_sender" {
   name                = "sender"
   resource_group_name = azurerm_resource_group.lm_logs.name
@@ -55,6 +64,7 @@ resource "azurerm_eventhub_authorization_rule" "lm_logs_sender" {
   manage              = false
 }
 
+# Event Hub Authorization Listener Role #
 resource "azurerm_eventhub_authorization_rule" "lm_logs_listener" {
   name                = "listener"
   resource_group_name = azurerm_resource_group.lm_logs.name
@@ -65,6 +75,7 @@ resource "azurerm_eventhub_authorization_rule" "lm_logs_listener" {
   manage              = false
 }
 
+## Storage Account ##
 resource "azurerm_storage_account" "lm_logs" {
   name                     = length(local.storage) > 24 ? substr(local.storage, length(local.storage) - 24, 24) : local.storage
   resource_group_name      = azurerm_resource_group.lm_logs.name
@@ -73,6 +84,7 @@ resource "azurerm_storage_account" "lm_logs" {
   account_replication_type = "LRS"
 }
 
+## App Service Plan ##
 resource "azurerm_app_service_plan" "lm_logs" {
   name                = "${local.namespace}-service-plan"
   resource_group_name = azurerm_resource_group.lm_logs.name
@@ -85,6 +97,7 @@ resource "azurerm_app_service_plan" "lm_logs" {
   }
 }
 
+## Function App ##
 resource "azurerm_function_app" "lm_logs" {
   name                       = local.namespace
   resource_group_name        = azurerm_resource_group.lm_logs.name
@@ -122,6 +135,7 @@ resource "azurerm_function_app" "lm_logs" {
   }
 }
 
+### Misc ###
 resource "null_resource" "restart_function_app_after_2_minutes" {
   provisioner "local-exec" {
     command = "sleep 120 && az functionapp restart --resource-group ${azurerm_resource_group.lm_logs.name} --name ${azurerm_function_app.lm_logs.name}"
