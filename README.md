@@ -18,7 +18,8 @@ Each Azure region requires a separate deployment. This is because devices can on
 * Download [deploy.tf file](https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/deploy.tf)
 * (optional) Update `app_settings` in the file to set the optional parameters
 * Exceute `terraform init`
-* Execute `terraform apply --var 'lm_company_name=<LM company name>' --var 'lm_access_id=<LM access ID>' --var 'lm_access_key=<LM access key>' --var 'azure_region=<region>'`
+* Execute `terraform plan --var-file terraform.tfvars -out tf.plan`
+* Execute `terraform apply tf.plan`
 
 ### Deploying using Gradle
 
