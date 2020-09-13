@@ -19,10 +19,27 @@ variable "azure_region" {
   description = "Azure region"
 }
 
+variable "tags" {
+  description = "Tags given to the resources created by this template"
+  type        = map(string)
+  default     = {
+    Application = "LM Logs Beta"
+    Environment = "-"
+    Criticality = "-"
+    Owner       = "-"
+  }
+}
+
 ### Locals ###
 locals {
   namespace = "lm-logs-${var.lm_company_name}-${replace(var.azure_region, " ", "")}"
   storage = lower(replace(replace(local.namespace, "2", "two"), "/[^A-Za-z]+/", ""))
+  tags = merge(
+    var.tags,
+    {
+      deployedBy = "Terraform"
+    }
+  )
 }
 
 ### Providers ###
@@ -34,8 +51,9 @@ provider "azurerm" {
 ### Resources ###
 ## Resource Groups ##
 resource "azurerm_resource_group" "lm_logs" {
-  name = "${local.namespace}-group"
+  name     = "${local.namespace}-group"
   location = var.azure_region
+  tags     = local.tags
 }
 
 ## Event Hub ##
@@ -46,6 +64,7 @@ resource "azurerm_eventhub_namespace" "lm_logs" {
   location            = var.azure_region
   sku                 = "Standard"
   capacity            = 1
+  tags                = local.tags
 }
 
 # Event Hub #
@@ -86,6 +105,7 @@ resource "azurerm_storage_account" "lm_logs" {
   location                 = var.azure_region
   account_tier             = "Standard"
   account_replication_type = "LRS"
+  tags                     = local.tags
 }
 
 ## App Service Plan ##
@@ -95,6 +115,7 @@ resource "azurerm_app_service_plan" "lm_logs" {
   location            = var.azure_region
   kind                = "FunctionApp"
   reserved            = true
+  tags                = local.tags
   sku {
     tier = "Standard"
     size = "S1"
@@ -112,6 +133,7 @@ resource "azurerm_function_app" "lm_logs" {
   os_type                    = "linux"
   https_only                 = true
   version                    = "~3"
+  tags                       = local.tags
   site_config {
     always_on                = true
     linux_fx_version         = "java|11"
