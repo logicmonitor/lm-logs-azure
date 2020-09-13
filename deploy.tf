@@ -21,7 +21,7 @@ variable "azure_region" {
 
 ### Locals ###
 locals {
-  namespace = "lm-logs-${var.lm_company_name}-${var.azure_region}"
+  namespace = "lm-logs-${var.lm_company_name}-${replace(var.azure_region, " ", "")}"
   storage = lower(replace(replace(local.namespace, "2", "two"), "/[^A-Za-z]+/", ""))
 }
 
