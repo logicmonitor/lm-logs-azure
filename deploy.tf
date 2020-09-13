@@ -1,17 +1,21 @@
 ### Variables ###
 variable "lm_company_name" {
+  type        = string
   description = "LogicMonitor company name"
 }
 
 variable "lm_access_id" {
+  type        = string
   description = "LogicMonitor access id"
 }
 
 variable "lm_access_key" {
+  type        = string
   description = "LogicMonitor access key"
 }
 
 variable "azure_region" {
+  type        = string
   description = "Azure region"
 }
 
