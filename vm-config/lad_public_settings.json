@@ -1,0 +1,35 @@
+{
+  "StorageAccount": "__DIAGNOSTIC_STORAGE_ACCOUNT__",
+  "ladCfg": {
+    "diagnosticMonitorConfiguration": {
+      "eventVolume": "Medium",
+      "metrics": {
+        "metricAggregation": [
+        ],
+        "resourceId": "__VM_RESOURCE_ID__"
+      },
+      "performanceCounters": {
+        "performanceCounterConfiguration": [
+        ]
+      },
+      "syslogEvents": {
+        "sinks": "LMLogsEventHub",
+        "syslogEventConfiguration": {
+          "LOG_AUTH": "LOG_INFO",
+          "LOG_CRON": "LOG_INFO",
+          "LOG_DAEMON": "LOG_INFO",
+          "LOG_KERN": "LOG_INFO",
+          "LOG_SYSLOG": "LOG_INFO",
+          "LOG_USER": "LOG_INFO"
+        }
+      }
+    },
+    "sampleRateInSeconds": 15
+  },
+  "fileLogs": [
+    {
+      "sinks": "LMLogsEventHub",
+      "file": "/opt/tomcat/logs/catalina.out"
+    }
+  ]
+}
