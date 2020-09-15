@@ -1,0 +1,12 @@
+lm_company_name='<LM company name>'
+lm_access_id='<LM access ID>'
+lm_access_key='<LM access key>'
+
+azure_region='<region>'
+
+tags = {
+  Application = "LM Logs Bets"
+  Environment = "Production/Test/Dev"
+  Criticality = "Tier 1/Tier 2/Tier 3"
+  Owner       = "Team Name"
+}
