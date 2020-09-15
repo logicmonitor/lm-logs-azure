@@ -1,42 +1,73 @@
+### Variables ###
 variable "lm_company_name" {
+  type        = string
   description = "LogicMonitor company name"
 }
 
 variable "lm_access_id" {
+  type        = string
   description = "LogicMonitor access id"
 }
 
 variable "lm_access_key" {
+  type        = string
   description = "LogicMonitor access key"
 }
 
 variable "azure_region" {
+  type        = string
   description = "Azure region"
 }
 
-locals {
-  namespace = "lm-logs-${var.lm_company_name}-${var.azure_region}"
-  storage = lower(replace(replace(local.namespace, "2", "two"), "/[^A-Za-z]+/", ""))
+variable "tags" {
+  description = "Tags given to the resources created by this template"
+  type        = map(string)
+  default     = {
+    Application = "LM Logs Beta"
+    Environment = "-"
+    Criticality = "-"
+    Owner       = "-"
+  }
 }
 
+### Locals ###
+locals {
+  namespace = "lm-logs-${var.lm_company_name}-${replace(var.azure_region, " ", "")}"
+  storage = lower(replace(replace(local.namespace, "2", "two"), "/[^A-Za-z]+/", ""))
+  tags = merge(
+    var.tags,
+    {
+      deployedBy = "Terraform"
+    }
+  )
+}
+
+### Providers ###
 provider "azurerm" {
   version = ">= 2.0.0"
   features {}
 }
 
+### Resources ###
+## Resource Groups ##
 resource "azurerm_resource_group" "lm_logs" {
-  name = "${local.namespace}-group"
+  name     = "${local.namespace}-group"
   location = var.azure_region
+  tags     = local.tags
 }
 
+## Event Hub ##
+# Namespace #
 resource "azurerm_eventhub_namespace" "lm_logs" {
   name                = local.namespace
   resource_group_name = azurerm_resource_group.lm_logs.name
   location            = var.azure_region
   sku                 = "Standard"
   capacity            = 1
+  tags                = local.tags
 }
 
+# Event Hub #
 resource "azurerm_eventhub" "lm_logs" {
   name                = "log-hub"
   resource_group_name = azurerm_resource_group.lm_logs.name
@@ -45,6 +76,7 @@ resource "azurerm_eventhub" "lm_logs" {
   message_retention   = 1
 }
 
+# Event Hub Authorization Sender Role #
 resource "azurerm_eventhub_authorization_rule" "lm_logs_sender" {
   name                = "sender"
   resource_group_name = azurerm_resource_group.lm_logs.name
@@ -55,6 +87,7 @@ resource "azurerm_eventhub_authorization_rule" "lm_logs_sender" {
   manage              = false
 }
 
+# Event Hub Authorization Listener Role #
 resource "azurerm_eventhub_authorization_rule" "lm_logs_listener" {
   name                = "listener"
   resource_group_name = azurerm_resource_group.lm_logs.name
@@ -65,26 +98,31 @@ resource "azurerm_eventhub_authorization_rule" "lm_logs_listener" {
   manage              = false
 }
 
+## Storage Account ##
 resource "azurerm_storage_account" "lm_logs" {
   name                     = length(local.storage) > 24 ? substr(local.storage, length(local.storage) - 24, 24) : local.storage
   resource_group_name      = azurerm_resource_group.lm_logs.name
   location                 = var.azure_region
   account_tier             = "Standard"
   account_replication_type = "LRS"
+  tags                     = local.tags
 }
 
+## App Service Plan ##
 resource "azurerm_app_service_plan" "lm_logs" {
   name                = "${local.namespace}-service-plan"
   resource_group_name = azurerm_resource_group.lm_logs.name
   location            = var.azure_region
   kind                = "FunctionApp"
   reserved            = true
+  tags                = local.tags
   sku {
     tier = "Standard"
     size = "S1"
   }
 }
 
+## Function App ##
 resource "azurerm_function_app" "lm_logs" {
   name                       = local.namespace
   resource_group_name        = azurerm_resource_group.lm_logs.name
@@ -95,6 +133,7 @@ resource "azurerm_function_app" "lm_logs" {
   os_type                    = "linux"
   https_only                 = true
   version                    = "~3"
+  tags                       = local.tags
   site_config {
     always_on                = true
     linux_fx_version         = "java|11"
@@ -122,6 +161,7 @@ resource "azurerm_function_app" "lm_logs" {
   }
 }
 
+### Misc ###
 resource "null_resource" "restart_function_app_after_2_minutes" {
   provisioner "local-exec" {
     command = "sleep 120 && az functionapp restart --resource-group ${azurerm_resource_group.lm_logs.name} --name ${azurerm_function_app.lm_logs.name}"
