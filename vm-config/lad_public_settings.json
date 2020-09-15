@@ -29,7 +29,7 @@
   "fileLogs": [
     {
       "sinks": "LMLogsEventHub",
-      "file": "/opt/tomcat/logs/catalina.out"
+      "file": "/path/to/my/application.log"
     }
   ]
 }
