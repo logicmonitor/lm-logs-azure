@@ -31,7 +31,7 @@ event_hub_sas_token() {
     local expiry=$(date --date='10 years' +%s) # + 10 years
     local utf8_signature=$(printf "%s\n%s" $encoded_uri $expiry | iconv -t utf8)
     local hash=$(echo -n "$utf8_signature" | openssl sha256 -hmac $3 -binary | base64)
-    local encoded_hash=$(url_encode $hash)
+    local encoded_hash=$(echo $hash | sed "s#+#%2B#g" | sed "s#/#%2F#g" | sed "s#=#%3D#g")
     echo "sr=$encoded_uri&sig=$encoded_hash&se=$expiry&skn=$2"
     return 0
 }
@@ -39,11 +39,8 @@ event_hub_sas_token() {
 # url_encode <URL to encode>
 url_encode() {
     local encoded=$(curl -s -o /dev/null -w %{url_effective} --get --data-urlencode "$1" "")
-    if [[ $? != 3 ]]; then
-        return $?
-    fi
     echo "${encoded##/?}"
-    return 0
+    return $?
 }
 
 #### main ####
