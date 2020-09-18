@@ -1,0 +1,13 @@
+{
+  "storageAccountName": "__DIAGNOSTIC_STORAGE_ACCOUNT__",
+  "storageAccountSasToken": "__DIAGNOSTIC_STORAGE_SAS_TOKEN__",
+  "sinksConfig": {
+    "sink": [
+      {
+        "name": "LMLogsEventHub",
+        "type": "EventHub",
+        "sasURL": "__LOGS_EVENT_HUB_URI__"
+      }
+    ]
+  }
+}

@@ -60,3 +60,25 @@ Then they can be observed using [Azure CLI webapp log tail](https://docs.microso
 
 `az webapp log tail --resource-group <your Azure Function's Resource Group name> --name <your Azure Function name>`
 
+## Forwarding Azure logs to Event Hub
+
+After the deployment is complete, the Azure function listens for logs from the Event Hub. We need to redirect them there from resources.
+For most of them, this can be done by [creating diagnostic settings](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings). If the function was deployed using Terraform, the logs should be sent to Event Hub named `log-hub` in namespace `lm-logs-<LM company name>-<Azure region>`.
+
+### Virtual Machines
+
+Forwarding VM's system and application logs requires [installation of diagnostic extension](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/diagnostics-linux#installing-the-extension-in-your-vm) on the machine.
+
+#### Prerequisites
+
+* [Install Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
+* [Sign to Azure in with Azure CLI](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli?view=azure-cli-latest): execute `az login`
+* Install wget: execute `sudo apt-get install wget`.
+
+#### Configuration
+
+* Download the configuration script: `wget https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/vm-config/configure-lad.sh`
+* execute it to create the storage account needed by the extension, and the configuration files: `./configure-lad.sh <LM company name>`
+* update `lad_public_settings.json` to configure types of system logs and their levels (`syslogEvents`), and application logs (`fileLogs`) to collect
+* excecute `az vm extension set --publisher Microsoft.Azure.Diagnostics --name LinuxDiagnostic --version 3.0 --resource-group azure-logs-us --vm-name vm-logs-us --protected-settings lad_protected_settings.json --settings lad_public_settings.json`
+
