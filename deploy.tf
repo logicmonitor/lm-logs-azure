@@ -149,8 +149,9 @@ resource "azurerm_function_app" "lm_logs" {
   version                    = "~3"
   tags                       = local.tags
   site_config {
-    always_on                = true
-    linux_fx_version         = "java|11"
+    always_on                    = true
+    linux_fx_version             = "java|11"
+    use_32_bit_worker_process    = false
   }
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME     = "java"
