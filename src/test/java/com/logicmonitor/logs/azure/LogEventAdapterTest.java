@@ -35,6 +35,7 @@ public class LogEventAdapterTest {
         "resource_vault.json,           1",
         "vm_catalina.json,              1",
         "vm_syslog.json,                1",
+        "windows_vm_log.json,           1",
     })
     public void testApply(String resourceName, int expectedEntriesCount) {
         String events = TestJsonUtils.getFirstJsonString(resourceName);
@@ -52,6 +53,7 @@ public class LogEventAdapterTest {
         "resource_vault.json,           ''|\"                             ",
         "vm_catalina.json,              .                                 ",
         "vm_syslog.json,                \\d                               ",
+        "windows_vm_log.json,                                             ",
     })
     public void testCreateEntry(String resourceName, String regexScrub) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
@@ -74,7 +76,8 @@ public class LogEventAdapterTest {
             () -> {
                 String message = Optional.ofNullable(event.get("properties"))
                     .map(JsonElement::getAsJsonObject)
-                    .map(properties -> properties.get("Msg"))
+                    .map(properties -> Optional.ofNullable(properties.get("Msg"))
+                        .orElseGet(() -> properties.get("Description")))
                     .map(JsonElement::getAsString)
                     .orElseGet(() -> TestJsonUtils.toString(event));
                 if (regexScrub != null) {

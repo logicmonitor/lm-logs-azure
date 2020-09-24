@@ -19,16 +19,8 @@ package com.logicmonitor.logs.azure;
  */
 public class LogEventProperties {
 
-    private String FluentdIngestTimestamp;
     private String Msg;
-
-    public String getFluentdIngestTimestamp() {
-        return FluentdIngestTimestamp;
-    }
-
-    public void setFluentdIngestTimestamp(String fluentdIngestTimestamp) {
-        FluentdIngestTimestamp = fluentdIngestTimestamp;
-    }
+    private String Description;
 
     public String getMsg() {
         return Msg;
@@ -36,6 +28,14 @@ public class LogEventProperties {
 
     public void setMsg(String msg) {
         Msg = msg;
+    }
+
+    protected String getDescription() {
+        return Description;
+    }
+
+    protected void setDescription(String description) {
+        Description = description;
     }
 
 }
