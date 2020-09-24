@@ -65,9 +65,9 @@ Then they can be observed using [Azure CLI webapp log tail](https://docs.microso
 After the deployment is complete, the Azure function listens for logs from the Event Hub. We need to redirect them there from resources.
 For most of them, this can be done by [creating diagnostic settings](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings). If the function was deployed using Terraform, the logs should be sent to Event Hub named `log-hub` in namespace `lm-logs-<LM company name>-<Azure region>`.
 
-### Virtual Machines
+### Linux Virtual Machines
 
-Forwarding VM's system and application logs requires [installation of diagnostic extension](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/diagnostics-linux#installing-the-extension-in-your-vm) on the machine.
+Forwarding Linux VM's system and application logs requires [installation of diagnostic extension](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/diagnostics-linux#installing-the-extension-in-your-vm) on the machine.
 
 #### Prerequisites
 
@@ -82,3 +82,20 @@ Forwarding VM's system and application logs requires [installation of diagnostic
 * update `lad_public_settings.json` to configure types of system logs and their levels (`syslogEvents`), and application logs (`fileLogs`) to collect
 * excecute `az vm extension set --publisher Microsoft.Azure.Diagnostics --name LinuxDiagnostic --version 3.0 --resource-group azure-logs-us --vm-name vm-logs-us --protected-settings lad_protected_settings.json --settings lad_public_settings.json`
 
+### Windows Virtual Machines 
+
+Forwarding Windows VM's system and application logs requires [installation of diagnostic extension](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostics-extension-windows-install) on the machine.
+
+#### Prerequisites
+
+* [Install Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
+* Install Azure CLI via PowerShell:
+`Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'; rm .\AzureCLI.msi`
+* [Sign to Azure in with Azure CLI](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli?view=azure-cli-latest): execute `az login`
+
+#### Configuration
+
+* Download the configuration script: `Invoke-WebRequest -Uri https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/vm-config/configure-wad.ps1 -OutFile .\configure-wad.ps1`
+* execute it to create the storage account needed by the extension, and the configuration files: `.\configure-wad.ps1 -lm_company_name <LM company name>`
+* update `wad_public_settings.json` to configure types of [event logs](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostics-extension-schema-windows#windowseventlog-element) (`Applicaiton, System, Setup, Security, etc`) and their levels (`Info, Warning, Critical`) to collect
+* excecute `az vm extension set --publisher Microsoft.Azure.Diagnostics --name IaaSDiagnostics --version 1.18 --resource-group ##AZ_VM_RG_NAME## --vm-name ##VM-NAME## --protected-settings wad_protected_settings.json --settings wad_public_settings.json`

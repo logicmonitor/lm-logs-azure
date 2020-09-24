@@ -1,0 +1,9 @@
+{
+    "StorageAccountName": "__DIAGNOSTIC_STORAGE_ACCOUNT__",
+    "storageAccountKey": "__DIAGNOSTIC_STORAGE_KEY__",
+	"EventHub": {
+		"Url": "__LOGS_EVENT_HUB_URI__",
+		"SharedAccessKeyName": "sender",
+		"SharedAccessKey": "__LOGS_EVENT_HUB_ACCESS_KEY__"
+	}
+}

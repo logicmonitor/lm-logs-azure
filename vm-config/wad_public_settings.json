@@ -1,0 +1,38 @@
+{
+    "WadCfg": {
+        "DiagnosticMonitorConfiguration": {
+            "Metrics": {
+                "MetricAggregation": [],
+                "resourceId": "__VM_RESOURCE_ID__"
+            },
+            "WindowsEventLog": {
+                "scheduledTransferPeriod": "PT5M",
+                "sinks": "LMLogsEventHub",
+                "DataSource": [
+                    {
+                        "name": "Application!*[System[(Level=1 or Level=2 or Level=3)]]"
+                    },
+                    {
+                        "name": "System!*[System[(Level=1 or Level=2 or Level=3)]]"
+                    },
+                    {
+                        "name": "Security!*[System[(Level=1 or Level=2 or Level=3)]]"
+                    }
+                ]
+            }
+        },
+        "SinksConfig": {
+            "Sink": [
+                {
+                    "name": "LMLogsEventHub",
+                    "EventHub": {
+                        "Url": "__LOGS_EVENT_HUB_URI__",
+                        "SharedAccessKeyName": "sender",
+                        "usePublisherId": false
+                    }
+                }
+            ]
+        }
+    },
+    "StorageAccount": "__DIAGNOSTIC_STORAGE_ACCOUNT__"
+}
