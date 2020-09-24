@@ -115,12 +115,13 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
                 "resource_sql.json",
                 "resource_vault.json",
                 "vm_catalina.json",
-                "vm_syslog.json");
+                "vm_syslog.json",
+                "windows_vm_log.json");
         new LogEventForwarder().forward(logEvents, mockExecutionContext);
 
         assertNotNull(LogIngestResource.receivedEntries);
         assertAll(
-            () -> assertEquals(14, LogIngestResource.receivedEntries.size()),
+            () -> assertEquals(15, LogIngestResource.receivedEntries.size()),
             () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
                     entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY))),
             () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(

@@ -90,6 +90,7 @@ public class LogEventForwarderTest {
         "resource_vault.json,           2",
         "vm_catalina.json,              1",
         "vm_syslog.json,                2",
+        "windows_vm_log.json,           1",
     })
     public void testProcessEvents(String resourceName, int expectedEntriesCount) {
         List<String> events = TestJsonUtils.getJsonStringList(resourceName);
@@ -113,6 +114,7 @@ public class LogEventForwarderTest {
         "resource_vault.json,           '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/VAULT-1'",
         "vm_catalina.json,              '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1'",
         "vm_syslog.json,                '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1'",
+        "windows_vm_log.json,           '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-win'",
     })
     public void testgetResourceIds(String resourceName, String expectedIds) {
         List<String> events = TestJsonUtils.getJsonStringList(resourceName);

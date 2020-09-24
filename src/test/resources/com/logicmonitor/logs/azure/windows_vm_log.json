@@ -1,0 +1,24 @@
+[
+  {
+    "time": "2020-09-22T20:42:09.2502321Z",
+    "resourceId": "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-win",
+    "category": "WindowsEventLogsTable",
+    "level": "Informational",
+    "properties": {
+      "DeploymentId": "a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5",
+      "Role": "IaaS",
+      "RoleInstance": "vm-win",
+      "ProviderGuid": "00000000-0000-0000-0000-000000000000",
+      "ProviderName": "FakeLMLogsTest",
+      "EventId": 8802,
+      "Level": 2,
+      "Pid": 0,
+      "Tid": 0,
+      "Opcode": 0,
+      "Task": 1,
+      "Channel": "Application",
+      "Description": "test Messsage for id: 8802 at 09/22/2020 20:42:09",
+      "RawXml": "\u003cEvent xmlns\u003d\u0027http://schemas.microsoft.com/win/2004/08/events/event\u0027\u003e\u003cSystem\u003e\u003cProvider Name\u003d\u0027FakeLMLogsTest\u0027/\u003e\u003cEventID Qualifiers\u003d\u00270\u0027\u003e8802\u003c/EventID\u003e\u003cLevel\u003e2\u003c/Level\u003e\u003cTask\u003e1\u003c/Task\u003e\u003cKeywords\u003e0x80000000000000\u003c/Keywords\u003e\u003cTimeCreated SystemTime\u003d\u00272020-09-22T20:42:09.250232100Z\u0027/\u003e\u003cEventRecordID\u003e2740\u003c/EventRecordID\u003e\u003cChannel\u003eApplication\u003c/Channel\u003e\u003cComputer\u003evm-win\u003c/Computer\u003e\u003cSecurity/\u003e\u003c/System\u003e\u003cEventData\u003e\u003cData\u003etest Messsage for id: 8802 at 09/22/2020 20:42:09\u003c/Data\u003e\u003c/EventData\u003e\u003c/Event\u003e"
+    }
+  }
+]
