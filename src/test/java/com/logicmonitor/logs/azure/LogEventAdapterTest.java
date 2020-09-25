@@ -46,16 +46,16 @@ public class LogEventAdapterTest {
 
     @ParameterizedTest
     @CsvSource({
-        "activity_storage_account.json,                                   ",
-        "activity_webapp.json,          [\\w-.#]+@[\\w-.]+                ",
-        "resource_db_account.json,      \\d+\\.\\d+\\.\\d+\\.\\d+         ",
-        "resource_sql.json,             '\"SubscriptionId\":\"[^\"]+\",'  ",
-        "resource_vault.json,           ''|\"                             ",
-        "vm_catalina.json,              .                                 ",
-        "vm_syslog.json,                \\d                               ",
-        "windows_vm_log.json,                                             ",
+        "activity_storage_account.json, ,                                              ",
+        "activity_webapp.json,          ,            [\\w-.#]+@[\\w-.]+                ",
+        "resource_db_account.json,      ,            \\d+\\.\\d+\\.\\d+\\.\\d+         ",
+        "resource_sql.json,             ,            '\"SubscriptionId\":\"[^\"]+\",'  ",
+        "resource_vault.json,           ,            ''|\"                             ",
+        "vm_catalina.json,              Msg,         .                                 ",
+        "vm_syslog.json,                Msg,         \\d                               ",
+        "windows_vm_log.json,           Description,                                   ",
     })
-    public void testCreateEntry(String resourceName, String regexScrub) {
+    public void testCreateEntry(String resourceName, String propertyName, String regexScrub) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
         LogEventAdapter adapter = new LogEventAdapter(regexScrub);
         LogEntry entry = adapter.createEntry(event);
@@ -74,12 +74,12 @@ public class LogEventAdapterTest {
                 assertEquals(timestamp, entry.getTimestamp());
             },
             () -> {
-                String message = Optional.ofNullable(event.get("properties"))
-                    .map(JsonElement::getAsJsonObject)
-                    .map(properties -> Optional.ofNullable(properties.get("Msg"))
-                        .orElseGet(() -> properties.get("Description")))
-                    .map(JsonElement::getAsString)
-                    .orElseGet(() -> TestJsonUtils.toString(event));
+                String message;
+                if (propertyName != null) {
+                    message = event.get("properties").getAsJsonObject().get(propertyName).getAsString();
+                } else {
+                    message = TestJsonUtils.toString(event);
+                }
                 if (regexScrub != null) {
                     message = message.replaceAll(regexScrub, "");
                 }
