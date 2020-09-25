@@ -21,6 +21,9 @@ Each Azure region requires a separate deployment. This is because devices can on
 * Execute `terraform plan --var-file terraform.tfvars -out tf.plan`
 * Execute `terraform apply tf.plan`
 
+*NOTE: the deployed function usually doesn't start, please see* [this issue](https://github.com/terraform-providers/terraform-provider-azurerm/issues/8546) *for the details.*<br>
+*As a workaround, please restart the Function App on the Azure Portal.*
+
 ### Deploying using Gradle
 
 #### Azure configuration
