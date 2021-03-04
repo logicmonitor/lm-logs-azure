@@ -49,7 +49,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
     protected static final String TEST_KEY = "testKey";
     protected static final String TEST_REQUEST_ID = "testRequestId";
     protected static final Pattern TEST_SCRUB_PATTERN = Pattern.compile("\\d");
-
+    protected static final String TEST_USER_AGENT = "testUserAgent";
     protected static ExecutionContext mockExecutionContext;
 
     @Path("/rest")
@@ -90,6 +90,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_ACCESS_ID, TEST_ID)
             .and(LogEventForwarder.PARAMETER_ACCESS_KEY, TEST_KEY)
             .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
+            .and(LogEventForwarder.PARAMETER_USER_AGENT, TEST_USER_AGENT)
             .execute(() -> {
                 // initialize the api with the system properties
                 LMLogsApi api = LogEventForwarder.getApi();

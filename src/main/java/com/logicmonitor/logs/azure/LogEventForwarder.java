@@ -75,6 +75,8 @@ public class LogEventForwarder {
      */
     public static final String PARAMETER_REGEX_SCRUB = "LogRegexScrub";
 
+    public static final String PARAMETER_USER_AGENT = "UserAgent";
+
     /**
      * Transforms Azure log events into log entries.
      */
@@ -126,10 +128,12 @@ public class LogEventForwarder {
         LMLogsApi.Builder builder = new LMLogsApi.Builder()
              .withCompany(System.getenv(PARAMETER_COMPANY_NAME))
              .withAccessId(System.getenv(PARAMETER_ACCESS_ID))
-             .withAccessKey(System.getenv(PARAMETER_ACCESS_KEY));
+             .withAccessKey(System.getenv(PARAMETER_ACCESS_KEY))
+             .withUserAgentHeader(System.getenv(PARAMETER_USER_AGENT));
         setProperty(PARAMETER_CONNECT_TIMEOUT, Integer::valueOf, builder::withConnectTimeout);
         setProperty(PARAMETER_READ_TIMEOUT, Integer::valueOf, builder::withReadTimeout);
         setProperty(PARAMETER_DEBUGGING, Boolean::valueOf, builder::withDebugging);
+
         return builder.build();
     }
 

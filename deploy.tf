@@ -161,6 +161,7 @@ resource "azurerm_function_app" "lm_logs" {
     LogicMonitorCompanyName      = var.lm_company_name
     LogicMonitorAccessId         = var.lm_access_id
     LogicMonitorAccessKey        = var.lm_access_key
+    UserAgent                    = "Azure/0.0.1"
 
     /* Uncomment to set custom connection timeout */
     # LogApiClientConnectTimeout   = 10000
