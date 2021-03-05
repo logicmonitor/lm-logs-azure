@@ -12,7 +12,6 @@
         "LogApiClientConnectTimeout": "10000",
         "LogApiClientReadTimeout": "10000",
         "LogApiClientDebugging": "false",
-        "LogRegexScrub": "<regex pattern>",
-        "UserAgent": "Azure/0.0.1"
+        "LogRegexScrub": "<regex pattern>"
     }
 }

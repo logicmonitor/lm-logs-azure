@@ -36,6 +36,7 @@ public class LogEventAdapterTest {
         "vm_catalina.json,              1",
         "vm_syslog.json,                1",
         "windows_vm_log.json,           1",
+        "resource_metrics.json,         1"
     })
     public void testApply(String resourceName, int expectedEntriesCount) {
         String events = TestJsonUtils.getFirstJsonString(resourceName);
@@ -54,6 +55,7 @@ public class LogEventAdapterTest {
         "vm_catalina.json,              Msg,         .                                 ",
         "vm_syslog.json,                Msg,         \\d                               ",
         "windows_vm_log.json,           Description,                                   ",
+        "resource_metrics.json,         ,                                              "
     })
     public void testCreateEntry(String resourceName, String propertyName, String regexScrub) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
