@@ -1,0 +1,17 @@
+[
+  {
+    "records": [
+      {
+        "count": 2,
+        "total": 3,
+        "minimum": 1,
+        "maximum": 2,
+        "average": 1.5,
+        "resourceId": "/SUBSCRIPTIONS/318382E3-A165-4F0D-8906-01FB4CD06B74/RESOURCEGROUPS/LM-LOGS-WESTINDIA-GROUP/PROVIDERS/MICROSOFT.EVENTHUB/NAMESPACES/LM-LOGS-WESTINDIA",
+        "time": "2021-03-04T17:30:00.0000000Z",
+        "metricName": "IncomingRequests",
+        "timeGrain": "PT1M"
+      }
+    ]
+  }
+]

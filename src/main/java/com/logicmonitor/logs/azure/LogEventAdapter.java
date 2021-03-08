@@ -109,13 +109,16 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
             .map(Instant::getEpochSecond)
             .ifPresent(entry::setTimestamp);
 
+        // get properties from event if present
+        Optional<LogEventProperties> properties = Optional.ofNullable(event.getProperties());
+
         // message:
         //     properties.Msg if present,
         //     else properties.Description if present,
         //     otherwise the whole JSON
-        String message = Optional.ofNullable(event.getProperties().getMsg())
-            .or(() -> Optional.ofNullable(event.getProperties().getDescription()))
-            .orElseGet(() -> GSON.toJson(json));
+        String message = properties.map(LogEventProperties::getMsg)
+                .or(() -> properties.map(LogEventProperties::getDescription))
+                .orElseGet(() -> GSON.toJson(json));
 
         if (scrubPattern != null) {
             message = scrubPattern.matcher(message).replaceAll("");

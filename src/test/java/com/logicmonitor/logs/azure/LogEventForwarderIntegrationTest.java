@@ -49,7 +49,6 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
     protected static final String TEST_KEY = "testKey";
     protected static final String TEST_REQUEST_ID = "testRequestId";
     protected static final Pattern TEST_SCRUB_PATTERN = Pattern.compile("\\d");
-
     protected static ExecutionContext mockExecutionContext;
 
     @Path("/rest")

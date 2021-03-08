@@ -31,10 +31,10 @@ public class LogEventForwarderTest {
     @ParameterizedTest
     @CsvSource({
         ",           1,      2,         true,     .                          ",
-        "company,    ,       0,         false,    \\d                        ",
-        "company,    0,      ,          true,     [\\w-.#]+@[\\w-.]+         ",
-        "company,    333,    4444,      false,    \\d+\\.\\d+\\.\\d+\\.\\d+  ",
-        "company,    55555,  666666,    false,                               ",
+        "company,    ,       0,         false,    \\d                       ",
+        "company,    0,      ,          true,     [\\w-.#]+@[\\w-.]+        ",
+        "company,    333,    4444,      false,    \\d+\\.\\d+\\.\\d+\\.\\d+ ",
+        "company,    55555,  666666,    false,                             ",
     })
     public void testConfigurationParameters(String companyName, Integer connectTimeout,
             Integer readTimeout, Boolean debugging, String regexScrub) throws Exception {
@@ -50,6 +50,7 @@ public class LogEventForwarderTest {
                     debugging != null ? debugging.toString() : null)
             .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, regexScrub)
             .execute(() -> {
+
                 LMLogsApi api = LogEventForwarder.configureApi();
                 LogEventAdapter adapter = LogEventForwarder.configureAdapter();
                 assertAll(
@@ -62,7 +63,10 @@ public class LogEventForwarderTest {
                     () -> assertEquals(debugging != null ? debugging : false,
                             api.getApiClient().isDebugging()),
                     () -> assertEquals(regexScrub,
-                            regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern())
+                            regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern()),
+                    () -> assertEquals(LogEventForwarder.getUserAgent(),
+                            api.getApiClient().getUserAgent())
+
                 );
             }
         );
