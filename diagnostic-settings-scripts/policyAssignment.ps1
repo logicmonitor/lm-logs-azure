@@ -6,17 +6,17 @@ param
     [Parameter(Mandatory = $True)]
     [string]$location,
 
-	[Parameter(Mandatory = $True)]
-	[string]$eventhubName,
+    [Parameter(Mandatory = $True)]
+    [string]$eventhubName,
 
-	[Parameter(Mandatory = $True)]
-	[string]$eventhubNameSpace,
+    [Parameter(Mandatory = $True)]
+    [string]$eventhubNameSpace,
 
-	[Parameter(Mandatory = $True)]
-	[string]$eventhubAuthorizationId,
+    [Parameter(Mandatory = $True)]
+    [string]$eventhubAuthorizationId,
 
-	[Parameter(Mandatory =$True)]
-	[string]$targetResourceGroup
+    [Parameter(Mandatory =$True)]
+    [string]$targetResourceGroup
 )
 
 $definition = Get-AzPolicySetDefinition | Where-Object { $_.Properties.DisplayName -eq 'Azure Diagnostics Policy Initiative to LM' }
