@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "subscriptionId": {
+      "type": "String"
+    },
+    "LM_Company_name": {
+      "type": "String"
+    },
+    "forceUpdateTag": {
+      "defaultValue": "[utcNow()]",
+      "type": "String",
+      "metadata": "Please do not edit this setting"
+    }
+  },
+  "variables": {
+    "templateBaseUri": "https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/arm-template-deployment/",
+    "deploymentResourceGroupName": "[concat('lm-logs-',parameters('LM_Company_name'),'-',resourceGroup().Location,'-group')]",
+    "managedIdentityName": "[concat('msi-', variables('deploymentResourceGroupName'), '-deploy')]",
+    "managedIdentityId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('managedIdentityName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2017-05-10",
+      "name": "linkedTemplatedeployment",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('templateBaseUri'), 'deploymentChildScript.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "resourceGroup": {
+            "value": "[resourceGroup().name]"
+          },
+          "LM_Company_name": {
+            "value": "[parameters('LM_Company_name')]"
+          },
+          "subscriptionId": {
+            "value": "[parameters('subscriptionId')]"
+          },
+          "managedIdentity": {
+            "value": "[variables('managedIdentityId')]"
+          },
+          "utcNow": {
+            "value": "[parameters('forceUpdateTag')]"
+          },
+          "location": {
+            "value": "[resourceGroup().Location]"
+          }
+        }
+      },
+      "resourceGroup": "[variables('deploymentResourceGroupName')]"
+    }
+  ]
+}

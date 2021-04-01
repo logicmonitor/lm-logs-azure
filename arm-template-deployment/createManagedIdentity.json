@@ -1,0 +1,101 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resource_group_region": {
+      "type": "String",
+      "metadata": "Please select the region which has the lm resources deployed i.e the resource group and resources"
+    },
+    "LM_Company_name": {
+      "type": "String"
+    }
+  },
+  "variables": {
+    "deploymentResourceGroupName": "[concat('lm-logs-',parameters('LM_Company_name'),'-', replace(parameters('resource_group_region'),' ',''), '-group')]",
+    "identityDeploymentName": "deployment-assets-except-role-assignment",
+    "managedIdentityName": "[concat('msi-', variables('deploymentResourceGroupName'), '-deploy')]",
+    "managedIdentityId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('managedIdentityName'))]",
+    "bootstrapRoleAssignmentId": "[guid(subscription().id, variables('userAccessAdministratorRoleDefinitionId'),variables('managedIdentityId'))]",
+    "contributorRoleAssignmentId": "[guid(subscription().id, variables('contributorRoleDefinitionId'),variables('managedIdentityId'))]",
+    "userAccessAdministratorRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '18d7d88d-d35e-4fb5-a5c3-7773c20a72d9')]",
+    "contributorRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "name": "[variables('identityDeploymentName')]",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('resource_group_region')]"
+          },
+          "managedIdentityName": {
+            "value": "[variables('managedIdentityName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "managedIdentityName": {
+              "type": "string"
+            }
+          },
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "name": "[parameters('managedIdentityName')]",
+              "apiVersion": "2018-11-30",
+              "location": "[parameters('location')]"
+            }
+          ],
+          "outputs": {
+            "principalId": {
+              "type": "string",
+              "value": "[reference(parameters('managedIdentityName')).principalId]"
+            }
+          }
+        }
+      },
+      "resourceGroup": "[variables('deploymentResourceGroupName')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2020-04-01-preview",
+      "name": "[variables('bootstrapRoleAssignmentId')]",
+      "dependsOn": [
+        "[variables('identityDeploymentName')]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('userAccessAdministratorRoleDefinitionId')]",
+        "principalId": "[reference(variables('identityDeploymentName')).outputs.principalId.value]",
+        "principalType": "ServicePrincipal",
+        "scope": "[subscription().id]"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2020-04-01-preview",
+      "name": "[variables('contributorRoleAssignmentId')]",
+      "dependsOn": [
+        "[variables('identityDeploymentName')]",
+        "[resourceId('Microsoft.Authorization/roleAssignments/', variables('bootstrapRoleAssignmentId'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('contributorRoleDefinitionId')]",
+        "principalId": "[reference(variables('identityDeploymentName')).outputs.principalId.value]",
+        "principalType": "ServicePrincipal",
+        "scope": "[subscription().id]"
+      }
+    }
+  ]
+}

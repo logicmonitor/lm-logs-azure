@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "LM_Company_name": {
+      "type": "String"
+    },
+    "resourceGroup": {
+      "type": "String"
+    },
+    "subscriptionId": {
+      "type": "String"
+    },
+    "managedIdentity": {
+      "type": "String",
+      "metadata": "Please provide the id of a User Defined Managed Identity with User Access Administrator role"
+    },
+    "location": {
+      "type": "String"
+    },
+    "utcNow": {
+      "type": "String"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2020-10-01",
+      "name": "[concat(parameters('resourceGroup'),'-script')]",
+      "location": "West US",
+      "kind": "AzurePowerShell",
+      "identity": {
+        "type": "userAssigned",
+        "userAssignedIdentities": {
+          "[parameters('managedIdentity')]": {
+          }
+        }
+      },
+      "properties": {
+        "forceUpdateTag": "[parameters('utcNow')]",
+        "azPowerShellVersion": "5.6",
+        "timeout": "PT1H",
+        "arguments": "[format(' -resourceGroup {0} -lmCompanyName {1} -subscriptionId {2} -location {3}', parameters('resourceGroup'),parameters('LM_Company_name'), parameters('subscriptionId'), parameters('location'))]",
+        "primaryScriptURI": "https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/diagnostic-settings-scripts/policyCreationAndRemediationTemplate.ps1",
+        "supportingScriptUris": [
+          "https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/diagnostic-settings-scripts/policyAssignment.ps1",
+          "https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/diagnostic-settings-scripts/policyInitiativeRemediation.ps1"
+        ],
+        "cleanupPreference": "Always",
+        "retentionInterval": "P1D"
+      }
+    }
+  ]
+}
