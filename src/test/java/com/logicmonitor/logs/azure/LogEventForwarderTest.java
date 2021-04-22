@@ -16,10 +16,16 @@ package com.logicmonitor.logs.azure;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.logicmonitor.logs.invoker.ServerConfiguration;
+import org.junit.Before;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import com.logicmonitor.logs.LMLogsApi;
@@ -27,6 +33,8 @@ import com.logicmonitor.logs.LMLogsClient;
 import com.logicmonitor.logs.model.LogEntry;
 
 public class LogEventForwarderTest {
+
+    protected static final String TEST_AZURE_CLIENT_ID = "testClientId";
 
     @ParameterizedTest
     @CsvSource({
@@ -42,6 +50,7 @@ public class LogEventForwarderTest {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
             .and(LogEventForwarder.PARAMETER_ACCESS_ID, "id")
             .and(LogEventForwarder.PARAMETER_ACCESS_KEY, "key")
+            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID,"azureClientId")
             .and(LogEventForwarder.PARAMETER_CONNECT_TIMEOUT,
                     connectTimeout != null ? connectTimeout.toString() : null)
             .and(LogEventForwarder.PARAMETER_READ_TIMEOUT,
@@ -96,7 +105,9 @@ public class LogEventForwarderTest {
         "vm_syslog.json,                2",
         "windows_vm_log.json,           1",
     })
-    public void testProcessEvents(String resourceName, int expectedEntriesCount) {
+    public void testProcessEvents(String resourceName, int expectedEntriesCount) throws Exception{
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID,TEST_AZURE_CLIENT_ID)
+                .execute(() -> {
         List<String> events = TestJsonUtils.getJsonStringList(resourceName);
         List<LogEntry> entries = LogEventForwarder.processEvents(events);
         assertNotNull(entries);
@@ -104,15 +115,19 @@ public class LogEventForwarderTest {
             () -> assertEquals(expectedEntriesCount, entries.size()),
             () -> entries.forEach(entry -> assertNotNull(entry.getMessage())),
             () -> entries.forEach(entry -> assertNotNull(entry.getTimestamp())),
-            () -> entries.forEach(entry -> assertNotNull(
-                    entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY)))
+            () -> entries.forEach((entry) ->{
+                if (entry.getLmResourceId().containsKey(LogEventAdapter.LM_CLIENT_ID))
+                    assertNotNull(entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
+                else assertNotNull(
+                    entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));})
         );
+    });
     }
 
     @ParameterizedTest
     @CsvSource({
-        "activity_storage_account.json, '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.STORAGE/STORAGEACCOUNTS/account-1 /SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.STORAGE/STORAGEACCOUNTS/ACCOUNT-1'",
-        "activity_webapp.json,          '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.WEB/SERVERFARMS/ASP-1'",
+        "activity_storage_account.json, 'testClientId'",
+        "activity_webapp.json,          'testClientId'",
         "resource_db_account.json,      '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.DOCUMENTDB/DATABASEACCOUNTS/ACCOUNT-2 /SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.DOCUMENTDB/DATABASEACCOUNTS/ACCOUNT-1'",
         "resource_sql.json,             '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.SQL/SERVERS/DBSERVER-1/DATABASES/DB-2 /SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.SQL/SERVERS/SERVER-1/DATABASES/DB-1'",
         "resource_vault.json,           '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/VAULT-1'",
@@ -120,12 +135,15 @@ public class LogEventForwarderTest {
         "vm_syslog.json,                '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1'",
         "windows_vm_log.json,           '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-win'",
     })
-    public void testgetResourceIds(String resourceName, String expectedIds) {
-        List<String> events = TestJsonUtils.getJsonStringList(resourceName);
-        List<LogEntry> entries = LogEventForwarder.processEvents(events);
-        Set<String> ids = LogEventForwarder.getResourceIds(entries);
-        assertNotNull(ids);
-        assertEquals(Arrays.stream(expectedIds.split(" ")).collect(Collectors.toSet()), ids);
+    public void testgetResourceIds(String resourceName, String expectedIds) throws Exception{
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
+                .execute(() -> {
+                    List<String> events = TestJsonUtils.getJsonStringList(resourceName);
+                    List<LogEntry> entries = LogEventForwarder.processEvents(events);
+                    Set<String> ids = LogEventForwarder.getResourceIds(entries);
+                    assertNotNull(ids);
+                    assertEquals(Arrays.stream(expectedIds.split(" ")).collect(Collectors.toSet()), ids);
+                });
     }
 
 }

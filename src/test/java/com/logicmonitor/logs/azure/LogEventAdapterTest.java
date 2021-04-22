@@ -40,32 +40,37 @@ public class LogEventAdapterTest {
     })
     public void testApply(String resourceName, int expectedEntriesCount) {
         String events = TestJsonUtils.getFirstJsonString(resourceName);
-        LogEventAdapter adapter = new LogEventAdapter(null);
+        LogEventAdapter adapter = new LogEventAdapter(null,"azure_client_id");
         List<LogEntry> entries = adapter.apply(events);
         assertEquals(expectedEntriesCount, entries.size());
     }
 
     @ParameterizedTest
     @CsvSource({
-        "activity_storage_account.json, ,                                              ",
-        "activity_webapp.json,          ,            [\\w-.#]+@[\\w-.]+                ",
-        "resource_db_account.json,      ,            \\d+\\.\\d+\\.\\d+\\.\\d+         ",
-        "resource_sql.json,             ,            '\"SubscriptionId\":\"[^\"]+\",'  ",
-        "resource_vault.json,           ,            ''|\"                             ",
-        "vm_catalina.json,              Msg,         .                                 ",
-        "vm_syslog.json,                Msg,         \\d                               ",
-        "windows_vm_log.json,           Description,                                   ",
-        "resource_metrics.json,         ,                                              "
+        "activity_storage_account.json, ,                                              ,xyz",
+        "activity_webapp.json,          ,            [\\w-.#]+@[\\w-.]+                , abc",
+        "resource_db_account.json,      ,            \\d+\\.\\d+\\.\\d+\\.\\d+         ,    ",
+        "resource_sql.json,             ,            '\"SubscriptionId\":\"[^\"]+\",'  ,    ",
+        "resource_vault.json,           ,            ''|\"                             ,    ",
+        "vm_catalina.json,              Msg,         .                                 ,    ",
+        "vm_syslog.json,                Msg,         \\d                               ,    ",
+        "windows_vm_log.json,           Description,                                   ,    ",
+        "resource_metrics.json,         ,                                              ,    "
     })
-    public void testCreateEntry(String resourceName, String propertyName, String regexScrub) {
+    public void testCreateEntry(String resourceName, String propertyName, String regexScrub,String azureClientId) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
-        LogEventAdapter adapter = new LogEventAdapter(regexScrub);
+        LogEventAdapter adapter = new LogEventAdapter(regexScrub,azureClientId);
         LogEntry entry = adapter.createEntry(event);
         assertAll(
             () -> {
-                String resourceId = event.get("resourceId").getAsString();
-                assertEquals(resourceId,
-                        entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+                if(azureClientId != null){
+                    assertEquals(azureClientId,entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
+                }
+                else {
+                    String resourceId = event.get("resourceId").getAsString();
+                    assertEquals(resourceId,
+                            entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+                }
             },
             () -> {
                 Long timestamp = Optional.ofNullable(event.get("time"))

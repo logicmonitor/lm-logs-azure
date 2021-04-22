@@ -75,6 +75,8 @@ public class LogEventForwarder {
      */
     public static final String PARAMETER_REGEX_SCRUB = "LogRegexScrub";
 
+    public static final String PARAMETER_AZURE_CLIENT_ID = "AzureClientID";
+
     /**
      * Transforms Azure log events into log entries.
      */
@@ -102,7 +104,7 @@ public class LogEventForwarder {
      * @return LogEventAdapter instance
      */
     protected static LogEventAdapter configureAdapter() {
-        return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB));
+        return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB),System.getenv(PARAMETER_AZURE_CLIENT_ID));
     }
 
     /**
@@ -202,7 +204,10 @@ public class LogEventForwarder {
     protected static Set<String> getResourceIds(List<LogEntry> logEntries) {
         return logEntries.stream()
             .map(LogEntry::getLmResourceId)
-            .map(props -> props.get(LogEventAdapter.LM_RESOURCE_PROPERTY))
+            .map((props) -> {
+                if (props.containsKey(LogEventAdapter.LM_RESOURCE_PROPERTY)) return props.get(LogEventAdapter.LM_RESOURCE_PROPERTY);
+                else return props.get(LogEventAdapter.LM_CLIENT_ID);
+            })
             .collect(Collectors.toSet());
     }
 

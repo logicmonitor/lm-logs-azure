@@ -49,6 +49,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
     protected static final String TEST_KEY = "testKey";
     protected static final String TEST_REQUEST_ID = "testRequestId";
     protected static final Pattern TEST_SCRUB_PATTERN = Pattern.compile("\\d");
+    protected static final String TEST_AZURE_CLIENT_ID = "testClientId";
     protected static ExecutionContext mockExecutionContext;
 
     @Path("/rest")
@@ -89,6 +90,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_ACCESS_ID, TEST_ID)
             .and(LogEventForwarder.PARAMETER_ACCESS_KEY, TEST_KEY)
             .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
+            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID,TEST_AZURE_CLIENT_ID)
             .execute(() -> {
                 // initialize the api with the system properties
                 LMLogsApi api = LogEventForwarder.getApi();
@@ -108,8 +110,6 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
     @Test
     public void testForward() throws Exception {
         List<String> logEvents = TestJsonUtils.mergeJsonStringList(
-                "activity_storage_account.json",
-                "activity_webapp.json",
                 "resource_db_account.json",
                 "resource_sql.json",
                 "resource_vault.json",
@@ -120,7 +120,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
 
         assertNotNull(LogIngestResource.receivedEntries);
         assertAll(
-            () -> assertEquals(15, LogIngestResource.receivedEntries.size()),
+            () -> assertEquals(11, LogIngestResource.receivedEntries.size()),
             () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
                     entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY))),
             () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
@@ -128,7 +128,28 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
             () -> LogIngestResource.receivedEntries.forEach(entry -> {
                 assertNotNull(entry.getMessage());
                 assertFalse(TEST_SCRUB_PATTERN.matcher(entry.getMessage()).find());
-            })
+                })
+        );
+    }
+
+    @Test
+    public void testForwardActivityLogs() throws Exception {
+        List<String> logEvents = TestJsonUtils.mergeJsonStringList(
+                "activity_storage_account.json",
+                "activity_webapp.json");
+        new LogEventForwarder().forward(logEvents, mockExecutionContext);
+
+        assertNotNull(LogIngestResource.receivedEntries);
+        assertAll(
+                () -> assertEquals(4, LogIngestResource.receivedEntries.size()),
+                () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
+                        entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID))),
+                () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
+                        entry.getTimestamp())),
+                () -> LogIngestResource.receivedEntries.forEach(entry -> {
+                    assertNotNull(entry.getMessage());
+                    assertFalse(TEST_SCRUB_PATTERN.matcher(entry.getMessage()).find());
+                })
         );
     }
 
