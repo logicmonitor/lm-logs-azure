@@ -43,6 +43,7 @@ import com.microsoft.azure.functions.annotation.FunctionName;
  * <li>{@value #PARAMETER_READ_TIMEOUT} Read timeout in milliseconds (default 10000)
  * <li>{@value #PARAMETER_DEBUGGING} HTTP client debugging
  * <li>{@value #PARAMETER_REGEX_SCRUB} Regex to scrub text from logs
+ *  <li>{@value #PARAMETER_AZURE_CLIENT_ID} Azure Application Client ID
  * </ul>
  */
 public class LogEventForwarder {
@@ -74,7 +75,9 @@ public class LogEventForwarder {
      * Parameter: Regex to scrub text from logs.
      */
     public static final String PARAMETER_REGEX_SCRUB = "LogRegexScrub";
-
+    /**
+     * Parameter: Azure Application Client ID
+     */
     public static final String PARAMETER_AZURE_CLIENT_ID = "AzureClientID";
 
     /**

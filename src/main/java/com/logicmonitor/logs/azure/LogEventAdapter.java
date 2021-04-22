@@ -47,11 +47,18 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      */
     public static final String LM_RESOURCE_PROPERTY = "system.azure.resourceid";
 
+    /**
+     * Name of the Azure Client Id used to match the resources for activity logs.
+     */
     public static final String LM_CLIENT_ID = "system.azure.clientid";
-
+    /**
+     * Used to match the category of resource for activity logs.
+     */
     public static final String LM_SYSTEM_CATEGORIES = "system.cloud.category";
-
-    public static final Set AUDIT_LOG_CATEGORIES = new HashSet(Arrays.asList("administrative","serviceHealth","resourcehealth","alert","autoscale","security","policy"));
+    /**
+     * Categories of Azure activity logs generated
+     */
+    public static final Set AUDIT_LOG_CATEGORIES = new HashSet(Arrays.asList("administrative","serviceHealth","resourcehealth","alert","autoscale","security","policy","recommendation"));
 
     /**
      * GSON instance.
