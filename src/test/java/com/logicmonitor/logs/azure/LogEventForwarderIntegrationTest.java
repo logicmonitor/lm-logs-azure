@@ -141,14 +141,14 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
 
         assertNotNull(LogIngestResource.receivedEntries);
         assertAll(
-                () -> assertEquals(4, LogIngestResource.receivedEntries.size()),
-                () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
-                        entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID))),
-                () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
-                        entry.getTimestamp())),
-                () -> LogIngestResource.receivedEntries.forEach(entry -> {
-                    assertNotNull(entry.getMessage());
-                    assertFalse(TEST_SCRUB_PATTERN.matcher(entry.getMessage()).find());
+            () -> assertEquals(4, LogIngestResource.receivedEntries.size()),
+            () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
+                    entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID))),
+            () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
+                    entry.getTimestamp())),
+            () -> LogIngestResource.receivedEntries.forEach(entry -> {
+                assertNotNull(entry.getMessage());
+                assertFalse(TEST_SCRUB_PATTERN.matcher(entry.getMessage()).find());
                 })
         );
     }
