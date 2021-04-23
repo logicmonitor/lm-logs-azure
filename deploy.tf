@@ -33,6 +33,11 @@ variable "azure_region" {
   description = "Azure region"
 }
 
+variable "azure_client_id" {
+  type        = string
+  description = "Azure Application Client ID"
+}
+
 variable "tags" {
   description = "Tags given to the resources created by this template"
   type        = map(string)
@@ -161,7 +166,7 @@ resource "azurerm_function_app" "lm_logs" {
     LogicMonitorCompanyName      = var.lm_company_name
     LogicMonitorAccessId         = var.lm_access_id
     LogicMonitorAccessKey        = var.lm_access_key
-
+    AzureClientID                = var.azure_client_id
     /* Uncomment to set custom connection timeout */
     # LogApiClientConnectTimeout   = 10000
 

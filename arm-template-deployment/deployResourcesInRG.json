@@ -11,6 +11,9 @@
     "LM_Access_Key": {
       "type": "string"
     },
+    "Azure_Client_Id": {
+      "type": "string"
+    },
     "azure_region": {
       "type": "string"
     }
@@ -149,6 +152,10 @@
             {
               "name": "LogicMonitorAccessKey",
               "value": "[parameters('LM_Access_Key')]"
+            },
+            {
+              "name": "AzureClientID",
+              "value": "[parameters('Azure_Client_Id')]"
             }
           ]
         }

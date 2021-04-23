@@ -34,6 +34,7 @@ The runtime stack should be set to Java version 11. The function uses the follow
 * `LogicMonitorCompanyName` - Company in the target URL '{company}.logicmonitor.com'
 * `LogicMonitorAccessId` - LogicMonitor access ID
 * `LogicMonitorAccessKey` - LogicMonitor access key
+* `AzureClientID` - Azure Application Client ID
 * `LogApiClientConnectTimeout` (optional) - Connection timeout in milliseconds (default 10000)
 * `LogApiClientReadTimeout` (optional) - Read timeout in milliseconds (default 10000)
 * `LogApiClientDebugging` (optional) - HTTP client debugging: true/false (default false)

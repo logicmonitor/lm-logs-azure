@@ -17,12 +17,14 @@ package com.logicmonitor.logs.azure;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -46,7 +48,22 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      * Name of the LM property used to match the resources.
      */
     public static final String LM_RESOURCE_PROPERTY = "system.azure.resourceid";
-
+    /**
+     * Name of the Azure Client Id used to match the resources for activity logs.
+     */
+    public static final String LM_CLIENT_ID = "system.azure.clientid";
+    /**
+     * Used to match the category of resource for activity logs.
+     */
+    public static final String LM_CLOUD_CATEGORY_KEY = "system.cloud.category";
+    /**
+     * Value for category of resource for activity logs.
+     */
+    public static final String LM_CLOUD_CATEGORY_VALUE = "Azure/LMAccount";
+    /**
+     * Categories of Azure activity logs generated
+     */
+    public static final Set<String> AUDIT_LOG_CATEGORIES = Set.of("administrative", "serviceHealth", "resourcehealth", "alert", "autoscale", "security", "policy", "recommendation");
     /**
      * GSON instance.
      */
@@ -54,16 +71,20 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
     private final Pattern scrubPattern;
 
-    public LogEventAdapter(String regexScrub) throws PatternSyntaxException {
+    private final String azureClientId;
+
+    public LogEventAdapter(String regexScrub, String azureClientId) throws PatternSyntaxException {
         if (regexScrub != null) {
             scrubPattern = Pattern.compile(regexScrub);
         } else {
             scrubPattern = null;
         }
+        this.azureClientId = azureClientId;
     }
 
     /**
      * Gets the regex pattern used to scrub log messages.
+     *
      * @return the pattern object
      */
     protected Pattern getScrubPattern() {
@@ -72,6 +93,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
     /**
      * Applies the log transformation.
+     *
      * @param jsonString Azure log event as JSON string
      * @return list of log entries
      */
@@ -93,15 +115,21 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
     /**
      * Transforms single Azure log object into log entry.
+     *
      * @param json the log object
      * @return log entry
      */
     protected LogEntry createEntry(JsonObject json) {
         LogEventMessage event = GSON.fromJson(json, LogEventMessage.class);
         LogEntry entry = new LogEntry();
-
-        // resource ID
-        entry.putLmResourceIdItem(LM_RESOURCE_PROPERTY, event.getResourceId());
+        if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
+            //client ID for activity logs
+            entry.putLmResourceIdItem(LM_CLIENT_ID, azureClientId);
+            entry.putLmResourceIdItem(LM_CLOUD_CATEGORY_KEY, LM_CLOUD_CATEGORY_VALUE);
+        } else {
+            // resource ID
+            entry.putLmResourceIdItem(LM_RESOURCE_PROPERTY, event.getResourceId());
+        }
 
         // timestamp as epoch
         Optional.ofNullable(event.getTime())
