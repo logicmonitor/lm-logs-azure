@@ -69,8 +69,7 @@ public class LogEventForwarderTest {
                             api.getApiClient().isDebugging()),
                     () -> assertEquals(regexScrub,
                             regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern()),
-                    () -> assertEquals(LogEventForwarder.getUserAgent(),
-                            api.getApiClient().getUserAgent())
+                    () -> assertEquals(LogEventForwarder.getUserAgent(), api.getApiClient().getUserAgent())
 
                 );
             }
@@ -114,8 +113,7 @@ public class LogEventForwarderTest {
             () -> entries.forEach((entry) -> {
                 if (entry.getLmResourceId().containsKey(LogEventAdapter.LM_CLIENT_ID))
                     assertNotNull(entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
-                else assertNotNull(
-                    entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+                else assertNotNull(entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
             })
         );
     });

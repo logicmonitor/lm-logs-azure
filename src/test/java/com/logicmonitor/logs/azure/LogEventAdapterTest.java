@@ -63,13 +63,11 @@ public class LogEventAdapterTest {
         LogEntry entry = adapter.createEntry(event);
         assertAll(
             () -> {
-                if(azureClientId != null){
+                if(azureClientId != null) {
                     assertEquals(azureClientId,entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
-                }
-                else {
+                } else {
                     String resourceId = event.get("resourceId").getAsString();
-                    assertEquals(resourceId,
-                            entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+                    assertEquals(resourceId,entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
                 }
             },
             () -> {
