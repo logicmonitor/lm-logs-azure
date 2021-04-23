@@ -46,7 +46,7 @@ public class LogEventForwarderTest {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
             .and(LogEventForwarder.PARAMETER_ACCESS_ID, "id")
             .and(LogEventForwarder.PARAMETER_ACCESS_KEY, "key")
-            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID,"azureClientId")
+            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, "azureClientId")
             .and(LogEventForwarder.PARAMETER_CONNECT_TIMEOUT,
                     connectTimeout != null ? connectTimeout.toString() : null)
             .and(LogEventForwarder.PARAMETER_READ_TIMEOUT,
@@ -101,7 +101,7 @@ public class LogEventForwarderTest {
         "windows_vm_log.json,           1",
     })
     public void testProcessEvents(String resourceName, int expectedEntriesCount) throws Exception{
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID,TEST_AZURE_CLIENT_ID)
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
                 .execute(() -> {
         List<String> events = TestJsonUtils.getJsonStringList(resourceName);
         List<LogEntry> entries = LogEventForwarder.processEvents(events);
@@ -111,9 +111,11 @@ public class LogEventForwarderTest {
             () -> entries.forEach(entry -> assertNotNull(entry.getMessage())),
             () -> entries.forEach(entry -> assertNotNull(entry.getTimestamp())),
             () -> entries.forEach((entry) -> {
-                if (entry.getLmResourceId().containsKey(LogEventAdapter.LM_CLIENT_ID))
+                if (entry.getLmResourceId().containsKey(LogEventAdapter.LM_CLIENT_ID)) {
                     assertNotNull(entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
-                else assertNotNull(entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+                } else {
+                    assertNotNull(entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+                }
             })
         );
     });

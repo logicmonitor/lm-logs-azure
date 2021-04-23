@@ -107,7 +107,7 @@ public class LogEventForwarder {
      * @return LogEventAdapter instance
      */
     protected static LogEventAdapter configureAdapter() {
-        return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB),System.getenv(PARAMETER_AZURE_CLIENT_ID));
+        return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB), System.getenv(PARAMETER_AZURE_CLIENT_ID));
     }
 
     /**
@@ -208,8 +208,11 @@ public class LogEventForwarder {
         return logEntries.stream()
             .map(LogEntry::getLmResourceId)
             .map((props) -> {
-                if (props.containsKey(LogEventAdapter.LM_RESOURCE_PROPERTY)) return props.get(LogEventAdapter.LM_RESOURCE_PROPERTY);
-                else return props.get(LogEventAdapter.LM_CLIENT_ID);
+                if (props.containsKey(LogEventAdapter.LM_RESOURCE_PROPERTY)) {
+                    return props.get(LogEventAdapter.LM_RESOURCE_PROPERTY);
+                } else {
+                    return props.get(LogEventAdapter.LM_CLIENT_ID);
+                }
             })
             .collect(Collectors.toSet());
     }

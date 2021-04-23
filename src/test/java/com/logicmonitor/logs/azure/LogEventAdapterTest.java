@@ -40,7 +40,7 @@ public class LogEventAdapterTest {
     })
     public void testApply(String resourceName, int expectedEntriesCount) {
         String events = TestJsonUtils.getFirstJsonString(resourceName);
-        LogEventAdapter adapter = new LogEventAdapter(null,"azure_client_id");
+        LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id");
         List<LogEntry> entries = adapter.apply(events);
         assertEquals(expectedEntriesCount, entries.size());
     }
@@ -59,15 +59,15 @@ public class LogEventAdapterTest {
     })
     public void testCreateEntry(String resourceName, String propertyName, String regexScrub,String azureClientId) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
-        LogEventAdapter adapter = new LogEventAdapter(regexScrub,azureClientId);
+        LogEventAdapter adapter = new LogEventAdapter(regexScrub, azureClientId);
         LogEntry entry = adapter.createEntry(event);
         assertAll(
             () -> {
-                if(azureClientId != null) {
-                    assertEquals(azureClientId,entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
+                if (azureClientId != null) {
+                    assertEquals(azureClientId, entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
                 } else {
                     String resourceId = event.get("resourceId").getAsString();
-                    assertEquals(resourceId,entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+                    assertEquals(resourceId, entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
                 }
             },
             () -> {

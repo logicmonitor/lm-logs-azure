@@ -90,7 +90,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_ACCESS_ID, TEST_ID)
             .and(LogEventForwarder.PARAMETER_ACCESS_KEY, TEST_KEY)
             .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
-            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID,TEST_AZURE_CLIENT_ID)
+            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
             .execute(() -> {
                 // initialize the api with the system properties
                 LMLogsApi api = LogEventForwarder.getApi();

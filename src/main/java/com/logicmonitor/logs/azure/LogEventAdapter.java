@@ -48,7 +48,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      * Name of the LM property used to match the resources.
      */
     public static final String LM_RESOURCE_PROPERTY = "system.azure.resourceid";
-
     /**
      * Name of the Azure Client Id used to match the resources for activity logs.
      */
@@ -60,8 +59,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     /**
      * Categories of Azure activity logs generated
      */
-    public static final Set AUDIT_LOG_CATEGORIES = Set.of("administrative","serviceHealth","resourcehealth","alert","autoscale","security","policy","recommendation");
-
+    public static final Set<String> AUDIT_LOG_CATEGORIES = Set.of("administrative", "serviceHealth", "resourcehealth", "alert", "autoscale", "security", "policy", "recommendation");
     /**
      * GSON instance.
      */
@@ -71,13 +69,13 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
     private final String azureClientId;
 
-    public LogEventAdapter(String regexScrub,String ClientId) throws PatternSyntaxException {
+    public LogEventAdapter(String regexScrub,String clientId) throws PatternSyntaxException {
         if (regexScrub != null) {
             scrubPattern = Pattern.compile(regexScrub);
         } else {
             scrubPattern = null;
         }
-        azureClientId = ClientId;
+        azureClientId = clientId;
     }
 
     /**
@@ -120,7 +118,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     protected LogEntry createEntry(JsonObject json) {
         LogEventMessage event = GSON.fromJson(json, LogEventMessage.class);
         LogEntry entry = new LogEntry();
-        if((event.getCategory() != null && AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
+        if ((event.getCategory() != null && AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
             //client ID for activity logs
             entry.putLmResourceIdItem(LM_CLIENT_ID,azureClientId);
             entry.putLmResourceIdItem(LM_SYSTEM_CATEGORIES,"Azure/LMAccount");
