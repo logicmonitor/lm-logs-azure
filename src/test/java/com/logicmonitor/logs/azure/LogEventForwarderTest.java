@@ -17,15 +17,11 @@ package com.logicmonitor.logs.azure;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.logicmonitor.logs.invoker.ServerConfiguration;
-import org.junit.Before;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import com.logicmonitor.logs.LMLogsApi;
@@ -115,11 +111,12 @@ public class LogEventForwarderTest {
             () -> assertEquals(expectedEntriesCount, entries.size()),
             () -> entries.forEach(entry -> assertNotNull(entry.getMessage())),
             () -> entries.forEach(entry -> assertNotNull(entry.getTimestamp())),
-            () -> entries.forEach((entry) ->{
+            () -> entries.forEach((entry) -> {
                 if (entry.getLmResourceId().containsKey(LogEventAdapter.LM_CLIENT_ID))
                     assertNotNull(entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
                 else assertNotNull(
-                    entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));})
+                    entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+            })
         );
     });
     }
