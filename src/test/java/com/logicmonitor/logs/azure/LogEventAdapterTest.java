@@ -57,7 +57,7 @@ public class LogEventAdapterTest {
         "windows_vm_log.json,           Description,                                   ,    ",
         "resource_metrics.json,         ,                                              ,    "
     })
-    public void testCreateEntry(String resourceName, String propertyName, String regexScrub,String azureClientId) {
+    public void testCreateEntry(String resourceName, String propertyName, String regexScrub, String azureClientId) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
         LogEventAdapter adapter = new LogEventAdapter(regexScrub, azureClientId);
         LogEntry entry = adapter.createEntry(event);

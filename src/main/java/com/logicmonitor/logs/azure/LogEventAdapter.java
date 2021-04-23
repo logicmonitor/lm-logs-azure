@@ -69,7 +69,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
     private final String azureClientId;
 
-    public LogEventAdapter(String regexScrub,String clientId) throws PatternSyntaxException {
+    public LogEventAdapter(String regexScrub, String clientId) throws PatternSyntaxException {
         if (regexScrub != null) {
             scrubPattern = Pattern.compile(regexScrub);
         } else {
@@ -120,8 +120,8 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         LogEntry entry = new LogEntry();
         if ((event.getCategory() != null && AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
             //client ID for activity logs
-            entry.putLmResourceIdItem(LM_CLIENT_ID,azureClientId);
-            entry.putLmResourceIdItem(LM_SYSTEM_CATEGORIES,"Azure/LMAccount");
+            entry.putLmResourceIdItem(LM_CLIENT_ID, azureClientId);
+            entry.putLmResourceIdItem(LM_SYSTEM_CATEGORIES, "Azure/LMAccount");
         } else {
             // resource ID
             entry.putLmResourceIdItem(LM_RESOURCE_PROPERTY, event.getResourceId());

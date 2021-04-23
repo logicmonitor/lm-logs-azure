@@ -119,7 +119,7 @@ public class LogEventForwarderTest {
             })
         );
     });
-    }
+    }   
 
     @ParameterizedTest
     @CsvSource({
