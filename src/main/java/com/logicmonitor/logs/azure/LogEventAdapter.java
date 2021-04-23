@@ -69,13 +69,13 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
     private final String azureClientId;
 
-    public LogEventAdapter(String regexScrub, String clientId) throws PatternSyntaxException {
+    public LogEventAdapter(String regexScrub, String azureClientId) throws PatternSyntaxException {
         if (regexScrub != null) {
             scrubPattern = Pattern.compile(regexScrub);
         } else {
             scrubPattern = null;
         }
-        azureClientId = clientId;
+        this.azureClientId = azureClientId;
     }
 
     /**
@@ -118,7 +118,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     protected LogEntry createEntry(JsonObject json) {
         LogEventMessage event = GSON.fromJson(json, LogEventMessage.class);
         LogEntry entry = new LogEntry();
-        if ((event.getCategory() != null && AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
+        if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
             //client ID for activity logs
             entry.putLmResourceIdItem(LM_CLIENT_ID, azureClientId);
             entry.putLmResourceIdItem(LM_SYSTEM_CATEGORIES, "Azure/LMAccount");
