@@ -57,7 +57,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      */
     public static final String LM_CLOUD_CATEGORY_KEY = "system.cloud.category";
     /**
-     * Used to match the category of resource for activity logs.
+     * Value for category of resource for activity logs.
      */
     public static final String LM_CLOUD_CATEGORY_VALUE = "Azure/LMAccount";
     /**
