@@ -1773,10 +1773,6 @@
               {
                 "field": "location",
                 "in": "[[parameters('azureRegions')]"
-              },
-              {
-                "field": "kind",
-                "equals": "v12.0"
               }
             ]
           },
@@ -3255,10 +3251,6 @@
               {
                 "field": "location",
                 "in": "[[parameters('azureRegions')]"
-              },
-              {
-                "field": "kind",
-                "equals": "app"
               }
             ]
           },
@@ -5967,10 +5959,6 @@
               {
                 "field": "location",
                 "in": "[[parameters('azureRegions')]"
-              },
-              {
-                "field": "kind",
-                "equals": "app"
               }
             ]
           },
