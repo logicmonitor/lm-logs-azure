@@ -1527,10 +1527,6 @@
               {
                 "field": "location",
                 "in": "[[parameters('azureRegions')]"
-              },
-              {
-                "field": "kind",
-                "equals": "web"
               }
             ]
           },
