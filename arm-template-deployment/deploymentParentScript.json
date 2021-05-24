@@ -1,6 +1,13 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2018-05-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+  "variables": {
+    "sourceCodeBranch": "master",  // the branch to checkout the code from ('develop' for testing purpose)
+    "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',variables('sourceCodeBranch'),'/arm-template-deployment/')]",
+    "deploymentResourceGroupName": "[concat('lm-logs-',parameters('LM_Company_name'),'-',resourceGroup().Location,'-group')]",
+    "managedIdentityName": "[concat('msi-', variables('deploymentResourceGroupName'), '-deploy')]",
+    "managedIdentityId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('managedIdentityName'))]"
+  },
   "parameters": {
     "subscriptionId": {
       "type": "String"
@@ -12,24 +19,7 @@
       "defaultValue": "[utcNow()]",
       "type": "String",
       "metadata": "Please do not edit this setting"
-    },
-    "sourceCodeBranch": {
-      "type": "String",
-      "allowedValues": [
-        "master",
-        "develop"
-      ],
-      "metadata": {
-        "description": "branch from which the code is to be deployed"
-      },
-      "defaultValue": "master"
     }
-  },
-  "variables": {
-    "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',parameters('sourceCodeBranch'),'/arm-template-deployment/')]",
-    "deploymentResourceGroupName": "[concat('lm-logs-',parameters('LM_Company_name'),'-',resourceGroup().Location,'-group')]",
-    "managedIdentityName": "[concat('msi-', variables('deploymentResourceGroupName'), '-deploy')]",
-    "managedIdentityId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('managedIdentityName'))]"
   },
   "resources": [
     {
@@ -62,7 +52,7 @@
             "value": "[resourceGroup().Location]"
           },
           "sourceCodeBranch": {
-            "value": "[parameters('sourceCodeBranch')]"
+            "value": "[variables('sourceCodeBranch')]"
           }
         }
       },
