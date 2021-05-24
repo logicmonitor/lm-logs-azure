@@ -60,6 +60,7 @@ $eventhubNameSpace = $targetResourceGroup.replace('-group','')
 $eventhubName = 'log-hub'
 $eventhubAuthorizationId = 'RootManageSharedAccessKey'
 $templateUri = 'https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/'+$sourceCodeBranch+'/arm-template-deployment/ARMTemplateExport.json'
+
 Get-AzResourceGroup -Name $targetResourceGroup -ErrorVariable notPresent -ErrorAction SilentlyContinue
 if ($notPresent) {
     Write-Host "target resource group not present..."
