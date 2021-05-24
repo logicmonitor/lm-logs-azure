@@ -30,10 +30,21 @@
         "description": "Enable Activity logs to be sent to the event hub that will get created in this deployment"
       },
       "defaultValue": "Yes"
+    },
+    "sourceCodeBranch": {
+      "type": "String",
+      "allowedValues": [
+        "master",
+        "develop"
+      ],
+      "metadata": {
+        "description": "Github branch from which the code is to be deployed"
+      },
+      "defaultValue": "master"
     }
   },
   "variables": {
-    "templateBaseUri": "https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/arm-template-deployment/",
+    "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',parameters('sourceCodeBranch'),'/arm-template-deployment/')]",
     "deploymentResourceGroupName": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('resource_group_region'),' ',''),'-group')]",
     "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('resource_group_region'),' ',''))]",
     "eventhubLogsName": "log-hub",
@@ -75,6 +86,9 @@
           },
           "Azure_Client_Id": {
             "value": "[parameters('Azure_Client_Id')]"
+          },
+          "sourceCodeBranch": {
+            "value": "[parameters('sourceCodeBranch')]"
           }
         }
       },

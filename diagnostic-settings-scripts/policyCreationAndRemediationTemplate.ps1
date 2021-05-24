@@ -10,7 +10,10 @@ param
     [string]$subscriptionId,
 
     [Parameter(Mandatory = $True)]
-    [string]$location
+    [string]$location,
+
+    [Parameter(Mandatory = $True)]
+    [string]$sourceCodeBranch
 
 )
 
@@ -56,14 +59,14 @@ $targetResourceGroup = 'lm-logs-' + $lmCompanyName + '-' + $location + '-group'
 $eventhubNameSpace = $targetResourceGroup.replace('-group','')
 $eventhubName = 'log-hub'
 $eventhubAuthorizationId = 'RootManageSharedAccessKey'
-
+$templateUri = 'https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/'+$sourceCodeBranch+'/arm-template-deployment/ARMTemplateExport.json'
 Get-AzResourceGroup -Name $targetResourceGroup -ErrorVariable notPresent -ErrorAction SilentlyContinue
 if ($notPresent) {
     Write-Host "target resource group not present..."
     exit;
 }
 else{
-    New-AzDeployment -TemplateUri "https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/arm-template-deployment/ARMTemplateExport.json" -Location "West US" -Verbose
+    New-AzDeployment -TemplateUri $templateUri -Location "West US" -Verbose
     $policyAssignments = ./policyAssignment.ps1 -resourceGroup $resourceGroup -location $location -eventhubName $eventhubName -eventhubNameSpace $eventhubNameSpace -eventhubAuthorizationId $eventhubAuthorizationId -targetResourceGroup $targetResourceGroup
     Write-Host "Running compliance result for $($policyAssignments.PolicyAssignmentId)" -ForegroundColor Cyan
     Start-AzPolicyComplianceScan -ResourceGroupName $policyAssignments.ResourceGroupName

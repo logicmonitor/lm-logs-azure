@@ -16,6 +16,9 @@
     },
     "azure_region": {
       "type": "string"
+    },
+    "sourceCodeBranch": {
+      "type": "string"
     }
   },
   "variables": {
@@ -127,7 +130,7 @@
             },
             {
               "name": "WEBSITE_RUN_FROM_PACKAGE",
-              "value": "https://github.com/logicmonitor/lm-logs-azure/raw/master/package/lm-logs-azure.zip"
+              "value": "[concat('https://github.com/logicmonitor/lm-logs-azure/raw/',parameters('sourceCodeBranch'),'/package/lm-logs-azure.zip')]"
             },
             {
               "name": "AzureWebJobsStorage",

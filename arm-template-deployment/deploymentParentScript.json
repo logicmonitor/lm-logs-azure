@@ -12,10 +12,21 @@
       "defaultValue": "[utcNow()]",
       "type": "String",
       "metadata": "Please do not edit this setting"
+    },
+    "sourceCodeBranch": {
+      "type": "String",
+      "allowedValues": [
+        "master",
+        "develop"
+      ],
+      "metadata": {
+        "description": "branch from which the code is to be deployed"
+      },
+      "defaultValue": "master"
     }
   },
   "variables": {
-    "templateBaseUri": "https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/arm-template-deployment/",
+    "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',parameters('sourceCodeBranch'),'/arm-template-deployment/')]",
     "deploymentResourceGroupName": "[concat('lm-logs-',parameters('LM_Company_name'),'-',resourceGroup().Location,'-group')]",
     "managedIdentityName": "[concat('msi-', variables('deploymentResourceGroupName'), '-deploy')]",
     "managedIdentityId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('managedIdentityName'))]"
@@ -49,6 +60,9 @@
           },
           "location": {
             "value": "[resourceGroup().Location]"
+          },
+          "sourceCodeBranch": {
+            "value": "[parameters('sourceCodeBranch')]"
           }
         }
       },
