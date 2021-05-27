@@ -159,6 +159,22 @@
             {
               "name": "AzureClientID",
               "value": "[parameters('Azure_Client_Id')]"
+            },
+            {
+              "name": "LogApiClientConnectTimeout",
+              "value": "10000"
+            },
+            {
+              "name": "LogApiClientReadTimeout",
+              "value": "10000"
+            },
+            {
+              "name": "LogApiClientDebugging",
+              "value": "false"
+            },
+            {
+              "name": "LogRegexScrub",
+              "value": "<regex pattern>"
             }
           ]
         }
