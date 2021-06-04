@@ -184,6 +184,8 @@ public class LogEventForwarder {
             logResponse(context, response.getData().getSuccess(), response);
         } catch (LMLogsApiException e) {
             logResponse(context, false, e.getResponse());
+        } catch (Exception e) {
+            log(context, Level.SEVERE, () -> "Exception occurred while processing the request: " + e);
         }
     }
 
