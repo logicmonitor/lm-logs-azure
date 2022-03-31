@@ -19,6 +19,16 @@
       "defaultValue": "[utcNow()]",
       "type": "String",
       "metadata": "Please do not edit this setting"
+    },
+    "deploymentLocation": {
+      "type": "string",
+      "allowedValues": [
+        "Australia East","Australia Southeast","Brazil South","Canada Central","Canada East","Central India","Central US","East Asia","East US","East US 2","France Central","Germany West Central","Japan East","Japan West","Korea Central","North Central US","North Europe","Norway East","South Central US","Southeast Asia","South India","Switzerland North","UK South","UK West","UAE North","West Central US","West Europe","West US","West US 2"
+      ],
+      "metadata": {
+        "description": "region for deployment script"
+      },
+      "defaultValue": "West US"
     }
   },
   "resources": [
@@ -53,6 +63,9 @@
           },
           "sourceCodeBranch": {
             "value": "[variables('sourceCodeBranch')]"
+          },
+          "deploymentLocation": {
+            "value": "[parameters('deploymentLocation')]"
           }
         }
       },

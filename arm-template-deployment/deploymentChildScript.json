@@ -13,7 +13,7 @@
     },
     "managedIdentity": {
       "type": "String",
-      "metadata": "Please provide the id of a User Defined Managed Identity with an User Access Administrator role"
+      "metadata": "Please provide the id of a User Defined Managed Identity with User Access Administrator role"
     },
     "location": {
       "type": "String"
@@ -23,6 +23,9 @@
     },
     "sourceCodeBranch": {
       "type": "string"
+    },
+    "deploymentLocation": {
+      "type": "string"
     }
   },
   "resources": [
@@ -30,7 +33,7 @@
       "type": "Microsoft.Resources/deploymentScripts",
       "apiVersion": "2020-10-01",
       "name": "[concat(parameters('resourceGroup'),'-script')]",
-      "location": "West US",
+      "location": "[parameters('deploymentLocation')]",
       "kind": "AzurePowerShell",
       "identity": {
         "type": "userAssigned",
