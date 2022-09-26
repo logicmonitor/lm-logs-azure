@@ -132,10 +132,14 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         }
 
         // timestamp as epoch
-        Optional.ofNullable(event.getTime())
-            .map(Instant::parse)
-            .map(Instant::getEpochSecond)
-            .ifPresent(entry::setTimestamp);
+        try {
+            Optional.ofNullable(event.getTime())
+                    .map(Instant::parse)
+                    .map(Instant::getEpochSecond)
+                    .ifPresent(entry::setTimestamp);
+        } catch(Exception e){
+            entry.setTimestamp(System.currentTimeMillis());
+        }
 
         // get properties from event if present
         Optional<LogEventProperties> properties = Optional.ofNullable(event.getProperties());
