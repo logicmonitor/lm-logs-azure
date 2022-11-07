@@ -106,7 +106,7 @@ then
 fi
 
 echo "generating the storage account sas token"
-storage_token_expiry=$(date --date='10 years' '+%Y-%m-%dT%H:%MZ') # + 10 years
+storage_token_expiry=$(date --date='10 years' '+%Y-%m-%dT%H:%M:%SZ') # + 10 years
 storage_account_sas_token=$(az storage account generate-sas --account-name $storage_name --expiry $storage_token_expiry --permissions wlacu --resource-types co --services bt -o tsv)
 if [ $? -ne 0 ]
 then
