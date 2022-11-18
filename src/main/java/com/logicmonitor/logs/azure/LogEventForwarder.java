@@ -165,7 +165,7 @@ public class LogEventForwarder {
      */
     @FunctionName("LogForwarder")
     public void forward(
-            @EventHubTrigger(name = "logEvents", eventHubName = "eventHub",
+            @EventHubTrigger(name = "logEvents", eventHubName = "log-hub",
                     dataType = "string", cardinality = Cardinality.MANY,
                     connection = "LogsEventHubConnectionString") List<String> logEvents,
             final ExecutionContext context
