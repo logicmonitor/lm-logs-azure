@@ -56,6 +56,10 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      * Used to match the category of resource for activity logs.
      */
     public static final String LM_CLOUD_CATEGORY_KEY = "system.cloud.category";
+
+
+    public static final String LM_SUBSCRIPTION_ID = "system.azure.subscriptionid";
+
     /**
      * Value for category of resource for activity logs.
      */
@@ -124,6 +128,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         LogEntry entry = new LogEntry();
         if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
             //client ID for activity logs
+            entry.putLmResourceIdItem(LM_SUBSCRIPTION_ID,event.getResourceId().split("/")[2]);
             entry.putLmResourceIdItem(LM_CLIENT_ID, azureClientId);
             entry.putLmResourceIdItem(LM_CLOUD_CATEGORY_KEY, LM_CLOUD_CATEGORY_VALUE);
         } else {
