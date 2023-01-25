@@ -29,7 +29,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.logicmonitor.logs.model.LogEntry;
 
 /**
  * Transforms one JSON string into one or multiple log entries.<br>
@@ -128,7 +127,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         LogEntry entry = new LogEntry();
         if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
             //client ID for activity logs
-            entry.putLmResourceIdItem(LM_SUBSCRIPTION_ID,event.getResourceId().split("/")[2]);
             entry.putLmResourceIdItem(LM_CLIENT_ID, azureClientId);
             entry.putLmResourceIdItem(LM_CLOUD_CATEGORY_KEY, LM_CLOUD_CATEGORY_VALUE);
         } else {

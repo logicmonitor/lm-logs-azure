@@ -22,7 +22,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.logicmonitor.logs.model.LogEntry;
 
 public class LogEventAdapterTest {
 
@@ -65,8 +64,7 @@ public class LogEventAdapterTest {
             () -> {
                 if (azureClientId != null) {
                     assertEquals(azureClientId, entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
-                    assertEquals(event.get("resourceId").getAsString().split("/")[2],
-                            entry.getLmResourceId().get(LogEventAdapter.LM_SUBSCRIPTION_ID));
+
                 } else {
                     String resourceId = event.get("resourceId").getAsString();
                     assertEquals(resourceId, entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
