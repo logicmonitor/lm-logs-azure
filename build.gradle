@@ -13,14 +13,28 @@ compileJava.options.encoding = "UTF-8"
 
 repositories {
     jcenter()
+    maven {
+        credentials {
+            username = System.getenv("GITHUB_USERNAME")
+            password = System.getenv("GITHUB_TOKEN")
+        }
+        url "https://maven.pkg.github.com/logicmonitor/lm-data-sdk-java"
+    }
+    mavenCentral()
+
 }
 
 dependencies {
     implementation (
         "com.microsoft.azure.functions:azure-functions-java-library:1.4.0",
         "com.logicmonitor:lm-logs-sdk-java:1.2",
+        "com.logicmonitor:lm-data-sdk:0.0.2-alpha",
         "com.google.code.gson:gson:2.8.6"
     )
+   implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
+    implementation 'io.gsonfire:gson-fire:1.8.5'
+    implementation 'org.slf4j:slf4j-api:1.7.25'
     testImplementation (
         "org.junit.jupiter:junit-jupiter:${junitVersion}",
         "com.github.stefanbirkner:system-lambda:1.0.0",

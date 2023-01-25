@@ -141,15 +141,15 @@
               "value": "[listkeys(resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventhubNamespace'),variables('eventhubLogsName'), variables('listener')), '2017-04-01').primaryConnectionString]"
             },
             {
-              "name": "LogicMonitorCompanyName",
+              "name": "LM_COMPANY",
               "value": "[parameters('LM_Company_name')]"
             },
             {
-              "name": "LogicMonitorAccessId",
+              "name": "LM_ACCESS_ID",
               "value": "[parameters('LM_Access_Id')]"
             },
             {
-              "name": "LogicMonitorAccessKey",
+              "name": "LM_ACCESS_KEY",
               "value": "[parameters('LM_Access_Key')]"
             },
             {
