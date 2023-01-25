@@ -56,9 +56,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      */
     public static final String LM_CLOUD_CATEGORY_KEY = "system.cloud.category";
 
-
-    public static final String LM_SUBSCRIPTION_ID = "system.azure.subscriptionid";
-
     /**
      * Value for category of resource for activity logs.
      */
