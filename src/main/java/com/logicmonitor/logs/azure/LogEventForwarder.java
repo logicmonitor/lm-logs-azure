@@ -14,23 +14,26 @@
 
 package com.logicmonitor.logs.azure;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import com.logicmonitor.logs.LMLogsApi;
-import com.logicmonitor.logs.LMLogsApiException;
-import com.logicmonitor.logs.LMLogsApiResponse;
-import com.logicmonitor.logs.model.LogEntry;
-import com.logicmonitor.logs.model.LogResponse;
+
+import com.logicmonitor.sdk.data.Configuration;
+import com.logicmonitor.sdk.data.api.Logs;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.Cardinality;
 import com.microsoft.azure.functions.annotation.EventHubTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
+import org.openapitools.client.ApiCallback;
+import org.openapitools.client.ApiException;
+import org.openapitools.client.ApiResponse;
 
 /**
  * Azure Function forwarding Azure logs to LogicMonitor endpoint.<br>
@@ -50,15 +53,15 @@ public class LogEventForwarder {
     /**
      * Parameter: company in the target URL '{company}.logicmonitor.com'.
      */
-    public static final String PARAMETER_COMPANY_NAME = "LogicMonitorCompanyName";
+    public static final String PARAMETER_COMPANY_NAME = "LM_COMPANY";
     /**
      * Parameter: LogicMonitor access ID.
      */
-    public static final String PARAMETER_ACCESS_ID = "LogicMonitorAccessId";
+    public static final String PARAMETER_ACCESS_ID = "LM_ACCESS_ID";
     /**
      * Parameter: LogicMonitor access key.
      */
-    public static final String PARAMETER_ACCESS_KEY = "LogicMonitorAccessKey";
+    public static final String PARAMETER_ACCESS_KEY = "LM_ACCESS_KEY";
     /**
      * Parameter: connection timeout in milliseconds (default 10000).
      */
@@ -84,10 +87,9 @@ public class LogEventForwarder {
      * Transforms Azure log events into log entries.
      */
     private static LogEventAdapter adapter;
-    /**
-     * API for sending log requests.
-     */
-    private static LMLogsApi api;
+
+   public final Configuration conf = new Configuration();
+   public  MyResponse responseInterface = new MyResponse();
 
     /**
      * Gets the log adapter instance (initializes it when needed).
@@ -110,34 +112,8 @@ public class LogEventForwarder {
         return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB), System.getenv(PARAMETER_AZURE_CLIENT_ID));
     }
 
-    /**
-     * Gets the API instance (initializes it when needed).
-     * @return LMLogsApi instance
-     */
-    protected synchronized static LMLogsApi getApi() {
-        // The initialization must be lazy for the testing
-        // - the test classes must set the environmental variables first.
-        if (api == null) {
-            api = configureApi();
-        }
-        return api;
-    }
-
-    /**
-     * Configures API using the environment variables.
-     * @return LMLogsApi instance
-     */
-    protected static LMLogsApi configureApi() {
-        LMLogsApi.Builder builder = new LMLogsApi.Builder()
-             .withCompany(System.getenv(PARAMETER_COMPANY_NAME))
-             .withAccessId(System.getenv(PARAMETER_ACCESS_ID))
-             .withAccessKey(System.getenv(PARAMETER_ACCESS_KEY))
-             .withUserAgentHeader(getUserAgent());
-        setProperty(PARAMETER_CONNECT_TIMEOUT, Integer::valueOf, builder::withConnectTimeout);
-        setProperty(PARAMETER_READ_TIMEOUT, Integer::valueOf, builder::withReadTimeout);
-        setProperty(PARAMETER_DEBUGGING, Boolean::valueOf, builder::withDebugging);
-
-        return builder.build();
+    public Logs configureLogs(){
+        return new Logs(conf, 5, true, responseInterface);
     }
 
     /**
@@ -170,6 +146,7 @@ public class LogEventForwarder {
                     connection = "LogsEventHubConnectionString") List<String> logEvents,
             final ExecutionContext context
     ) {
+        Logs logs = configureLogs();
         List<LogEntry> logEntries = processEvents(logEvents);
         if (logEntries.isEmpty()) {
             log(context, Level.INFO, () -> "No entries to send");
@@ -178,15 +155,17 @@ public class LogEventForwarder {
 
         log(context, Level.INFO, () -> "Sending " + logEntries.size() +
                 " log entries for devices " + getResourceIds(logEntries));
-        log(context, Level.FINEST, () -> "Request body: " + logEntries);
-        try {
-            LMLogsApiResponse<LogResponse> response = getApi().logIngestPostWithHttpInfo(logEntries);
-            logResponse(context, response.getData().getSuccess(), response);
-        } catch (LMLogsApiException e) {
-            logResponse(context, false, e.getResponse());
-        } catch (Exception e) {
-            log(context, Level.SEVERE, () -> "Exception occurred while processing the request: " + e);
+        for(LogEntry logEntry : logEntries){
+            try {
+                Optional<ApiResponse> response = logs.sendLogs(logEntry.getMessage(), logEntry.getLmResourceId(), null);
+                if (response != null && response.isPresent()) {
+                    logResponse(context, response.get());
+                }
+            } catch (final ApiException | IOException e) {
+                log(context, Level.SEVERE, () -> "Exception occurred while processing the request: " + e);
+            }
         }
+
     }
 
     /**
@@ -234,15 +213,14 @@ public class LogEventForwarder {
     /**
      * Logs a response received from LogicMonitor.
      * @param context execution context
-     * @param success if the request was successful
      * @param response the response to log
      */
-    private static void logResponse(final ExecutionContext context, boolean success,
-            LMLogsApiResponse<?> response) {
-        log(context, success ? Level.INFO : Level.WARNING,
-                () -> String.format("Received: status = %d, id = %s",
-                        response.getStatusCode(), response.getRequestId()));
-        log(context, success ? Level.FINEST : Level.WARNING,
+    private static void logResponse(final ExecutionContext context,
+            ApiResponse<?> response) {
+        log(context, Level.INFO ,
+                () -> String.format("Received: status = %d ",
+                        response.getStatusCode()));
+        log(context, Level.INFO,
                 () -> "Response body: " + response.getData());
     }
 
@@ -268,5 +246,35 @@ public class LogEventForwarder {
      */
     public static String getUserAgent() {
         return getBuildName() + "/" + getBuildVersion();
+    }
+
+
+    static class MyResponse implements ApiCallback {
+
+        public static final String JSON_PROPERTY_SUCCESS = "success";
+        private Boolean success;
+
+        public MyResponse success(Boolean success) {
+            this.success = success;
+            return this;
+        }
+
+        @Override
+        public void onFailure(org.openapitools.client.ApiException e, int i, Map map) {
+
+        }
+
+        @Override
+        public void onSuccess(Object o, int i, Map map) {
+
+        }
+
+        @Override
+        public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+        }
+
+        @Override
+        public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+        }
     }
 }
