@@ -29,7 +29,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.logicmonitor.logs.model.LogEntry;
 
 /**
  * Transforms one JSON string into one or multiple log entries.<br>
@@ -56,6 +55,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      * Used to match the category of resource for activity logs.
      */
     public static final String LM_CLOUD_CATEGORY_KEY = "system.cloud.category";
+
     /**
      * Value for category of resource for activity logs.
      */

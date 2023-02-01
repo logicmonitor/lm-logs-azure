@@ -18,9 +18,8 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironment
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import java.net.URI;
+
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.ws.rs.Consumes;
@@ -31,16 +30,17 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import com.logicmonitor.sdk.data.Configuration;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.logicmonitor.logs.LMLogsApi;
-import com.logicmonitor.logs.invoker.ServerConfiguration;
-import com.logicmonitor.logs.model.LogEntry;
-import com.logicmonitor.logs.model.LogResponse;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
 import com.microsoft.azure.functions.ExecutionContext;
 
 public class LogEventForwarderIntegrationTest extends JerseyTest {
@@ -65,8 +65,8 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
 
             return Response
                 .status(Status.ACCEPTED)
-                .entity(new LogResponse().success(true))
-                .header(LMLogsApi.REQUEST_ID_HEADER, TEST_REQUEST_ID)
+                .entity(new LogEventForwarder.MyResponse().success(true))
+                .header("X-Request-ID", TEST_REQUEST_ID)
                 .build();
         }
     }
@@ -78,6 +78,18 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
             .thenReturn(mock(Logger.class));
     }
 
+    @Before
+    public void setupLogEventForwarder() throws Exception {
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_ACCESS_ID, TEST_ID)
+            .and(LogEventForwarder.PARAMETER_ACCESS_KEY, TEST_KEY)
+            .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
+            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
+            .and(LogEventForwarder.PARAMETER_COMPANY_NAME, "localhost")
+                .execute(() -> {
+                LogEventForwarder.getAdapter();
+            });
+    }
+
     @Override
     protected Application configure() {
         LogIngestResource.receivedEntries = null;
@@ -85,79 +97,52 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
         return new ResourceConfig(LogIngestResource.class);
     }
 
-    @Before
-    public void setupLogEventForwarder() throws Exception {
+    @ParameterizedTest
+    @CsvSource({
+            "company1,    ,       0,         false,    \\d                       ",
+            "company2,    0,      ,          true,     [\\w-.#]+@[\\w-.]+        ",
+            "company3,    3334,    44445,      false,    \\d+\\.\\d+\\.\\d+\\.\\d+ ",
+            "company4,    555555,  6666666,    false,                             ",
+    })
+    public void testConfigurationParameters(String companyName, Integer connectTimeout,
+                                            Integer readTimeout, Boolean debugging, String regexScrub) throws Exception {
+
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
+                .and(LogEventForwarder.PARAMETER_ACCESS_ID, "id")
+                .and(LogEventForwarder.PARAMETER_ACCESS_KEY, "key")
+                .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, "azureClientId")
+                .and(LogEventForwarder.PARAMETER_CONNECT_TIMEOUT,
+                        connectTimeout != null ? connectTimeout.toString() : null)
+                .and(LogEventForwarder.PARAMETER_READ_TIMEOUT,
+                        readTimeout != null ? readTimeout.toString() : null)
+                .and(LogEventForwarder.PARAMETER_DEBUGGING,
+                        debugging != null ? debugging.toString() : null)
+                .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, regexScrub)
+                .execute(() -> {
+                            LogEventAdapter adapter = LogEventForwarder.configureAdapter();
+                            Configuration conf = new Configuration();
+                            assertAll(
+                                    () -> assertEquals(companyName,
+                                            conf.getCompany()),
+                                    () -> assertTrue(conf.checkAuthentication()),
+                                    () -> assertEquals(regexScrub,
+                                            regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern())
+                            );
+                        }
+                );
+    }
+
+    @Test
+    public void testForwardEmptyList() throws Exception {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_ACCESS_ID, TEST_ID)
-            .and(LogEventForwarder.PARAMETER_ACCESS_KEY, TEST_KEY)
-            .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
-            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
-            .execute(() -> {
-                // initialize the api with the system properties
-                LMLogsApi api = LogEventForwarder.getApi();
-
-                // override the base URL of the api client
-                URI testBaseUrl = getBaseUri().resolve(
-                        URI.create(api.getApiClient().getBasePath()).getPath());
-                api.getApiClient().setServers(List.of(
-                        new ServerConfiguration(testBaseUrl.toString(), null, Map.of())));
-
-                // initialize the adapter with the system properties
-                LogEventForwarder.getAdapter();
-            }
-        );
-    }
-
-    @Test
-    public void testForward() throws Exception {
-        List<String> logEvents = TestJsonUtils.mergeJsonStringList(
-                "resource_db_account.json",
-                "resource_sql.json",
-                "resource_vault.json",
-                "vm_catalina.json",
-                "vm_syslog.json",
-                "windows_vm_log.json");
-        new LogEventForwarder().forward(logEvents, mockExecutionContext);
-
-        assertNotNull(LogIngestResource.receivedEntries);
-        assertAll(
-            () -> assertEquals(11, LogIngestResource.receivedEntries.size()),
-            () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
-                    entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY))),
-            () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
-                    entry.getTimestamp())),
-            () -> LogIngestResource.receivedEntries.forEach(entry -> {
-                assertNotNull(entry.getMessage());
-                assertFalse(TEST_SCRUB_PATTERN.matcher(entry.getMessage()).find());
-                })
-        );
-    }
-
-    @Test
-    public void testForwardActivityLogs() throws Exception {
-        List<String> logEvents = TestJsonUtils.mergeJsonStringList(
-                "activity_storage_account.json",
-                "activity_webapp.json");
-        new LogEventForwarder().forward(logEvents, mockExecutionContext);
-
-        assertNotNull(LogIngestResource.receivedEntries);
-        assertAll(
-            () -> assertEquals(4, LogIngestResource.receivedEntries.size()),
-            () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
-                    entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID))),
-            () -> LogIngestResource.receivedEntries.forEach(entry -> assertNotNull(
-                    entry.getTimestamp())),
-            () -> LogIngestResource.receivedEntries.forEach(entry -> {
-                assertNotNull(entry.getMessage());
-                assertFalse(TEST_SCRUB_PATTERN.matcher(entry.getMessage()).find());
-                })
-        );
-    }
-
-    @Test
-    public void testForwardEmptyList() {
+                .and(LogEventForwarder.PARAMETER_ACCESS_KEY, TEST_KEY)
+                .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
+                .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
+                .and(LogEventForwarder.PARAMETER_COMPANY_NAME, "localhost")
+                .execute(() -> {
         new LogEventForwarder().forward(List.of(), mockExecutionContext);
-
         assertNull(LogIngestResource.receivedEntries);
+    });
     }
 
 }

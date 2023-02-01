@@ -22,7 +22,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.logicmonitor.logs.model.LogEntry;
 
 public class LogEventAdapterTest {
 

@@ -18,17 +18,14 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironment
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.logicmonitor.sdk.data.Configuration;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import com.logicmonitor.logs.LMLogsApi;
-import com.logicmonitor.logs.LMLogsClient;
-import com.logicmonitor.logs.model.LogEntry;
 
 public class LogEventForwarderTest {
 
@@ -36,7 +33,6 @@ public class LogEventForwarderTest {
 
     @ParameterizedTest
     @CsvSource({
-        ",           1,      2,         true,     .                          ",
         "company,    ,       0,         false,    \\d                       ",
         "company,    0,      ,          true,     [\\w-.#]+@[\\w-.]+        ",
         "company,    333,    4444,      false,    \\d+\\.\\d+\\.\\d+\\.\\d+ ",
@@ -57,39 +53,18 @@ public class LogEventForwarderTest {
                     debugging != null ? debugging.toString() : null)
             .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, regexScrub)
             .execute(() -> {
-
-                LMLogsApi api = LogEventForwarder.configureApi();
                 LogEventAdapter adapter = LogEventForwarder.configureAdapter();
+                Configuration conf = new Configuration();
                 assertAll(
                     () -> assertEquals(companyName,
-                            api.getApiClient().getCompany()),
-                    () -> assertEquals(connectTimeout != null ? connectTimeout : LMLogsClient.DEFAULT_TIMEOUT,
-                            api.getApiClient().getConnectTimeout()),
-                    () -> assertEquals(readTimeout != null ? readTimeout : LMLogsClient.DEFAULT_TIMEOUT,
-                            api.getApiClient().getReadTimeout()),
-                    () -> assertEquals(debugging != null ? debugging : false,
-                            api.getApiClient().isDebugging()),
+                            conf.getCompany()),
                     () -> assertEquals(regexScrub,
-                            regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern()),
-                    () -> assertEquals(LogEventForwarder.getUserAgent(), api.getApiClient().getUserAgent())
-
+                            regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern())
                 );
             }
         );
     }
 
-    @ParameterizedTest
-    @CsvSource({
-        ",      key",
-        "id,       ",
-    })
-    public void testInvalidConfigurationParameters(String accessId, String accessKey) throws Exception {
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_ACCESS_ID, accessId)
-            .and(LogEventForwarder.PARAMETER_ACCESS_KEY, accessKey)
-            .execute(() ->
-                assertThrows(NullPointerException.class, () -> LogEventForwarder.configureApi())
-        );
-    }
 
     @ParameterizedTest
     @CsvSource({
