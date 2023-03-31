@@ -13,6 +13,7 @@
         "LogApiClientReadTimeout": "10000",
         "LogApiClientDebugging": "false",
         "LogRegexScrub": "<regex pattern>",
-        "AzureClientID": "<Azure Application ID>"
+        "AzureClientID": "<Azure Application ID>",
+        "APPLICATION_NAME": "lm-logs-azure"
     }
 }
