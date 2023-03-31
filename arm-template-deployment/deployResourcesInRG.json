@@ -171,6 +171,10 @@
             {
               "name": "LogRegexScrub",
               "value": "<regex pattern>"
+            },
+            {
+              "name": "APPLICATION_NAME",
+              "value": "lm-logs-azure"
             }
           ]
         }
