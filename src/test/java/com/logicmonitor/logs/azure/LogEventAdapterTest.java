@@ -15,8 +15,11 @@
 package com.logicmonitor.logs.azure;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.google.gson.GsonBuilder;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -88,6 +91,22 @@ public class LogEventAdapterTest {
                     message = message.replaceAll(regexScrub, "");
                 }
                 assertEquals(message, entry.getMessage());
+            },
+            () -> {
+                Map<String, String> metadata = entry.getMetadata();
+                LogEventMessage event_msg = new GsonBuilder().create()
+                    .fromJson(event, LogEventMessage.class);
+                for (String key : metadata.keySet()) {
+                    if (LogEventAdapter.REQ_STATIC_METADATA.containsKey(key)) {
+                        assertEquals(metadata.get(key),
+                            LogEventAdapter.REQ_STATIC_METADATA.get(key));
+
+                    } else {
+                        assertEquals(metadata.get(key),
+                            LogEventAdapter.METADATA_KEYS_TO_GETTERS.get(key).apply(event_msg));
+                    }
+                }
+
             }
         );
     }

@@ -157,7 +157,7 @@ public class LogEventForwarder {
                 " log entries for devices " + getResourceIds(logEntries));
         for(LogEntry logEntry : logEntries){
             try {
-                Optional<ApiResponse> response = logs.sendLogs(logEntry.getMessage(), logEntry.getLmResourceId(), null, logEntry.getTimestamp());
+                Optional<ApiResponse> response = logs.sendLogs(logEntry.getMessage(), logEntry.getLmResourceId(), logEntry.getMetadata(), logEntry.getTimestamp());
                 if (response != null && response.isPresent()) {
                     logResponse(context, response.get());
                 }

@@ -15,7 +15,9 @@
 package com.logicmonitor.logs.azure;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -29,6 +31,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Transforms one JSON string into one or multiple log entries.<br>
@@ -68,6 +71,20 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      * GSON instance.
      */
     private static final Gson GSON = new GsonBuilder().create();
+
+    /**
+     * Required static metadata to be added in every LogEntry.
+     */
+    public static final Map<String, String> REQ_STATIC_METADATA = Map.of("_integration", "azure");
+
+    /**
+     * Required metadata key to LogEventMessage method map.
+     */
+    public static final Map<String, Function<LogEventMessage, String>> METADATA_KEYS_TO_GETTERS = Map
+        .of("severity", LogEventMessage::getLevel,
+            "activity_type", LogEventMessage::getOperationName,
+            "azure_resource_id", LogEventMessage::getResourceId,
+            "category", LogEventMessage::getCategory);
 
     private final Pattern scrubPattern;
 
@@ -151,6 +168,19 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         String message = properties.map(LogEventProperties::getMsg)
                 .or(() -> properties.map(LogEventProperties::getDescription))
                 .orElseGet(() -> GSON.toJson(json));
+
+        Map<String, String> metadata = new HashMap<>();
+        for (String key : METADATA_KEYS_TO_GETTERS.keySet()) {
+            Function<LogEventMessage, String> getter = METADATA_KEYS_TO_GETTERS.get(key);
+            String metadataVal = getter.apply(event);
+            if (StringUtils.isNotBlank(metadataVal)) {
+                metadata.put(key, metadataVal);
+            }
+        }
+        // Add static metadata
+        metadata.putAll(REQ_STATIC_METADATA);
+
+        entry.setMetadata(metadata);
 
         if (scrubPattern != null) {
             message = scrubPattern.matcher(message).replaceAll("");
