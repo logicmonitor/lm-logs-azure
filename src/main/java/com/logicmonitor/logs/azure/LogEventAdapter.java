@@ -14,13 +14,22 @@
 
 package com.logicmonitor.logs.azure;
 
+import com.google.gson.JsonArray;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.ReadContext;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -67,6 +76,20 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      * Categories of Azure activity logs generated
      */
     public static final Set<String> AUDIT_LOG_CATEGORIES = Set.of("administrative", "serviceHealth", "resourcehealth", "alert", "autoscale", "security", "policy", "recommendation");
+
+    public static final String LM_SEVERITY = "severity";
+    public static final String LM_ACTIVITY_TYPE = "activity_type";
+    public static final String LM_AZURE_RESOURCE_ID = "azure_resource_id";
+    public static final String LM_CATEGORY = "category";
+
+    public static final String LM_EVENTSOURCE = "_type";
+
+    public static final String AZURE_SEVERITY = "level";
+    public static final String AZURE_ACTIVITY_TYPE = "operationName";
+    public static final String AZURE_RESOURCE_ID = "resourceId";
+    public static final String AZURE_CATEGORY = "category";
+
+    public static final Pattern RESOURCE_TYPE = Pattern.compile("/subscriptions/.*/resourceGroups/.*/providers/(?<type>[^/]*/[^/]*)/.*", Pattern.CASE_INSENSITIVE);
     /**
      * GSON instance.
      */
@@ -81,22 +104,34 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      * Required metadata key to LogEventMessage method map.
      */
     public static final Map<String, Function<LogEventMessage, String>> METADATA_KEYS_TO_GETTERS = Map
-        .of("severity", LogEventMessage::getLevel,
-            "activity_type", LogEventMessage::getOperationName,
-            "azure_resource_id", LogEventMessage::getResourceId,
-            "category", LogEventMessage::getCategory);
+        .of(LM_SEVERITY, LogEventMessage::getLevel,
+            LM_ACTIVITY_TYPE, LogEventMessage::getOperationName,
+            LM_CATEGORY, LogEventMessage::getCategory,
+            LM_EVENTSOURCE, LogEventAdapter::getEventSourceMetadata);
+
+
+    public static final Map<String ,String> LM_METADATA_RENAME_KEYS = Map.of(
+        AZURE_SEVERITY, LM_SEVERITY,
+        AZURE_ACTIVITY_TYPE, LM_ACTIVITY_TYPE,
+        AZURE_RESOURCE_ID, LM_AZURE_RESOURCE_ID);
+    private static final Configuration JSONPATH_CONFIG = Configuration.builder().jsonProvider(new GsonJsonProvider()).build();
 
     private final Pattern scrubPattern;
 
     private final String azureClientId;
 
-    public LogEventAdapter(String regexScrub, String azureClientId) throws PatternSyntaxException {
+    private final Set<String> metadataDeepPath;
+
+    public LogEventAdapter(String regexScrub, String azureClientId, String includeMetadataKeys) throws PatternSyntaxException {
         if (regexScrub != null) {
             scrubPattern = Pattern.compile(regexScrub);
         } else {
             scrubPattern = null;
         }
         this.azureClientId = azureClientId;
+        this.metadataDeepPath = StringUtils.isNotBlank(includeMetadataKeys) ? Arrays.stream(
+                StringUtils.split(StringUtils.strip(includeMetadataKeys), ","))
+            .collect(Collectors.toSet()) : new HashSet<>();
     }
 
     /**
@@ -172,22 +207,86 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         Map<String, String> metadata = new HashMap<>();
         for (String key : METADATA_KEYS_TO_GETTERS.keySet()) {
             Function<LogEventMessage, String> getter = METADATA_KEYS_TO_GETTERS.get(key);
-            String metadataVal = getter.apply(event);
+            String metadataVal = getter!=null ? getter.apply(event) : null;
             if (StringUtils.isNotBlank(metadataVal)) {
                 metadata.put(key, metadataVal);
             }
         }
         // Add static metadata
         metadata.putAll(REQ_STATIC_METADATA);
-
+        // Add metadata for includeMetadataKeys
+        metadata.putAll(addMissingMetadataFromJsonEvent(json));
         entry.setMetadata(metadata);
-
         if (scrubPattern != null) {
             message = scrubPattern.matcher(message).replaceAll("");
         }
         entry.setMessage(message);
 
         return entry;
+    }
+
+    private Map<String, String> addMissingMetadataFromJsonEvent(JsonObject event) {
+
+        Map<String, String> additionalMetadata = new HashMap<>();
+        ReadContext jsonPathContext = JsonPath.using(JSONPATH_CONFIG).parse(event);
+
+        for (String metadataDeepKey : metadataDeepPath) {
+            final String finalMetadataKey =
+                LM_METADATA_RENAME_KEYS.getOrDefault(metadataDeepKey, metadataDeepKey);
+
+            try {
+                final String jsonPath = "$." + metadataDeepKey;
+                Object val = jsonPathContext.read(jsonPath);
+
+                //TODO we need to remove flattening when data sdk handles nested json metadata internally
+                reFlat(finalMetadataKey, (JsonElement) val, additionalMetadata);
+
+            } catch (Exception e) {
+                // skip this key
+            }
+        }
+        return additionalMetadata;
+    }
+
+    private void reFlat(String baseKey, JsonElement node, Map<String, String> flattenedMap) {
+        if (node.isJsonPrimitive()) {
+            // get value as string
+            try {
+                flattenedMap.put(baseKey, node.getAsString());
+            } catch (Exception e) {
+                // value could be int or double or other primitive type
+                flattenedMap.put(baseKey, node.toString());
+            }
+
+        } else if (node.isJsonObject()) {
+
+            // iterate
+            JsonObject jsonObject = (JsonObject) node;
+            String pathPrefix = StringUtils.isBlank(baseKey) ? "" : baseKey + ".";
+
+            jsonObject.entrySet();
+            for (Entry<String, com.google.gson.JsonElement> e : jsonObject.entrySet()) {
+                reFlat(pathPrefix + e.getKey(), e.getValue(), flattenedMap);
+            }
+        } else if (node.isJsonArray()) {
+            //iterate through array
+            JsonArray jsonArray = (JsonArray) node;
+            for (int i = 0; i < jsonArray.size(); i++) {
+                reFlat(baseKey + "." + i, jsonArray.get(i), flattenedMap);
+            }
+        } else if (node.isJsonNull()) {
+            // ignore
+        }
+    }
+
+    public static String getEventSourceMetadata(LogEventMessage logEventMessage) {
+        if (StringUtils.isNotBlank(logEventMessage.getResourceId())) {
+            Matcher matcher = RESOURCE_TYPE.matcher(logEventMessage.getResourceId());
+            if (matcher.find()) {
+                return matcher.group("type");
+            }
+        }
+        return StringUtils.EMPTY;
     }
 
 }

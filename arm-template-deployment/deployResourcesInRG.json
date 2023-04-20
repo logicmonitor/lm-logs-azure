@@ -14,6 +14,9 @@
     "Azure_Client_Id": {
       "type": "string"
     },
+    "Include_Metadata_keys": {
+      "type": "array"
+    },
     "azure_region": {
       "type": "string"
     },
@@ -175,6 +178,10 @@
             {
               "name": "APPLICATION_NAME",
               "value": "lm-logs-azure"
+            },
+            {
+              "name": "Include_Metadata_keys",
+              "value" : "[parameters('Include_Metadata_keys')]"
             }
           ]
         }

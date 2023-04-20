@@ -29,6 +29,15 @@
         "description": "Application Client Id provided during the creation of azure account in LM"
       }
     },
+    "Include_Metadata_keys": {
+      "type": "array",
+      "defaultValue": [
+        "resourceId"
+      ],
+      "metadata": {
+        "description": "Metadata "
+      }
+    },
     "enableActivityLogs": {
       "type": "String",
       "allowedValues": [
@@ -79,6 +88,9 @@
           },
           "sourceCodeBranch": {
             "value": "[variables('sourceCodeBranch')]"
+          },
+          "Include_Metadata_keys": {
+            "value": "[parameters('Include_Metadata_keys')]"
           }
         }
       },

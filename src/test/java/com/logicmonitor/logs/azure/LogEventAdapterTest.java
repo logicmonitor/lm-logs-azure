@@ -42,7 +42,7 @@ public class LogEventAdapterTest {
     })
     public void testApply(String resourceName, int expectedEntriesCount) {
         String events = TestJsonUtils.getFirstJsonString(resourceName);
-        LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id");
+        LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id", null);
         List<LogEntry> entries = adapter.apply(events);
         assertEquals(expectedEntriesCount, entries.size());
     }
@@ -61,7 +61,7 @@ public class LogEventAdapterTest {
     })
     public void testCreateEntry(String resourceName, String propertyName, String regexScrub, String azureClientId) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
-        LogEventAdapter adapter = new LogEventAdapter(regexScrub, azureClientId);
+        LogEventAdapter adapter = new LogEventAdapter(regexScrub, azureClientId, null);
         LogEntry entry = adapter.createEntry(event);
         assertAll(
             () -> {

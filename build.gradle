@@ -36,6 +36,8 @@ dependencies {
     implementation 'io.gsonfire:gson-fire:1.8.5'
     implementation 'org.slf4j:slf4j-api:1.7.25'
     implementation 'org.apache.commons:commons-lang3:3.9'
+    implementation 'com.jayway.jsonpath:json-path:2.5.0'
+
     testImplementation (
         "org.junit.jupiter:junit-jupiter:${junitVersion}",
         "com.github.stefanbirkner:system-lambda:1.0.0",

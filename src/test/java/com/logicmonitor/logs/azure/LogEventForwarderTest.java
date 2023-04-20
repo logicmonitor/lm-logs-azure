@@ -120,4 +120,42 @@ public class LogEventForwarderTest {
                 });
     }
 
+    @ParameterizedTest
+    @CsvSource({
+        "activity_storage_account.json, '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.STORAGE/STORAGEACCOUNTS/ACCOUNT-1 /SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.STORAGE/STORAGEACCOUNTS/account-1',      'MICROSOFT.STORAGE/STORAGEACCOUNTS'",
+        "activity_webapp.json,          '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.WEB/SERVERFARMS/ASP-1 /SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.WEB/SERVERFARMS/ASP-1',      'MICROSOFT.WEB/SERVERFARMS'",
+        "resource_db_account.json,      '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.DOCUMENTDB/DATABASEACCOUNTS/ACCOUNT-2 /SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.DOCUMENTDB/DATABASEACCOUNTS/ACCOUNT-1',      'MICROSOFT.DOCUMENTDB/DATABASEACCOUNTS'",
+        "resource_sql.json,             '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.SQL/SERVERS/DBSERVER-1/DATABASES/DB-2 /SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.SQL/SERVERS/SERVER-1/DATABASES/DB-1',        'MICROSOFT.SQL/SERVERS MICROSOFT.SQL/SERVERS'",
+        "resource_vault.json,           '/SUBSCRIPTIONS/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/RESOURCEGROUPS/RESOURCE-GROUP-1/PROVIDERS/MICROSOFT.KEYVAULT/VAULTS/VAULT-1',      'MICROSOFT.KEYVAULT/VAULTS'",
+        "vm_catalina.json,              '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1',     'Microsoft.Compute/virtualMachines'",
+        "vm_syslog.json,                '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1',     'Microsoft.Compute/virtualMachines'",
+        "windows_vm_log.json,           '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-win',       'Microsoft.Compute/virtualMachines'",
+    })
+    public void testMetadata(String resourceName, String expectedIds, String expectedType)
+        throws Exception {
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
+            .and(LogEventForwarder.PARAMETER_INCLUDE_METADATA_KEYS, "resourceId,identity")
+            .execute(() -> {
+                LogEventAdapter adapter = LogEventForwarder.configureAdapter();
+                List<String> events = TestJsonUtils.getJsonStringList(resourceName);
+                List<LogEntry> entries = events.stream()
+                    .map(adapter)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+                Set<String> metadataIds = entries.stream()
+                    .map(e -> e.getMetadata().get(LogEventAdapter.LM_AZURE_RESOURCE_ID)).collect(
+                        Collectors.toSet());
+                Set<String> metadataType = entries.stream()
+                    .map(e -> e.getMetadata().get(LogEventAdapter.LM_EVENTSOURCE)).collect(
+                        Collectors.toSet());
+                assertNotNull(metadataIds);
+                assertNotNull(metadataType);
+                assertEquals(Arrays.stream(expectedIds.split(" ")).collect(Collectors.toSet()),
+                    metadataIds);
+                assertEquals(Arrays.stream(expectedType.split(" ")).collect(Collectors.toSet()),
+                    metadataType);
+
+            });
+    }
+
 }
