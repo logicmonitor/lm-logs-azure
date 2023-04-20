@@ -30,12 +30,10 @@
       }
     },
     "Include_Metadata_keys": {
-      "type": "array",
-      "defaultValue": [
-        "resourceId"
-      ],
+      "type": "string",
+      "defaultValue":"resourceId",
       "metadata": {
-        "description": "Metadata "
+        "description": "comma separated keys to add as event metadata in a lm-log event. for nested json specify '.' eg - properties.functionName,properties.message "
       }
     },
     "enableActivityLogs": {

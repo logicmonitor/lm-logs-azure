@@ -15,7 +15,7 @@
       "type": "string"
     },
     "Include_Metadata_keys": {
-      "type": "array"
+      "type": "string"
     },
     "azure_region": {
       "type": "string"
