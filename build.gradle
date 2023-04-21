@@ -4,7 +4,7 @@ plugins {
 }
 
 group "com.logicmonitor"
-version "1.4"
+version "1.5"
 
 def jerseyVersion = "2.31"
 def junitVersion = "5.6.2"
@@ -35,6 +35,9 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
     implementation 'io.gsonfire:gson-fire:1.8.5'
     implementation 'org.slf4j:slf4j-api:1.7.25'
+    implementation 'org.apache.commons:commons-lang3:3.9'
+    implementation 'com.jayway.jsonpath:json-path:2.5.0'
+
     testImplementation (
         "org.junit.jupiter:junit-jupiter:${junitVersion}",
         "com.github.stefanbirkner:system-lambda:1.0.0",

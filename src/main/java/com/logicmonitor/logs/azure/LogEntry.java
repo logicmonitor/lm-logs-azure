@@ -14,6 +14,16 @@ public class LogEntry {
     public static final String JSON_PROPERTY_LM_RESOURCE_ID = "_lm.resourceId";
     private Map<String, String> lmResourceId = new HashMap<>();
 
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
+    }
+
+    private Map<String, String> metadata = new HashMap<>();
+
 
     public LogEntry message(String message) {
         this.message = message;
