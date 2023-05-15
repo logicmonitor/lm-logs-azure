@@ -29,6 +29,14 @@
         "description": "Application Client Id provided during the creation of azure account in LM"
       }
     },
+    "Include_Metadata_keys": {
+      "type": "string",
+      "defaultValue":"resourceId",
+      "allowedValues": ["resourceId"],
+      "metadata": {
+        "description": "comma separated keys to add as event metadata in a lm-log event. for nested json specify '.' eg - properties.functionName,properties.message "
+      }
+    },
     "enableActivityLogs": {
       "type": "String",
       "allowedValues": [
@@ -79,6 +87,9 @@
           },
           "sourceCodeBranch": {
             "value": "[variables('sourceCodeBranch')]"
+          },
+          "Include_Metadata_keys": {
+            "value": "[parameters('Include_Metadata_keys')]"
           }
         }
       },

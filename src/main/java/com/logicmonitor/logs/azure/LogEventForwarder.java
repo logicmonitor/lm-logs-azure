@@ -82,7 +82,10 @@ public class LogEventForwarder {
      * Parameter: Azure Application Client ID
      */
     public static final String PARAMETER_AZURE_CLIENT_ID = "AzureClientID";
-
+    /**
+     * Parameter: comma separated metadata keys to look in azure events and then add to metadata
+     */
+    public static final String PARAMETER_INCLUDE_METADATA_KEYS = "Include_Metadata_keys";
     /**
      * Transforms Azure log events into log entries.
      */
@@ -109,7 +112,9 @@ public class LogEventForwarder {
      * @return LogEventAdapter instance
      */
     protected static LogEventAdapter configureAdapter() {
-        return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB), System.getenv(PARAMETER_AZURE_CLIENT_ID));
+        return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB),
+            System.getenv(PARAMETER_AZURE_CLIENT_ID),
+            System.getenv(PARAMETER_INCLUDE_METADATA_KEYS));
     }
 
     public Logs configureLogs(){
@@ -157,7 +162,7 @@ public class LogEventForwarder {
                 " log entries for devices " + getResourceIds(logEntries));
         for(LogEntry logEntry : logEntries){
             try {
-                Optional<ApiResponse> response = logs.sendLogs(logEntry.getMessage(), logEntry.getLmResourceId(), null, logEntry.getTimestamp());
+                Optional<ApiResponse> response = logs.sendLogs(logEntry.getMessage(), logEntry.getLmResourceId(), logEntry.getMetadata(), logEntry.getTimestamp());
                 if (response != null && response.isPresent()) {
                     logResponse(context, response.get());
                 }
