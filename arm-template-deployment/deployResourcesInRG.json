@@ -185,7 +185,7 @@
             },
             {
               "name": "LOG_LEVEL",
-              "value" : "INFO"
+              "value" : "WARNING"
             }
           ]
         }
