@@ -65,7 +65,6 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
 
             return Response
                 .status(Status.ACCEPTED)
-                .entity(new LogEventForwarder.MyResponse().success(true))
                 .header("X-Request-ID", TEST_REQUEST_ID)
                 .build();
         }

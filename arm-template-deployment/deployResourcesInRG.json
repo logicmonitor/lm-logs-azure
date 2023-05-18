@@ -182,6 +182,10 @@
             {
               "name": "Include_Metadata_keys",
               "value" : "[parameters('Include_Metadata_keys')]"
+            },
+            {
+              "name": "LOG_LEVEL",
+              "value" : "WARNING"
             }
           ]
         }
