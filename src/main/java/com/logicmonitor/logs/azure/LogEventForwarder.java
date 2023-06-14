@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import com.logicmonitor.sdk.data.Configuration;
@@ -31,6 +32,7 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.Cardinality;
 import com.microsoft.azure.functions.annotation.EventHubTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
+import org.apache.commons.lang3.StringUtils;
 import org.openapitools.client.ApiCallback;
 import org.openapitools.client.ApiException;
 import org.openapitools.client.ApiResponse;
@@ -90,9 +92,37 @@ public class LogEventForwarder {
      * Transforms Azure log events into log entries.
      */
     private static LogEventAdapter adapter;
+    private static final String LOG_LEVEL = "LOG_LEVEL";
+    private static final Level DEFAULT_LOG_LEVEL = Level.WARNING;
+    private static final Logger LOGGER ;
+
+    static {
+        setupGlobalLogger();
+        LOGGER = Logger.getLogger("LogForwarder");
+        try {
+            String logLevel = System.getenv(LOG_LEVEL);
+            if (StringUtils.isNotBlank(logLevel)) {
+                Level level = Level.parse(logLevel);
+                LOGGER.setLevel(level);
+            }
+        } catch (IllegalArgumentException e) {
+            LOGGER.setLevel(DEFAULT_LOG_LEVEL);
+        }
+    }
+    private static void setupGlobalLogger(){
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s%n");
+    }
+    protected static void log(Level level, String message) {
+        LOGGER.log(level,message);
+    }
 
    public final Configuration conf = new Configuration();
-   public  MyResponse responseInterface = new MyResponse();
+
+    public void setResponseInterface(final ExecutionContext context) {
+        this.responseInterface = new LogIngestResponse(context, context.getLogger());
+    }
+
+    public LogIngestResponse responseInterface ;
 
     /**
      * Gets the log adapter instance (initializes it when needed).
@@ -151,6 +181,7 @@ public class LogEventForwarder {
                     connection = "LogsEventHubConnectionString") List<String> logEvents,
             final ExecutionContext context
     ) {
+        setResponseInterface(context);
         Logs logs = configureLogs();
         List<LogEntry> logEntries = processEvents(logEvents);
         if (logEntries.isEmpty()) {
@@ -158,7 +189,7 @@ public class LogEventForwarder {
             return;
         }
 
-        log(context, Level.INFO, () -> "Sending " + logEntries.size() +
+        log(context, Level.FINE, () -> "Sending " + logEntries.size() +
                 " log entries for devices " + getResourceIds(logEntries));
         for(LogEntry logEntry : logEntries){
             try {
@@ -211,7 +242,7 @@ public class LogEventForwarder {
      */
     private static void log(final ExecutionContext context, Level level,
             Supplier<String> msgSupplier) {
-        context.getLogger().log(level, () -> String.format("[%s][%s] %s",
+        LOGGER.log(level, () -> String.format("[%s][%s] %s",
                 context.getFunctionName(), context.getInvocationId(), msgSupplier.get()));
     }
 
@@ -254,25 +285,34 @@ public class LogEventForwarder {
     }
 
 
-    static class MyResponse implements ApiCallback {
+      class LogIngestResponse implements ApiCallback {
 
         public static final String JSON_PROPERTY_SUCCESS = "success";
         private Boolean success;
 
-        public MyResponse success(Boolean success) {
+        public ExecutionContext getContext() {
+            return context;
+        }
+
+        ExecutionContext context;
+
+        public LogIngestResponse(final ExecutionContext context, Logger logger) {
+            this.context = context;
+        }
+        public LogIngestResponse success(Boolean success) {
             this.success = success;
             return this;
         }
 
         @Override
         public void onFailure(org.openapitools.client.ApiException e, int i, Map map) {
-
+            LogEventForwarder.log(Level.SEVERE, String.format("[%s][%s] Failed to ingest logs to Logicmonitor. Error = %s", this.getContext().getFunctionName(), this.getContext().getInvocationId(), e.getMessage()));
         }
 
         @Override
         public void onSuccess(Object o, int i, Map map) {
-
-        }
+            LogEventForwarder.log(Level.INFO, String.format("[%s][%s] Successfully ingested logs to Logicmonitor. x-request-id=%s",this.getContext().getFunctionName(), this.getContext().getInvocationId(), map.get("x-request-id")));
+       }
 
         @Override
         public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {

@@ -15,6 +15,7 @@
         "LogRegexScrub": "<regex pattern>",
         "AzureClientID": "<Azure Application ID>",
         "APPLICATION_NAME": "lm-logs-azure",
-        "Include_Metadata_keys" : "resourceId"
+        "Include_Metadata_keys" : "resourceId",
+        "LOG_LEVEL" : "WARNING"
     }
 }
