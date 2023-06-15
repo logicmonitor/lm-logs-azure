@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "variables": {
     "sourceCodeBranch" : "master",
-    "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',variables('sourceCodeBranch'),'/arm-template-deployment/')]",
+    "templateBaseUri": "[concat('https://raw.githubusercontent.com/ckcompton/lm-logs-azure/',variables('sourceCodeBranch'),'/arm-template-deployment/')]",
     "deploymentResourceGroupName": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('resource_group_region'),' ',''),'-group')]",
     "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('resource_group_region'),' ',''))]",
     "eventhubLogsName": "log-hub",

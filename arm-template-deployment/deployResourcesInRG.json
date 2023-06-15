@@ -71,17 +71,18 @@
             }
           },
           "keySource": "Microsoft.Storage"
-        }
+        },
+        "allowBlobPublicAccess": false
       },
       "dependsOn": []
     },
     {
       "type": "Microsoft.Web/serverfarms",
       "sku": {
-        "name": "S1",
-        "tier": "Standard",
-        "size": "S1",
-        "family": "S",
+        "name": "B1",
+        "tier": "Basic",
+        "size": "B1",
+        "family": "B",
         "capacity": 1
       },
       "kind": "Linux",
