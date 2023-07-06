@@ -11,6 +11,9 @@
     "LM_Access_Key": {
       "type": "string"
     },
+    "LM_Bearer_Token": {
+      "type": "String"
+    },
     "Azure_Client_Id": {
       "type": "string"
     },
@@ -154,6 +157,10 @@
             {
               "name": "LM_ACCESS_KEY",
               "value": "[parameters('LM_Access_Key')]"
+            },
+            {
+              "name": "LM_BEARER_TOKEN",
+              "value": "[parameters('LM_Bearer_Token')]"
             },
             {
               "name": "AzureClientID",

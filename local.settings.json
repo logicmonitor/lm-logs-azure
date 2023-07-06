@@ -9,6 +9,7 @@
         "LM_COMPANY": "<LogicMonitor company name>",
         "LM_ACCESS_ID": "<LogicMonitor access ID>",
         "LM_ACCESS_KEY": "<LogicMonitor access key>",
+        "LM_BEARER_TOKEN": "<LogicMonitor bearer token>",
         "LogApiClientConnectTimeout": "10000",
         "LogApiClientReadTimeout": "10000",
         "LogApiClientDebugging": "false",

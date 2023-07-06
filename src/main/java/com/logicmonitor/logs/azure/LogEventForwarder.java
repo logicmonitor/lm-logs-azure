@@ -65,6 +65,11 @@ public class LogEventForwarder {
      */
     public static final String PARAMETER_ACCESS_KEY = "LM_ACCESS_KEY";
     /**
+     * Parameter: LogicMonitor bearer token.
+     */
+    public static final String PARAMETER_BEARER_TOKEN = "LM_BEARER_TOKEN";
+
+    /**
      * Parameter: connection timeout in milliseconds (default 10000).
      */
     public static final String PARAMETER_CONNECT_TIMEOUT = "LogApiClientConnectTimeout";
@@ -116,7 +121,23 @@ public class LogEventForwarder {
         LOGGER.log(level,message);
     }
 
-   public final Configuration conf = new Configuration();
+   public final Configuration conf = createDataSdkConfig();
+
+    protected static Configuration createDataSdkConfig() {
+        String company = System.getenv(PARAMETER_COMPANY_NAME);
+        String accessId = System.getenv(PARAMETER_ACCESS_ID);
+        String accessKey = System.getenv(PARAMETER_ACCESS_KEY);
+        String bearerToken = System.getenv(PARAMETER_BEARER_TOKEN);
+        if (StringUtils.isNoneBlank(accessKey, accessId)) {
+            // configure with null bearer token
+            log(Level.INFO, "Using LMv1 for authentication with Logicmonitor.");
+            return new Configuration(company, accessId, accessKey, null);
+        } else {
+            // configure with just Bearer token
+            log(Level.INFO, "Using bearer token for authentication with Logicmonitor.");
+            return new Configuration(company, null, null, bearerToken);
+        }
+    }
 
     public void setResponseInterface(final ExecutionContext context) {
         this.responseInterface = new LogIngestResponse(context, context.getLogger());
