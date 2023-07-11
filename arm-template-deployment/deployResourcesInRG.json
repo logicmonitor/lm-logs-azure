@@ -37,7 +37,7 @@
     "functionServerfarms": "[concat(variables('eventhubNamespace'),'-service-plan')]",
     "listener": "listener",
     "sender": "sender",
-    "lm_auth": "[concat('{ \"LM_ACCESS_ID\" : \"','parameters('LM_Access_Id')','\", \"LM_ACCESS_KEY\" : \"', 'parameters('LM_Access_Key')', '\", \"LM_BEARER_TOKEN\" : \"', 'parameters('LM_Bearer_Token')', '\" }' )]"
+    "lm_auth": "[concat('{ \"LM_ACCESS_ID\" : \"',parameters('LM_Access_Id'),'\", \"LM_ACCESS_KEY\" : \"', parameters('LM_Access_Key'), '\", \"LM_BEARER_TOKEN\" : \"', parameters('LM_Bearer_Token'), '\" }')]"
   },
   "resources": [
     {
