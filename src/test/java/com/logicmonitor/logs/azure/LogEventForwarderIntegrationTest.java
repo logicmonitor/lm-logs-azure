@@ -79,8 +79,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
 
     @Before
     public void setupLogEventForwarder() throws Exception {
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_ACCESS_ID, TEST_ID)
-            .and(LogEventForwarder.PARAMETER_ACCESS_KEY, TEST_KEY)
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
             .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
             .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
             .and(LogEventForwarder.PARAMETER_COMPANY_NAME, "localhost")
@@ -107,8 +106,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
                                             Integer readTimeout, Boolean debugging, String regexScrub) throws Exception {
 
         withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
-                .and(LogEventForwarder.PARAMETER_ACCESS_ID, "id")
-                .and(LogEventForwarder.PARAMETER_ACCESS_KEY, "key")
+                .and(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
                 .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, "azureClientId")
                 .and(LogEventForwarder.PARAMETER_CONNECT_TIMEOUT,
                         connectTimeout != null ? connectTimeout.toString() : null)
@@ -119,7 +117,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
                 .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, regexScrub)
                 .execute(() -> {
                             LogEventAdapter adapter = LogEventForwarder.configureAdapter();
-                            Configuration conf = new Configuration();
+                            Configuration conf = LogEventForwarder.createDataSdkConfig();
                             assertAll(
                                     () -> assertEquals(companyName,
                                             conf.getCompany()),
@@ -133,8 +131,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
 
     @Test
     public void testForwardEmptyList() throws Exception {
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_ACCESS_ID, TEST_ID)
-                .and(LogEventForwarder.PARAMETER_ACCESS_KEY, TEST_KEY)
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
                 .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
                 .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
                 .and(LogEventForwarder.PARAMETER_COMPANY_NAME, "localhost")

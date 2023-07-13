@@ -11,6 +11,9 @@
     "LM_Access_Key": {
       "type": "string"
     },
+    "LM_Bearer_Token": {
+      "type": "String"
+    },
     "Azure_Client_Id": {
       "type": "string"
     },
@@ -33,7 +36,8 @@
     "ConsumergroupsLogsName": "LMConsumerGroup",
     "functionServerfarms": "[concat(variables('eventhubNamespace'),'-service-plan')]",
     "listener": "listener",
-    "sender": "sender"
+    "sender": "sender",
+    "lm_auth": "[concat('{ \"LM_ACCESS_ID\" : \"',parameters('LM_Access_Id'),'\", \"LM_ACCESS_KEY\" : \"', parameters('LM_Access_Key'), '\", \"LM_BEARER_TOKEN\" : \"', parameters('LM_Bearer_Token'), '\" }')]"
   },
   "resources": [
     {
@@ -148,12 +152,8 @@
               "value": "[parameters('LM_Company_name')]"
             },
             {
-              "name": "LM_ACCESS_ID",
-              "value": "[parameters('LM_Access_Id')]"
-            },
-            {
-              "name": "LM_ACCESS_KEY",
-              "value": "[parameters('LM_Access_Key')]"
+              "name" : "LM_AUTH",
+              "value" : "[variables('lm_auth')]"
             },
             {
               "name": "AzureClientID",
