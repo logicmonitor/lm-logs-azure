@@ -7,9 +7,6 @@
         "AzureWebJobsStorage": "<Web Storage connection string>",
         "LogsEventHubConnectionString": "<Event Hub connection string>",
         "LM_COMPANY": "<LogicMonitor company name>",
-        "LM_ACCESS_ID": "<LogicMonitor access ID>",
-        "LM_ACCESS_KEY": "<LogicMonitor access key>",
-        "LM_BEARER_TOKEN": "<LogicMonitor bearer token>",
         "LogApiClientConnectTimeout": "10000",
         "LogApiClientReadTimeout": "10000",
         "LogApiClientDebugging": "false",
@@ -17,6 +14,7 @@
         "AzureClientID": "<Azure Application ID>",
         "APPLICATION_NAME": "lm-logs-azure",
         "Include_Metadata_keys" : "resourceId",
-        "LOG_LEVEL" : "WARNING"
+        "LOG_LEVEL" : "WARNING",
+        "LM_AUTH": "{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"token\"}"
     }
 }

@@ -26,6 +26,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.logicmonitor.sdk.data.Configuration;
 import com.logicmonitor.sdk.data.api.Logs;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -56,6 +59,10 @@ public class LogEventForwarder {
      * Parameter: company in the target URL '{company}.logicmonitor.com'.
      */
     public static final String PARAMETER_COMPANY_NAME = "LM_COMPANY";
+    /**
+     * Parameter: LogicMonitor auth as json.
+     */
+    public static final String PARAMETER_LM_AUTH = "LM_AUTH";
     /**
      * Parameter: LogicMonitor access ID.
      */
@@ -101,6 +108,8 @@ public class LogEventForwarder {
     private static final Level DEFAULT_LOG_LEVEL = Level.WARNING;
     private static final Logger LOGGER ;
 
+    private static final Gson GSON = new GsonBuilder().create();
+
     static {
         setupGlobalLogger();
         LOGGER = Logger.getLogger("LogForwarder");
@@ -125,17 +134,26 @@ public class LogEventForwarder {
 
     protected static Configuration createDataSdkConfig() {
         String company = System.getenv(PARAMETER_COMPANY_NAME);
-        String accessId = System.getenv(PARAMETER_ACCESS_ID);
-        String accessKey = System.getenv(PARAMETER_ACCESS_KEY);
-        String bearerToken = System.getenv(PARAMETER_BEARER_TOKEN);
-        if (StringUtils.isNoneBlank(accessKey, accessId)) {
-            // configure with null bearer token
-            log(Level.INFO, "Using LMv1 for authentication with Logicmonitor.");
-            return new Configuration(company, accessId, accessKey, null);
-        } else {
-            // configure with just Bearer token
-            log(Level.INFO, "Using bearer token for authentication with Logicmonitor.");
-            return new Configuration(company, null, null, bearerToken);
+        try {
+            JsonObject authConf = GSON.fromJson(System.getenv(PARAMETER_LM_AUTH), JsonObject.class);
+            System.out.println(authConf);
+            String accessId = authConf.get(PARAMETER_ACCESS_ID).getAsString();
+            String accessKey = authConf.get(PARAMETER_ACCESS_KEY).getAsString();
+            String bearerToken = authConf.get(PARAMETER_BEARER_TOKEN).getAsString();
+
+            if (StringUtils.isNoneBlank(accessKey, accessId)) {
+                // configure with null bearer token
+                log(Level.FINE, "Using LMv1 for authentication with Logicmonitor.");
+                return new Configuration(company, accessId, accessKey, null);
+            } else {
+                // configure with just Bearer token
+                log(Level.FINE, "Using bearer token for authentication with Logicmonitor.");
+                return new Configuration(company, null, null, bearerToken);
+            }
+        } catch (Exception e) {
+            log(Level.SEVERE, "Unable to configure LM Data SDK config with ENV var LM_AUTH. Log Ingestion will be interrupted. Error : " + e.getMessage());
+            return new Configuration();
+
         }
     }
 
@@ -218,8 +236,8 @@ public class LogEventForwarder {
                 if (response != null && response.isPresent()) {
                     logResponse(context, response.get());
                 }
-            } catch (final ApiException | IOException e) {
-                log(context, Level.SEVERE, () -> "Exception occurred while processing the request: " + e);
+            } catch (final Exception  e) {
+                log(context, Level.SEVERE, () -> "Exception occurred while processing the request: " + e.getMessage());
             }
         }
 

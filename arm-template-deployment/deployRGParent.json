@@ -21,7 +21,7 @@
       "type": "String",
       "defaultValue":"",
       "metadata": {
-        "description": "If specified, make sure you also specify LM_Access_Key."
+        "description": "LogicMonitor API Token access ID."
       }
 
     },
@@ -29,14 +29,14 @@
       "type": "String",
       "defaultValue":"",
       "metadata": {
-        "description": "If specified, make sure you also specify LM_Access_Id."
+        "description": "LogicMonitor API Token access Key."
       }
     },
     "LM_Bearer_Token": {
       "type": "String",
       "defaultValue":"",
       "metadata": {
-        "description": "Required if LM_Access_Id and LM_Access_Key are not specified."
+        "description": "LM API Bearer Token.\nEither specify access_id and access_key both or bearer_token. If all specified, LMv1 token(access_id and access_key) will be used for authentication with LogicMonitor."
       }
     },
     "Azure_Client_Id": {
