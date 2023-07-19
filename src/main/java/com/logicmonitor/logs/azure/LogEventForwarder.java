@@ -136,7 +136,6 @@ public class LogEventForwarder {
         String company = System.getenv(PARAMETER_COMPANY_NAME);
         try {
             JsonObject authConf = GSON.fromJson(System.getenv(PARAMETER_LM_AUTH), JsonObject.class);
-            System.out.println(authConf);
             String accessId = authConf.get(PARAMETER_ACCESS_ID).getAsString();
             String accessKey = authConf.get(PARAMETER_ACCESS_KEY).getAsString();
             String bearerToken = authConf.get(PARAMETER_BEARER_TOKEN).getAsString();
