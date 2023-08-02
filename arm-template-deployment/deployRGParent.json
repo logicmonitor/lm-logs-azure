@@ -18,10 +18,26 @@
       "type": "String"
     },
     "LM_Access_Id": {
-      "type": "String"
+      "type": "String",
+      "defaultValue":"",
+      "metadata": {
+        "description": "LogicMonitor API Token access ID."
+      }
+
     },
     "LM_Access_Key": {
-      "type": "String"
+      "type": "String",
+      "defaultValue":"",
+      "metadata": {
+        "description": "LogicMonitor API Token access Key."
+      }
+    },
+    "LM_Bearer_Token": {
+      "type": "String",
+      "defaultValue":"",
+      "metadata": {
+        "description": "LM API Bearer Token.\nEither specify access_id and access_key both or bearer_token. If all specified, LMv1 token(access_id and access_key) will be used for authentication with LogicMonitor."
+      }
     },
     "Azure_Client_Id": {
       "type": "string",
@@ -51,6 +67,7 @@
   },
   "resources": [
     {
+      "condition": "[or(and(not(empty(parameters('LM_Access_Id'))), not(empty(parameters('LM_Access_Key')))), not(empty(parameters('LM_Bearer_Token'))))]",
       "type": "Microsoft.Resources/resourceGroups",
       "apiVersion": "2018-05-01",
       "location": "[parameters('resource_group_region')]",
@@ -81,6 +98,9 @@
           },
           "LM_Access_Key": {
             "value": "[parameters('LM_Access_Key')]"
+          },
+          "LM_Bearer_Token": {
+            "value": "[parameters('LM_Bearer_Token')]"
           },
           "Azure_Client_Id": {
             "value": "[parameters('Azure_Client_Id')]"

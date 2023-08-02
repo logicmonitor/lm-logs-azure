@@ -42,8 +42,7 @@ public class LogEventForwarderTest {
             Integer readTimeout, Boolean debugging, String regexScrub) throws Exception {
 
         withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
-            .and(LogEventForwarder.PARAMETER_ACCESS_ID, "id")
-            .and(LogEventForwarder.PARAMETER_ACCESS_KEY, "key")
+                .and(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
             .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, "azureClientId")
             .and(LogEventForwarder.PARAMETER_CONNECT_TIMEOUT,
                     connectTimeout != null ? connectTimeout.toString() : null)
@@ -54,7 +53,7 @@ public class LogEventForwarderTest {
             .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, regexScrub)
             .execute(() -> {
                 LogEventAdapter adapter = LogEventForwarder.configureAdapter();
-                Configuration conf = new Configuration();
+                Configuration conf = LogEventForwarder.createDataSdkConfig();
                 assertAll(
                     () -> assertEquals(companyName,
                             conf.getCompany()),
