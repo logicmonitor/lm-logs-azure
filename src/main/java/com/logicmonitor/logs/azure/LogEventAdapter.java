@@ -130,7 +130,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         }
         this.azureClientId = azureClientId;
         this.metadataDeepPath = StringUtils.isNotBlank(includeMetadataKeys) ? Arrays.stream(
-                StringUtils.split(StringUtils.strip(includeMetadataKeys), ","))
+                StringUtils.split(includeMetadataKeys, ",")).map(StringUtils::strip)
             .collect(Collectors.toSet()) : new HashSet<>();
     }
 
