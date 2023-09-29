@@ -77,7 +77,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      */
     public static final Set<String> AUDIT_LOG_CATEGORIES = Set.of("administrative", "serviceHealth", "resourcehealth", "alert", "autoscale", "security", "policy", "recommendation");
 
-    public static final String LM_SEVERITY = "severity";
+    public static final String LM_SEVERITY = "log_level";
     public static final String LM_ACTIVITY_TYPE = "activity_type";
     public static final String LM_AZURE_RESOURCE_ID = "azure_resource_id";
     public static final String LM_CATEGORY = "category";
