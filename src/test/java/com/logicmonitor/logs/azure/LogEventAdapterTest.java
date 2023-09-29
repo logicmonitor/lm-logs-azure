@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import com.google.gson.JsonElement;
@@ -109,6 +110,21 @@ public class LogEventAdapterTest {
 
             }
         );
+    }
+
+
+    @Test
+    public void jsonMetadataExtractionTest() {
+        JsonObject event = TestJsonUtils.getFirstLogEvent("activity_webapp.json");
+        LogEventAdapter adapter = new LogEventAdapter("testRegexScrub", "testAzureClientId", " resultType, callerIpAddress  , identity.authorization , non_existing_key");
+        LogEntry entry = adapter.createEntry(event);
+        assertEquals(entry.getMetadata().get("resultType"), "Start");
+        assertEquals(entry.getMetadata().get("callerIpAddress"), "10.10.10.10");
+        assertEquals(entry.getMetadata().get("identity.authorization.scope"), "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourcegroups/resource-group-1/providers/Microsoft.Web/serverfarms/ASP-1");
+        assertEquals(entry.getMetadata().get("identity.authorization.action"), "Microsoft.Web/serverfarms/write");
+        assertEquals(entry.getMetadata().get("identity.authorization.evidence.role"), "Subscription Admin");
+
+        assertEquals(entry.getMetadata().get("non_existing_key"), null);
     }
 
 }
