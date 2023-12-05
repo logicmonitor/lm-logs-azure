@@ -52,6 +52,13 @@
         "description": "comma separated keys to add as event metadata in a lm-log event. for nested json specify '.' eg - properties.functionName,properties.message "
       }
     },
+    "LMTenantId": {
+      "type": "string",
+      "defaultValue":"",
+      "metadata": {
+        "description": "LogicMonitor Tenant Identifier sent as event metadata to LogicMonitor"
+      }
+    },
     "enableActivityLogs": {
       "type": "String",
       "allowedValues": [
@@ -109,6 +116,9 @@
           },
           "Include_Metadata_keys": {
             "value": "[parameters('Include_Metadata_keys')]"
+          },
+          "LMTenantId" : {
+            "value": "[parameters('LMTenantId')]"
           }
         }
       },
