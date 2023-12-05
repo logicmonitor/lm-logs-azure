@@ -88,6 +88,8 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     public static final String AZURE_ACTIVITY_TYPE = "operationName";
     public static final String AZURE_RESOURCE_ID = "resourceId";
     public static final String AZURE_CATEGORY = "category";
+    public static final String LM_TENANT_ID = "LM_TENANT_ID";
+    public static final String LM_TENANT_ID_KEY = "_lm.tenantId";
 
     public static final Pattern RESOURCE_TYPE = Pattern.compile("/subscriptions/.*/resourceGroups/.*/providers/(?<type>[^/]*/[^/]*)/.*", Pattern.CASE_INSENSITIVE);
     /**
@@ -216,6 +218,12 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         metadata.putAll(REQ_STATIC_METADATA);
         // Add metadata for includeMetadataKeys
         metadata.putAll(addMissingMetadataFromJsonEvent(json));
+
+        String tenantId = System.getenv(LM_TENANT_ID);
+        if (StringUtils.isNotBlank(tenantId)) {
+            metadata.put(LM_TENANT_ID_KEY, tenantId);
+        }
+
         entry.setMetadata(metadata);
         if (scrubPattern != null) {
             message = scrubPattern.matcher(message).replaceAll("");

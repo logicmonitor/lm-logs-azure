@@ -16,6 +16,7 @@ package com.logicmonitor.logs.azure;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import com.google.gson.GsonBuilder;
 import java.time.Instant;
 import java.util.List;
@@ -114,17 +115,20 @@ public class LogEventAdapterTest {
 
 
     @Test
-    public void jsonMetadataExtractionTest() {
-        JsonObject event = TestJsonUtils.getFirstLogEvent("activity_webapp.json");
-        LogEventAdapter adapter = new LogEventAdapter("testRegexScrub", "testAzureClientId", " resultType, callerIpAddress  , identity.authorization , non_existing_key");
-        LogEntry entry = adapter.createEntry(event);
-        assertEquals(entry.getMetadata().get("resultType"), "Start");
-        assertEquals(entry.getMetadata().get("callerIpAddress"), "10.10.10.10");
-        assertEquals(entry.getMetadata().get("identity.authorization.scope"), "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourcegroups/resource-group-1/providers/Microsoft.Web/serverfarms/ASP-1");
-        assertEquals(entry.getMetadata().get("identity.authorization.action"), "Microsoft.Web/serverfarms/write");
-        assertEquals(entry.getMetadata().get("identity.authorization.evidence.role"), "Subscription Admin");
+    public void jsonMetadataExtractionTest() throws Exception {
+        withEnvironmentVariable(LogEventAdapter.LM_TENANT_ID, "sample_tenant_id").execute(() -> {
+            JsonObject event = TestJsonUtils.getFirstLogEvent("activity_webapp.json");
+            LogEventAdapter adapter = new LogEventAdapter("testRegexScrub", "testAzureClientId", " resultType, callerIpAddress  , identity.authorization , non_existing_key");
+            LogEntry entry = adapter.createEntry(event);
+            assertEquals(entry.getMetadata().get("resultType"), "Start");
+            assertEquals(entry.getMetadata().get("callerIpAddress"), "10.10.10.10");
+            assertEquals(entry.getMetadata().get("identity.authorization.scope"), "/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourcegroups/resource-group-1/providers/Microsoft.Web/serverfarms/ASP-1");
+            assertEquals(entry.getMetadata().get("identity.authorization.action"), "Microsoft.Web/serverfarms/write");
+            assertEquals(entry.getMetadata().get("identity.authorization.evidence.role"), "Subscription Admin");
 
-        assertEquals(entry.getMetadata().get("non_existing_key"), null);
+            assertEquals(entry.getMetadata().get("non_existing_key"), null);
+            assertEquals(entry.getMetadata().get(LogEventAdapter.LM_TENANT_ID_KEY), "sample_tenant_id");
+        });
     }
 
 }

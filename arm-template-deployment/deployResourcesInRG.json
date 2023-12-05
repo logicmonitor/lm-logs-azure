@@ -157,6 +157,10 @@
               "value" : "[variables('lm_auth')]"
             },
             {
+              "name" : "LM_TENANT_ID",
+              "value" : "[parameters('LMTenantId')]"
+            },
+            {
               "name": "AzureClientID",
               "value": "[parameters('Azure_Client_Id')]"
             },
