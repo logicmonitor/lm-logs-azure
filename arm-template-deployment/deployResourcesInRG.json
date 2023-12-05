@@ -20,6 +20,9 @@
     "Include_Metadata_keys": {
       "type": "string"
     },
+    "LMTenantId": {
+      "type": "string"
+    },
     "azure_region": {
       "type": "string"
     },

@@ -54,6 +54,7 @@
     },
     "LMTenantId": {
       "type": "string",
+      "defaultValue":"",
       "metadata": {
         "description": "LogicMonitor Tenant Identifier sent as event metadata to LogicMonitor"
       }
