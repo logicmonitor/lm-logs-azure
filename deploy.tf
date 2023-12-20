@@ -38,6 +38,48 @@ variable "azure_client_id" {
   description = "Azure Application Client ID"
 }
 
+variable "lm_apiClientDebug" {
+  type = bool
+  description = "(optional) Enable API debugging"
+  default = false
+}
+
+variable "lm_logLevel" {
+  type        = string
+  description = "(optional) LM Log App log level"
+  default     = "WARNING"
+  validation {
+    condition = contains([
+      "TRACE",
+      "DEBUG",
+      "INFORMATION",
+      "WARNING",
+      "ERROR",
+      "CRITICAL",
+      "NONE",
+    ], upper(var.lm_logLevel) )
+    error_message = "lm_logLevel must be one of `TRACE`,`DEBUG`,`INFORMATION`,`WARNING`,`ERROR`,`CRITICAL`,`NONE`"
+  }
+}
+
+variable "lm_logRegexScrubPattern" {
+  type        = string
+  description = "(optional) Regex scrub string"
+  default     = null
+}
+
+variable "lm_sourceCodeBranch" {
+  type        = string
+  description = "(optional) Code branch to deploy lm azure app from."
+  default     = "master"
+}
+
+variable "lm_metadataKeys" {
+  type        = string
+  description = "(Optional) Metadata keys to include in records"
+  default     = "resourceId"
+}
+
 variable "tags" {
   description = "Tags given to the resources created by this template"
   type        = map(string)
@@ -59,6 +101,10 @@ locals {
       deployedBy = "Terraform"
     }
   )
+
+  lm_auth_string      = "{ \"LM_ACCESS_ID\" : \"${var.lm_access_id}\", \"LM_ACCESS_KEY\" : \"${var.lm_access_key}\", \"LM_BEARER_TOKEN\" : \"\" }"
+  lm_package_url      = "https://github.com/logicmonitor/lm-logs-azure/raw/${var.lm_sourceCodeBranch}/package/lm-logs-azure.zip"
+  lm_web_job_storage  = "DefaultEndpointsProtocol=https;AccountName=${azurerm_storage_account.lm_logs.name};AccountKey=${azurerm_storage_account.lm_logs.primary_access_key}"
 }
 
 ### Providers ###
@@ -153,31 +199,31 @@ resource "azurerm_function_app" "lm_logs" {
   https_only                 = true
   version                    = "~3"
   tags                       = local.tags
+
   site_config {
     always_on                    = true
     linux_fx_version             = "java|11"
     use_32_bit_worker_process    = false
   }
+
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME     = "java"
-    FUNCTIONS_EXTENSION_VERSION  = "~3"
-    WEBSITE_RUN_FROM_PACKAGE     = "https://github.com/logicmonitor/lm-logs-azure/raw/master/package/lm-logs-azure.zip"
-    LogsEventHubConnectionString = azurerm_eventhub_authorization_rule.lm_logs_listener.primary_connection_string
-    LogicMonitorCompanyName      = var.lm_company_name
-    LogicMonitorAccessId         = var.lm_access_id
-    LogicMonitorAccessKey        = var.lm_access_key
-    AzureClientID                = var.azure_client_id
-    /* Uncomment to set custom connection timeout */
-    # LogApiClientConnectTimeout   = 10000
-
-    /* Uncomment to set custom read timeout */
-    # LogApiClientReadTimeout      = 10000
-
-    /* Uncomment to turn on HTTP debugging */
-    # LogApiClientDebugging        = true
-
-    /* Uncomment to remove matching text from the logs */
-    # LogRegexScrub                = "\\d+\\.\\d+\\.\\d+\\.\\d+"
+    APPLICATION_NAME                = "lm-logs-azure"
+    AzureClientID                   = var.azure_client_id
+    AzureWebJobsStorage             = local.lm_web_job_storage
+    FUNCTION_APP_EDIT_MODE          = "readwrite"
+    FUNCTIONS_WORKER_RUNTIME        = "java"
+    FUNCTIONS_EXTENSION_VERSION     = "~4"
+    FUNCTIONS_WORKER_PROCESS_COUNT  = 1
+    Include_Metadata_keys           = var.lm_metadataKeys
+    LogsEventHubConnectionString    = azurerm_eventhub_authorization_rule.lm_logs_listener.primary_connection_string
+    LM_COMPANY                      = var.lm_company_name
+    LM_AUTH                         = local.lm_auth_string
+    LogApiClientConnectTimeout      = 10000
+    LogApiClientReadTimeout         = 10000
+    LogApiClientDebugging           = var.lm_apiClientDebug
+    LOG_LEVEL                       = var.lm_logLevel
+    LogRegexScrub                   = var.lm_logRegexScrubPattern
+    WEBSITE_RUN_FROM_PACKAGE        = local.lm_package_url
   }
 }
 
