@@ -12,6 +12,22 @@
  * the License.
  */
 
+### Terraform Setup ###
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 3.50.0"
+    }
+  }
+}
+
+
+### Providers ###
+provider "azurerm" {
+  features {}
+}
+
 ### Variables ###
 variable "lm_company_name" {
   type        = string
@@ -107,12 +123,6 @@ locals {
   lm_web_job_storage  = "DefaultEndpointsProtocol=https;AccountName=${azurerm_storage_account.lm_logs.name};AccountKey=${azurerm_storage_account.lm_logs.primary_access_key}"
 }
 
-### Providers ###
-provider "azurerm" {
-  version = ">= 2.0.0"
-  features {}
-}
-
 ### Resources ###
 ## Resource Groups ##
 resource "azurerm_resource_group" "lm_logs" {
@@ -173,37 +183,36 @@ resource "azurerm_storage_account" "lm_logs" {
   tags                     = local.tags
 }
 
-## App Service Plan ##
-resource "azurerm_app_service_plan" "lm_logs" {
+## Service Plan ##
+resource "azurerm_service_plan" "lm_logs" {
   name                = "${local.namespace}-service-plan"
   resource_group_name = azurerm_resource_group.lm_logs.name
   location            = var.azure_region
-  kind                = "FunctionApp"
-  reserved            = true
+  os_type             = "Linux"
+  sku_name            = "S1" 
   tags                = local.tags
-  sku {
-    tier = "Standard"
-    size = "S1"
-  }
+
 }
 
-## Function App ##
-resource "azurerm_function_app" "lm_logs" {
+## Linux Function App ##
+resource "azurerm_linux_function_app" "lm_logs" {
   name                       = local.namespace
   resource_group_name        = azurerm_resource_group.lm_logs.name
   location                   = var.azure_region
-  app_service_plan_id        = azurerm_app_service_plan.lm_logs.id
+  service_plan_id            = azurerm_service_plan.lm_logs.id
   storage_account_name       = azurerm_storage_account.lm_logs.name
   storage_account_access_key = azurerm_storage_account.lm_logs.primary_access_key
-  os_type                    = "linux"
   https_only                 = true
-  version                    = "~3"
   tags                       = local.tags
 
   site_config {
-    always_on                    = true
-    linux_fx_version             = "java|11"
-    use_32_bit_worker_process    = false
+    always_on         = true
+    use_32_bit_worker = false
+    http2_enabled     = true
+
+    application_stack{
+      java_version  = 11
+    }
   }
 
   app_settings = {
@@ -212,7 +221,6 @@ resource "azurerm_function_app" "lm_logs" {
     AzureWebJobsStorage             = local.lm_web_job_storage
     FUNCTION_APP_EDIT_MODE          = "readwrite"
     FUNCTIONS_WORKER_RUNTIME        = "java"
-    FUNCTIONS_EXTENSION_VERSION     = "~4"
     FUNCTIONS_WORKER_PROCESS_COUNT  = 1
     Include_Metadata_keys           = var.lm_metadataKeys
     LogsEventHubConnectionString    = azurerm_eventhub_authorization_rule.lm_logs_listener.primary_connection_string
