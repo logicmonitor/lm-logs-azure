@@ -15,17 +15,18 @@
 package com.logicmonitor.logs.azure;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
+
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.ReadContext;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 public class LogEventAdapterTest {
 
@@ -46,6 +47,24 @@ public class LogEventAdapterTest {
         LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id", null);
         List<LogEntry> entries = adapter.apply(events);
         assertEquals(expectedEntriesCount, entries.size());
+    }
+
+    @Test
+    public void testApplyWithoutErrorHandling(){
+        LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id", "properties");
+        String invalidJsonString = "InvalidJson";
+        adapter.apply(invalidJsonString);
+        List<LogEntry> result = adapter.apply(invalidJsonString);
+        assertEquals(Collections.emptyList(), result);
+    }
+
+    @Test
+    public void testApplyWithErrorHandling(){
+        LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id", "resourceId");
+        String invalidJsonString = "InvalidJson";
+//        when(adapter.apply(invalidJsonString)).thenThrow(new JsonSyntaxException("Invalid JSON"));
+        List<LogEntry> result = adapter.apply(invalidJsonString);
+        assertEquals(Collections.emptyList(), result);
     }
 
     @ParameterizedTest
@@ -112,6 +131,70 @@ public class LogEventAdapterTest {
         );
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "activity_storage_account.json, ,                                              , xyz",
+            "activity_webapp1.json,          ,            [\\w-.#]+@[\\w-.]+                , abc",
+            "resource_db_account.json,      ,            \\d+\\.\\d+\\.\\d+\\.\\d+         ,    ",
+            "resource_sql.json,             ,            '\"SubscriptionId\":\"[^\"]+\",'  ,    ",
+            "resource_vault.json,           ,            ''|\"                             ,    ",
+            "vm_catalina.json,              Msg,         .                                 ,    ",
+            "vm_syslog.json,                Msg,         \\d                               ,    ",
+            "windows_vm_log.json,           Description,                                   ,    ",
+            "resource_metrics.json,         ,                                              ,    "
+    })
+    public void testCreateEntryForGSON(String resourceName, String propertyName, String regexScrub, String azureClientId) {
+        JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
+        LogEventAdapter adapter = new LogEventAdapter(regexScrub, azureClientId, "resourceId");
+        LogEntry entry = adapter.createEntry(event);
+        assertAll(
+                () -> {
+                    if (azureClientId != null) {
+                        assertEquals(azureClientId, entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
+                    } else {
+                        String resourceId = event.get("resourceId").getAsString();
+                        assertEquals(resourceId, entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+                    }
+                },
+                () -> {
+                    Long timestamp = Optional.ofNullable(event.get("time"))
+                            .map(JsonElement::getAsString)
+                            .map(Instant::parse)
+                            .map(Instant::getEpochSecond)
+                            .orElse(null);
+                    assertEquals(timestamp, entry.getTimestamp());
+                },
+                () -> {
+                    String message;
+                    if (propertyName != null) {
+                        message = event.get("properties").getAsJsonObject().get(propertyName).getAsString();
+                    } else {
+                        message = TestJsonUtils.toString(event);
+                    }
+                    if (regexScrub != null) {
+                        message = message.replaceAll(regexScrub, "");
+                    }
+                    assertEquals(message, entry.getMessage());
+                },
+                () -> {
+                    Map<String, String> metadata = entry.getMetadata();
+                    LogEventMessage event_msg = new GsonBuilder().create()
+                            .fromJson(event, LogEventMessage.class);
+                    for (String key : metadata.keySet()) {
+                        if (LogEventAdapter.REQ_STATIC_METADATA.containsKey(key)) {
+                            assertEquals(metadata.get(key),
+                                    LogEventAdapter.REQ_STATIC_METADATA.get(key));
+
+                        } else {
+                            assertEquals(metadata.get(key),
+                                    LogEventAdapter.METADATA_KEYS_TO_GETTERS.get(key).apply(event_msg));
+                        }
+                    }
+
+                }
+        );
+    }
+
 
     @Test
     public void jsonMetadataExtractionTest() {
@@ -126,5 +209,7 @@ public class LogEventAdapterTest {
 
         assertEquals(entry.getMetadata().get("non_existing_key"), null);
     }
+
+
 
 }

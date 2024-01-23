@@ -14,21 +14,16 @@
 
 package com.logicmonitor.logs.azure;
 
-import com.google.gson.JsonArray;
+import com.google.gson.*;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -36,10 +31,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -122,6 +115,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
     private final Set<String> metadataDeepPath;
 
+
     public LogEventAdapter(String regexScrub, String azureClientId, String includeMetadataKeys) throws PatternSyntaxException {
         if (regexScrub != null) {
             scrubPattern = Pattern.compile(regexScrub);
@@ -143,6 +137,16 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         return scrubPattern;
     }
 
+
+    private String removeQuotesAndUnescape(String uncleanJson) {
+        String noQuotes = uncleanJson.replaceAll("^\"|\"$", "");
+
+        return StringEscapeUtils.unescapeJava(noQuotes);
+    }
+
+
+
+
     /**
      * Applies the log transformation.
      *
@@ -151,18 +155,36 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      */
     @Override
     public List<LogEntry> apply(String jsonString) {
-        JsonObject log = GSON.fromJson(jsonString, JsonObject.class);
-        // if the JSON object contains "records" array, transform its members
-        return Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
-            .filter(JsonElement::isJsonArray)
-            .map(JsonElement::getAsJsonArray)
-            .map(records -> StreamSupport.stream(records.spliterator(), true)
-                .filter(JsonElement::isJsonObject)
-                .map(JsonElement::getAsJsonObject)
-            )
-            .orElseGet(() -> Stream.of(log))
-            .map(this::createEntry)
-            .collect(Collectors.toList());
+//        JsonObject log = GSON.fromJson(jsonString, JsonObject.class);
+//        // if the JSON object contains "records" array, transform its members
+//        return Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
+//                .filter(JsonElement::isJsonArray)
+//                .map(JsonElement::getAsJsonArray)
+//                .map(records -> StreamSupport.stream(records.spliterator(), true)
+//                        .filter(JsonElement::isJsonObject)
+//                        .map(JsonElement::getAsJsonObject)
+//                )
+//                .orElseGet(() -> Stream.of(log))
+//                .map(this::createEntry)
+//                .collect(Collectors.toList());
+        try{
+            JsonObject log = GSON.fromJson(this.removeQuotesAndUnescape(jsonString), JsonObject.class);
+            // if the JSON object contains "records" array, transform its members
+            return Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
+                    .filter(JsonElement::isJsonArray)
+                    .map(JsonElement::getAsJsonArray)
+                    .map(records -> StreamSupport.stream(records.spliterator(), true)
+                            .filter(JsonElement::isJsonObject)
+                            .map(JsonElement::getAsJsonObject)
+                    )
+                    .orElseGet(() -> Stream.of(log))
+                    .map(this::createEntry)
+                    .collect(Collectors.toList());
+        } catch(JsonSyntaxException e) {
+            System.err.println("Error Applying transformation: "+e.getMessage());
+            return Collections.emptyList();
+        }
+
     }
 
     /**
@@ -215,7 +237,10 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         // Add static metadata
         metadata.putAll(REQ_STATIC_METADATA);
         // Add metadata for includeMetadataKeys
-        metadata.putAll(addMissingMetadataFromJsonEvent(json));
+        if(!metadataDeepPath.isEmpty()){
+            metadata.putAll(addMissingMetadataFromJsonEvent(json));
+        }
+
         entry.setMetadata(metadata);
         if (scrubPattern != null) {
             message = scrubPattern.matcher(message).replaceAll("");
@@ -239,7 +264,9 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
                 Object val = jsonPathContext.read(jsonPath);
 
                 //TODO we need to remove flattening when data sdk handles nested json metadata internally
+                System.out.println("Before reflat");
                 reFlat(finalMetadataKey, (JsonElement) val, additionalMetadata);
+                System.out.println("After reflat");
 
             } catch (Exception e) {
                 // skip this key
@@ -252,6 +279,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         if (node.isJsonPrimitive()) {
             // get value as string
             try {
+                System.out.println(node.getClass().getName());
                 flattenedMap.put(baseKey, node.getAsString());
             } catch (Exception e) {
                 // value could be int or double or other primitive type
@@ -266,6 +294,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
             jsonObject.entrySet();
             for (Entry<String, com.google.gson.JsonElement> e : jsonObject.entrySet()) {
+                System.out.println(e.getValue().getClass().getName());
                 reFlat(pathPrefix + e.getKey(), e.getValue(), flattenedMap);
             }
         } else if (node.isJsonArray()) {

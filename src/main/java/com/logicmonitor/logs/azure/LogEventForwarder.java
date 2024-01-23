@@ -15,10 +15,7 @@
 package com.logicmonitor.logs.azure;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -29,6 +26,7 @@ import java.util.stream.Collectors;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.logicmonitor.sdk.data.Configuration;
 import com.logicmonitor.sdk.data.api.Logs;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -248,10 +246,16 @@ public class LogEventForwarder {
      * @return the log entries
      */
     protected static List<LogEntry> processEvents(List<String> logEvents) {
-        return logEvents.stream()
-            .map(getAdapter())
-            .flatMap(List::stream)
-            .collect(Collectors.toList());
+        try{
+            return logEvents.stream()
+                    .map(getAdapter())
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+        } catch(JsonSyntaxException e) {
+            System.err.println("Error while processing Json: " +e.getMessage());
+            return Collections.emptyList();
+        }
+
     }
 
     /**
