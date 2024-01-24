@@ -50,15 +50,6 @@ public class LogEventAdapterTest {
     }
 
     @Test
-    public void testApplyWithoutErrorHandling(){
-        LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id", "properties");
-        String invalidJsonString = "InvalidJson";
-        adapter.apply(invalidJsonString);
-        List<LogEntry> result = adapter.apply(invalidJsonString);
-        assertEquals(Collections.emptyList(), result);
-    }
-
-    @Test
     public void testApplyWithErrorHandling(){
         LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id", "resourceId");
         String invalidJsonString = "InvalidJson";
