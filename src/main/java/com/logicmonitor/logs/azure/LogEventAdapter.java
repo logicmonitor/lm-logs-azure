@@ -36,14 +36,15 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Transforms one JSON string into one or multiple log entries.<br>
- * The following formats are supported:
+ * Transforms one JSON string into one or multiple log entries.<br> The following formats are
+ * supported:
  * <ul>
  * <li> single log event
  * <li> {@value #AZURE_RECORDS_PROPERTY} = array of log events
  * </ul>
  */
 public class LogEventAdapter implements Function<String, List<LogEntry>> {
+
     /**
      * Name of the JSON property containing array of log events.
      */
@@ -68,7 +69,8 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     /**
      * Categories of Azure activity logs generated
      */
-    public static final Set<String> AUDIT_LOG_CATEGORIES = Set.of("administrative", "serviceHealth", "resourcehealth", "alert", "autoscale", "security", "policy", "recommendation");
+    public static final Set<String> AUDIT_LOG_CATEGORIES = Set.of("administrative", "serviceHealth",
+        "resourcehealth", "alert", "autoscale", "security", "policy", "recommendation");
 
     public static final String LM_SEVERITY = "log_level";
     public static final String LM_ACTIVITY_TYPE = "activity_type";
@@ -82,7 +84,9 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     public static final String AZURE_RESOURCE_ID = "resourceId";
     public static final String AZURE_CATEGORY = "category";
 
-    public static final Pattern RESOURCE_TYPE = Pattern.compile("/subscriptions/.*/resourceGroups/.*/providers/(?<type>[^/]*/[^/]*)/.*", Pattern.CASE_INSENSITIVE);
+    public static final Pattern RESOURCE_TYPE = Pattern.compile(
+        "/subscriptions/.*/resourceGroups/.*/providers/(?<type>[^/]*/[^/]*)/.*",
+        Pattern.CASE_INSENSITIVE);
     /**
      * GSON instance.
      */
@@ -103,11 +107,12 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
             LM_EVENTSOURCE, LogEventAdapter::getEventSourceMetadata);
 
 
-    public static final Map<String ,String> LM_METADATA_RENAME_KEYS = Map.of(
+    public static final Map<String, String> LM_METADATA_RENAME_KEYS = Map.of(
         AZURE_SEVERITY, LM_SEVERITY,
         AZURE_ACTIVITY_TYPE, LM_ACTIVITY_TYPE,
         AZURE_RESOURCE_ID, LM_AZURE_RESOURCE_ID);
-    private static final Configuration JSONPATH_CONFIG = Configuration.builder().jsonProvider(new GsonJsonProvider()).build();
+    private static final Configuration JSONPATH_CONFIG = Configuration.builder()
+        .jsonProvider(new GsonJsonProvider()).build();
 
     private final Pattern scrubPattern;
 
@@ -116,7 +121,8 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     private final Set<String> metadataDeepPath;
 
 
-    public LogEventAdapter(String regexScrub, String azureClientId, String includeMetadataKeys) throws PatternSyntaxException {
+    public LogEventAdapter(String regexScrub, String azureClientId, String includeMetadataKeys)
+        throws PatternSyntaxException {
         if (regexScrub != null) {
             scrubPattern = Pattern.compile(regexScrub);
         } else {
@@ -145,8 +151,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     }
 
 
-
-
     /**
      * Applies the log transformation.
      *
@@ -155,33 +159,22 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      */
     @Override
     public List<LogEntry> apply(String jsonString) {
-//        JsonObject log = GSON.fromJson(jsonString, JsonObject.class);
-//        // if the JSON object contains "records" array, transform its members
-//        return Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
-//                .filter(JsonElement::isJsonArray)
-//                .map(JsonElement::getAsJsonArray)
-//                .map(records -> StreamSupport.stream(records.spliterator(), true)
-//                        .filter(JsonElement::isJsonObject)
-//                        .map(JsonElement::getAsJsonObject)
-//                )
-//                .orElseGet(() -> Stream.of(log))
-//                .map(this::createEntry)
-//                .collect(Collectors.toList());
-        try{
-            JsonObject log = GSON.fromJson(this.removeQuotesAndUnescape(jsonString), JsonObject.class);
+        try {
+            JsonObject log = GSON.fromJson(this.removeQuotesAndUnescape(jsonString),
+                JsonObject.class);
             // if the JSON object contains "records" array, transform its members
             return Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
-                    .filter(JsonElement::isJsonArray)
-                    .map(JsonElement::getAsJsonArray)
-                    .map(records -> StreamSupport.stream(records.spliterator(), true)
-                            .filter(JsonElement::isJsonObject)
-                            .map(JsonElement::getAsJsonObject)
-                    )
-                    .orElseGet(() -> Stream.of(log))
-                    .map(this::createEntry)
-                    .collect(Collectors.toList());
-        } catch(JsonSyntaxException e) {
-            System.err.println("Error Applying transformation: "+e.getMessage());
+                .filter(JsonElement::isJsonArray)
+                .map(JsonElement::getAsJsonArray)
+                .map(records -> StreamSupport.stream(records.spliterator(), true)
+                    .filter(JsonElement::isJsonObject)
+                    .map(JsonElement::getAsJsonObject)
+                )
+                .orElseGet(() -> Stream.of(log))
+                .map(this::createEntry)
+                .collect(Collectors.toList());
+        } catch (JsonSyntaxException e) {
+            System.err.println("Error Applying transformation: " + e.getMessage());
             return Collections.emptyList();
         }
 
@@ -196,7 +189,8 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     protected LogEntry createEntry(JsonObject json) {
         LogEventMessage event = GSON.fromJson(json, LogEventMessage.class);
         LogEntry entry = new LogEntry();
-        if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
+        if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(
+            event.getCategory().toLowerCase()))) {
             //client ID for activity logs
             entry.putLmResourceIdItem(LM_CLIENT_ID, azureClientId);
             entry.putLmResourceIdItem(LM_CLOUD_CATEGORY_KEY, LM_CLOUD_CATEGORY_VALUE);
@@ -208,10 +202,10 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         // timestamp as epoch
         try {
             Optional.ofNullable(event.getTime())
-                    .map(Instant::parse)
-                    .map(Instant::getEpochSecond)
-                    .ifPresent(entry::setTimestamp);
-        } catch(Exception e){
+                .map(Instant::parse)
+                .map(Instant::getEpochSecond)
+                .ifPresent(entry::setTimestamp);
+        } catch (Exception e) {
             entry.setTimestamp(System.currentTimeMillis());
         }
 
@@ -223,13 +217,13 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         //     else properties.Description if present,
         //     otherwise the whole JSON
         String message = properties.map(LogEventProperties::getMsg)
-                .or(() -> properties.map(LogEventProperties::getDescription))
-                .orElseGet(() -> GSON.toJson(json));
+            .or(() -> properties.map(LogEventProperties::getDescription))
+            .orElseGet(() -> GSON.toJson(json));
 
         Map<String, String> metadata = new HashMap<>();
         for (String key : METADATA_KEYS_TO_GETTERS.keySet()) {
             Function<LogEventMessage, String> getter = METADATA_KEYS_TO_GETTERS.get(key);
-            String metadataVal = getter!=null ? getter.apply(event) : null;
+            String metadataVal = getter != null ? getter.apply(event) : null;
             if (StringUtils.isNotBlank(metadataVal)) {
                 metadata.put(key, metadataVal);
             }
@@ -237,7 +231,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         // Add static metadata
         metadata.putAll(REQ_STATIC_METADATA);
         // Add metadata for includeMetadataKeys
-        if(!metadataDeepPath.isEmpty()){
+        if (!metadataDeepPath.isEmpty()) {
             metadata.putAll(addMissingMetadataFromJsonEvent(json));
         }
 
@@ -264,9 +258,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
                 Object val = jsonPathContext.read(jsonPath);
 
                 //TODO we need to remove flattening when data sdk handles nested json metadata internally
-                System.out.println("Before reflat");
                 reFlat(finalMetadataKey, (JsonElement) val, additionalMetadata);
-                System.out.println("After reflat");
 
             } catch (Exception e) {
                 // skip this key
