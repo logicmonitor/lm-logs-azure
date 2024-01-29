@@ -159,11 +159,13 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      */
     @Override
     public List<LogEntry> apply(String jsonString) {
+        List<LogEntry> validLogEntries = new ArrayList<>();
         try {
+
             JsonObject log = GSON.fromJson(this.removeQuotesAndUnescape(jsonString),
                 JsonObject.class);
             // if the JSON object contains "records" array, transform its members
-            return Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
+            Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
                 .filter(JsonElement::isJsonArray)
                 .map(JsonElement::getAsJsonArray)
                 .map(records -> StreamSupport.stream(records.spliterator(), true)
@@ -172,12 +174,11 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
                 )
                 .orElseGet(() -> Stream.of(log))
                 .map(this::createEntry)
-                .collect(Collectors.toList());
+                .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
             System.err.println("Error Applying transformation: " + e.getMessage());
-            return Collections.emptyList();
         }
-
+        return validLogEntries;
     }
 
     /**

@@ -257,16 +257,16 @@ public class LogEventForwarder {
      * @return the log entries
      */
     protected static List<LogEntry> processEvents(List<String> logEvents) {
+        List<LogEntry> validLogEntries = new ArrayList<>();
         try {
-            return logEvents.stream()
+             logEvents.stream()
                 .map(getAdapter())
                 .flatMap(List::stream)
-                .collect(Collectors.toList());
+                 .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
             System.err.println("Error while processing Json: " + e.getMessage());
-            return Collections.emptyList();
         }
-
+        return validLogEntries;
     }
 
     /**
