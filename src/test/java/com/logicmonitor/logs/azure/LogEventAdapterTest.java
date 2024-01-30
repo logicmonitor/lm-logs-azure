@@ -49,13 +49,32 @@ public class LogEventAdapterTest {
         assertEquals(expectedEntriesCount, entries.size());
     }
 
-    @Test
-    public void testApplyWithErrorHandling() {
+    @ParameterizedTest
+    @CsvSource({
+        "activity_storage_account.json, 2",
+        "activity_webapp.json,          2",
+        "resource_db_account.json,      2",
+        "resource_sql.json,             2",
+        "resource_vault.json,           1",
+        "vm_catalina.json,              1",
+        "vm_syslog.json,                1",
+        "windows_vm_log.json,           1",
+        "resource_metrics.json,         1"
+    })
+    public void testApplyWithErrorHandling(String resourceName, int expectedEntriesCount) {
+        String events = TestJsonUtils.getFirstJsonString(resourceName);
         LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id", "resourceId");
-        String invalidJsonString = "InvalidJson";
-//        when(adapter.apply(invalidJsonString)).thenThrow(new JsonSyntaxException("Invalid JSON"));
-        List<LogEntry> result = adapter.apply(invalidJsonString);
-        assertEquals(Collections.emptyList(), result);
+        assertAll(
+            () -> {
+                List<LogEntry> result = adapter.apply(events);
+                assertEquals(expectedEntriesCount, result.size());
+            },
+            () -> {
+                String invalidJsonString = "InvalidJson";
+                List<LogEntry> result = adapter.apply(invalidJsonString);
+                assertEquals(Collections.emptyList(), result);
+            }
+        );
     }
 
     @ParameterizedTest
@@ -142,7 +161,7 @@ public class LogEventAdapterTest {
     public void testCreateEntryForGSON(String resourceName, String propertyName, String regexScrub,
         String azureClientId) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
-        LogEventAdapter adapter = new LogEventAdapter(regexScrub, azureClientId, "resourceId");
+        LogEventAdapter adapter = new LogEventAdapter(regexScrub, azureClientId, null);
         LogEntry entry = adapter.createEntry(event);
         assertAll(
             () -> {
@@ -200,7 +219,7 @@ public class LogEventAdapterTest {
     public void jsonMetadataExtractionTest() {
         JsonObject event = TestJsonUtils.getFirstLogEvent("activity_webapp.json");
         LogEventAdapter adapter = new LogEventAdapter("testRegexScrub", "testAzureClientId",
-            " resultType, callerIpAddress  , identity.authorization , non_existing_key");
+            " resultType, callerIpAddress  , identity.authorization , non_existing_key, properties");
         LogEntry entry = adapter.createEntry(event);
         assertEquals(entry.getMetadata().get("resultType"), "Start");
         assertEquals(entry.getMetadata().get("callerIpAddress"), "10.10.10.10");

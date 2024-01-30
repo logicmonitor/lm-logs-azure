@@ -146,7 +146,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
     private String removeQuotesAndUnescape(String uncleanJson) {
         String noQuotes = uncleanJson.replaceAll("^\"|\"$", "");
-
         return StringEscapeUtils.unescapeJava(noQuotes);
     }
 
@@ -161,7 +160,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     public List<LogEntry> apply(String jsonString) {
         List<LogEntry> validLogEntries = new ArrayList<>();
         try {
-
             JsonObject log = GSON.fromJson(this.removeQuotesAndUnescape(jsonString),
                 JsonObject.class);
             // if the JSON object contains "records" array, transform its members
@@ -272,7 +270,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         if (node.isJsonPrimitive()) {
             // get value as string
             try {
-                System.out.println(node.getClass().getName());
                 flattenedMap.put(baseKey, node.getAsString());
             } catch (Exception e) {
                 // value could be int or double or other primitive type
@@ -287,7 +284,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
             jsonObject.entrySet();
             for (Entry<String, com.google.gson.JsonElement> e : jsonObject.entrySet()) {
-                System.out.println(e.getValue().getClass().getName());
                 reFlat(pathPrefix + e.getKey(), e.getValue(), flattenedMap);
             }
         } else if (node.isJsonArray()) {
