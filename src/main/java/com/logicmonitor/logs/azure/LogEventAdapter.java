@@ -64,6 +64,10 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      */
     public static final String LM_CLIENT_ID = "system.azure.clientid";
     /**
+     * Name of the Azure Client Id used to match the resources for activity logs.
+     */
+    public static final String LM_AZURE_ACCOUNT = "system.displayname";
+    /**
      * Used to match the category of resource for activity logs.
      */
     public static final String LM_CLOUD_CATEGORY_KEY = "system.cloud.category";
@@ -122,15 +126,18 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
     private final String azureClientId;
 
+    private final String azureAccountName;
+
     private final Set<String> metadataDeepPath;
 
-    public LogEventAdapter(String regexScrub, String azureClientId, String includeMetadataKeys) throws PatternSyntaxException {
+    public LogEventAdapter(String regexScrub, String azureClientId, String azureAccountName, String includeMetadataKeys) throws PatternSyntaxException {
         if (regexScrub != null) {
             scrubPattern = Pattern.compile(regexScrub);
         } else {
             scrubPattern = null;
         }
         this.azureClientId = azureClientId;
+        this.azureAccountName = azureAccountName;
         this.metadataDeepPath = StringUtils.isNotBlank(includeMetadataKeys) ? Arrays.stream(
                 StringUtils.split(includeMetadataKeys, ",")).map(StringUtils::strip)
             .collect(Collectors.toSet()) : new HashSet<>();
@@ -176,7 +183,12 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     protected LogEntry createEntry(JsonObject json) {
         LogEventMessage event = GSON.fromJson(json, LogEventMessage.class);
         LogEntry entry = new LogEntry();
-        if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
+        if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase())) && (azureAccountName != null)) {
+            //client ID and Azure account for activity logs
+            entry.putLmResourceIdItem(LM_CLIENT_ID, azureClientId);
+            entry.putLmResourceIdItem(LM_CLOUD_CATEGORY_KEY, LM_CLOUD_CATEGORY_VALUE);
+            entry.putLmResourceIdItem(LM_AZURE_ACCOUNT, azureAccountName);
+        } else if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
             //client ID for activity logs
             entry.putLmResourceIdItem(LM_CLIENT_ID, azureClientId);
             entry.putLmResourceIdItem(LM_CLOUD_CATEGORY_KEY, LM_CLOUD_CATEGORY_VALUE);

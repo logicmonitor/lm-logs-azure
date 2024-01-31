@@ -45,6 +45,12 @@
         "description": "Application Client Id provided during the creation of azure account in LM"
       }
     },
+    "Azure_Account_Name": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Account Name provided during the creation of azure account in LM"
+      }
+    },
     "Include_Metadata_keys": {
       "type": "string",
       "defaultValue":"resourceId",
@@ -110,6 +116,9 @@
           },
           "Azure_Client_Id": {
             "value": "[parameters('Azure_Client_Id')]"
+          },
+          "Azure_Account_Name": {
+            "value": "[parameters('Azure_Account_Name')]"
           },
           "sourceCodeBranch": {
             "value": "[variables('sourceCodeBranch')]"

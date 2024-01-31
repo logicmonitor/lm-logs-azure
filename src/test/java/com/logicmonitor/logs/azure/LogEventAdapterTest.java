@@ -44,30 +44,30 @@ public class LogEventAdapterTest {
     })
     public void testApply(String resourceName, int expectedEntriesCount) {
         String events = TestJsonUtils.getFirstJsonString(resourceName);
-        LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id", null);
+        LogEventAdapter adapter = new LogEventAdapter(null, "azure_client_id","azure_account_name", null);
         List<LogEntry> entries = adapter.apply(events);
         assertEquals(expectedEntriesCount, entries.size());
     }
 
     @ParameterizedTest
     @CsvSource({
-        "activity_storage_account.json, ,                                              , xyz",
-        "activity_webapp.json,          ,            [\\w-.#]+@[\\w-.]+                , abc",
-        "resource_db_account.json,      ,            \\d+\\.\\d+\\.\\d+\\.\\d+         ,    ",
-        "resource_sql.json,             ,            '\"SubscriptionId\":\"[^\"]+\",'  ,    ",
-        "resource_vault.json,           ,            ''|\"                             ,    ",
-        "vm_catalina.json,              Msg,         .                                 ,    ",
-        "vm_syslog.json,                Msg,         \\d                               ,    ",
-        "windows_vm_log.json,           Description,                                   ,    ",
-        "resource_metrics.json,         ,                                              ,    "
+        "activity_storage_account.json, ,                                              , xyz,testAccount",
+        "activity_webapp.json,          ,            [\\w-.#]+@[\\w-.]+                , abc,testAccount",
+        "resource_db_account.json,      ,            \\d+\\.\\d+\\.\\d+\\.\\d+         ,    ,testAccount",
+        "resource_sql.json,             ,            '\"SubscriptionId\":\"[^\"]+\",'  ,    ,testAccount",
+        "resource_vault.json,           ,            ''|\"                             ,    ,testAccount",
+        "vm_catalina.json,              Msg,         .                                 ,    ,testAccount",
+        "vm_syslog.json,                Msg,         \\d                               ,    ,testAccount",
+        "windows_vm_log.json,           Description,                                   ,    ,testAccount",
+        "resource_metrics.json,         ,                                              ,    ,testAccount"
     })
-    public void testCreateEntry(String resourceName, String propertyName, String regexScrub, String azureClientId) {
+    public void testCreateEntry(String resourceName, String propertyName, String regexScrub, String azureClientId, String azureAccountName) {
         JsonObject event = TestJsonUtils.getFirstLogEvent(resourceName);
-        LogEventAdapter adapter = new LogEventAdapter(regexScrub, azureClientId, null);
+        LogEventAdapter adapter = new LogEventAdapter(regexScrub, azureClientId, azureAccountName,  null);
         LogEntry entry = adapter.createEntry(event);
         assertAll(
             () -> {
-                if (azureClientId != null) {
+                if (azureClientId != null && azureAccountName != null) {
                     assertEquals(azureClientId, entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
                 } else {
                     String resourceId = event.get("resourceId").getAsString();
@@ -118,7 +118,7 @@ public class LogEventAdapterTest {
     public void jsonMetadataExtractionTest() throws Exception {
         withEnvironmentVariable(LogEventAdapter.LM_TENANT_ID, "sample_tenant_id").execute(() -> {
             JsonObject event = TestJsonUtils.getFirstLogEvent("activity_webapp.json");
-            LogEventAdapter adapter = new LogEventAdapter("testRegexScrub", "testAzureClientId", " resultType, callerIpAddress  , identity.authorization , non_existing_key");
+            LogEventAdapter adapter = new LogEventAdapter("testRegexScrub", "testAzureClientId","testAzureAccountName"," resultType, callerIpAddress  , identity.authorization , non_existing_key");
             LogEntry entry = adapter.createEntry(event);
             assertEquals(entry.getMetadata().get("resultType"), "Start");
             assertEquals(entry.getMetadata().get("callerIpAddress"), "10.10.10.10");
