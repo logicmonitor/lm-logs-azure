@@ -14,11 +14,13 @@
 
 package com.logicmonitor.logs.azure;
 
+import static com.logicmonitor.logs.azure.LoggingUtils.log;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonSyntaxException;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
@@ -97,31 +99,8 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     public static final String AZURE_RESOURCE_ID = "resourceId";
     public static final String AZURE_CATEGORY = "category";
 
-    private static final String LOG_LEVEL = "LOG_LEVEL";
-    private static final Level DEFAULT_LOG_LEVEL = Level.WARNING;
-    private static final Logger LOGGER;
 
-    static {
-        setupGlobalLogger();
-        LOGGER = Logger.getLogger("LogForwarder");
-        try {
-            String logLevel = System.getenv(LOG_LEVEL);
-            if (StringUtils.isNotBlank(logLevel)) {
-                Level level = Level.parse(logLevel);
-                LOGGER.setLevel(level);
-            }
-        } catch (IllegalArgumentException e) {
-            LOGGER.setLevel(DEFAULT_LOG_LEVEL);
-        }
-    }
 
-    private static void setupGlobalLogger() {
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s%n");
-    }
-
-    protected static void log(Level level, String message) {
-        LOGGER.log(level, message);
-    }
     public static final Pattern RESOURCE_TYPE = Pattern.compile(
         "/subscriptions/.*/resourceGroups/.*/providers/(?<type>[^/]*/[^/]*)/.*",
         Pattern.CASE_INSENSITIVE);

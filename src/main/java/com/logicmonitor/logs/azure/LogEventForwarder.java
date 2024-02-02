@@ -14,6 +14,8 @@
 
 package com.logicmonitor.logs.azure;
 
+import static com.logicmonitor.logs.azure.LoggingUtils.log;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +27,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -105,34 +106,8 @@ public class LogEventForwarder {
      * Transforms Azure log events into log entries.
      */
     private static LogEventAdapter adapter;
-    private static final String LOG_LEVEL = "LOG_LEVEL";
-    private static final Level DEFAULT_LOG_LEVEL = Level.WARNING;
-    private static final Logger LOGGER;
 
     private static final Gson GSON = new GsonBuilder().create();
-
-    static {
-        setupGlobalLogger();
-        LOGGER = Logger.getLogger("LogForwarder");
-        try {
-            String logLevel = System.getenv(LOG_LEVEL);
-            if (StringUtils.isNotBlank(logLevel)) {
-                Level level = Level.parse(logLevel);
-                LOGGER.setLevel(level);
-            }
-        } catch (IllegalArgumentException e) {
-            LOGGER.setLevel(DEFAULT_LOG_LEVEL);
-        }
-    }
-
-    private static void setupGlobalLogger() {
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s%n");
-    }
-
-    protected static void log(Level level, String message) {
-        LOGGER.log(level, message);
-    }
-
     public final Configuration conf = createDataSdkConfig();
 
     protected static Configuration createDataSdkConfig() {
@@ -266,7 +241,7 @@ public class LogEventForwarder {
                 .flatMap(List::stream)
                  .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            log(DEFAULT_LOG_LEVEL, "Error while processing Json: " + e.getMessage());
+            log(Level.WARNING, "Error while processing Json: " + e.getMessage());
         }
         return validLogEntries;
     }
@@ -290,18 +265,7 @@ public class LogEventForwarder {
             .collect(Collectors.toSet());
     }
 
-    /**
-     * Logs a message with function name and invocation ID.
-     *
-     * @param context execution context
-     * @param level logging level
-     * @param msgSupplier produces the message to log
-     */
-    private static void log(final ExecutionContext context, Level level,
-        Supplier<String> msgSupplier) {
-        LOGGER.log(level, () -> String.format("[%s][%s] %s",
-            context.getFunctionName(), context.getInvocationId(), msgSupplier.get()));
-    }
+
 
     /**
      * Logs a response received from LogicMonitor.
@@ -368,7 +332,7 @@ public class LogEventForwarder {
 
         @Override
         public void onFailure(org.openapitools.client.ApiException e, int i, Map map) {
-            LogEventForwarder.log(Level.SEVERE,
+            log(Level.SEVERE,
                 String.format("[%s][%s] Failed to ingest logs to Logicmonitor. Error = %s",
                     this.getContext().getFunctionName(), this.getContext().getInvocationId(),
                     e.getMessage()));
@@ -376,7 +340,7 @@ public class LogEventForwarder {
 
         @Override
         public void onSuccess(Object o, int i, Map map) {
-            LogEventForwarder.log(Level.INFO, String.format(
+            log(Level.INFO, String.format(
                 "[%s][%s] Successfully ingested logs to Logicmonitor. x-request-id=%s",
                 this.getContext().getFunctionName(), this.getContext().getInvocationId(),
                 map.get("x-request-id")));
