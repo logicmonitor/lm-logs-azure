@@ -16,11 +16,16 @@ package com.logicmonitor.logs.azure;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.google.gson.*;
-
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.time.Instant;
-import java.util.*;
 
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
