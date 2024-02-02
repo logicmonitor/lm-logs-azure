@@ -14,8 +14,11 @@
 
 package com.logicmonitor.logs.azure;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -35,7 +38,6 @@ import com.microsoft.azure.functions.annotation.EventHubTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import org.apache.commons.lang3.StringUtils;
 import org.openapitools.client.ApiCallback;
-import org.openapitools.client.ApiException;
 import org.openapitools.client.ApiResponse;
 
 /**
@@ -264,7 +266,7 @@ public class LogEventForwarder {
                 .flatMap(List::stream)
                  .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            System.err.println("Error while processing Json: " + e.getMessage());
+            log(DEFAULT_LOG_LEVEL, "Error while processing Json: " + e.getMessage());
         }
         return validLogEntries;
     }

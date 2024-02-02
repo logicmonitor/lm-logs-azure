@@ -30,6 +30,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -90,6 +92,31 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     public static final String AZURE_RESOURCE_ID = "resourceId";
     public static final String AZURE_CATEGORY = "category";
 
+    private static final String LOG_LEVEL = "LOG_LEVEL";
+    private static final Level DEFAULT_LOG_LEVEL = Level.WARNING;
+    private static final Logger LOGGER;
+
+    static {
+        setupGlobalLogger();
+        LOGGER = Logger.getLogger("LogForwarder");
+        try {
+            String logLevel = System.getenv(LOG_LEVEL);
+            if (StringUtils.isNotBlank(logLevel)) {
+                Level level = Level.parse(logLevel);
+                LOGGER.setLevel(level);
+            }
+        } catch (IllegalArgumentException e) {
+            LOGGER.setLevel(DEFAULT_LOG_LEVEL);
+        }
+    }
+
+    private static void setupGlobalLogger() {
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s%n");
+    }
+
+    protected static void log(Level level, String message) {
+        LOGGER.log(level, message);
+    }
     public static final Pattern RESOURCE_TYPE = Pattern.compile(
         "/subscriptions/.*/resourceGroups/.*/providers/(?<type>[^/]*/[^/]*)/.*",
         Pattern.CASE_INSENSITIVE);
@@ -180,7 +207,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
                 .map(this::createEntry)
                 .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            System.err.println("Error Applying transformation: " + e.getMessage());
+            log(Level.WARNING, "Error while processing Json: " + e.getMessage());
         }
         return validLogEntries;
     }
