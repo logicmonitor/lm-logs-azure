@@ -191,7 +191,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
                 .map(this::createEntry)
                 .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            log(Level.WARNING, "Error while processing Json: " + e.getMessage());
+            log(Level.INFO, "Error while processing Json: " + e.getMessage());
         }
         return validLogEntries;
     }

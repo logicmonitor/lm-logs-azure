@@ -241,7 +241,7 @@ public class LogEventForwarder {
                 .flatMap(List::stream)
                  .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            log(Level.WARNING, "Error while processing Json: " + e.getMessage());
+            log(Level.INFO, "Error while processing Json: " + e.getMessage());
         }
         return validLogEntries;
     }
