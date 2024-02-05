@@ -47,8 +47,9 @@
     },
     "Azure_Account_Name": {
       "type": "string",
+      "defaultValue":"",
       "metadata": {
-        "description": "Azure Account Name provided during the creation of azure account in LM"
+        "description": "Azure Account Name created during the creation of azure account in LM"
       }
     },
     "Include_Metadata_keys": {

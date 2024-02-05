@@ -183,7 +183,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     protected LogEntry createEntry(JsonObject json) {
         LogEventMessage event = GSON.fromJson(json, LogEventMessage.class);
         LogEntry entry = new LogEntry();
-        if ((event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase())) && (azureAccountName != null)) {
+        if ((azureAccountName != null && StringUtils.isNotBlank(azureAccountName)) && (event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
             //client ID and Azure account for activity logs
             entry.putLmResourceIdItem(LM_CLIENT_ID, azureClientId);
             entry.putLmResourceIdItem(LM_CLOUD_CATEGORY_KEY, LM_CLOUD_CATEGORY_VALUE);
