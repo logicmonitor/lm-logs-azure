@@ -47,6 +47,7 @@ public class LogEventForwarderTest {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
                 .and(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
             .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, "azureClientId")
+            .and(LogEventForwarder.PARAMETER_AZURE_ACCOUNT_NAME, "azureAccountName")
             .and(LogEventForwarder.PARAMETER_CONNECT_TIMEOUT,
                     connectTimeout != null ? connectTimeout.toString() : null)
             .and(LogEventForwarder.PARAMETER_READ_TIMEOUT,

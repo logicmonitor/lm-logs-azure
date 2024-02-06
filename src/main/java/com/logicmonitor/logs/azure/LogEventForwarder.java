@@ -99,6 +99,10 @@ public class LogEventForwarder {
      */
     public static final String PARAMETER_AZURE_CLIENT_ID = "AzureClientID";
     /**
+     * Parameter: Azure Azure Account Name
+     */
+    public static final String PARAMETER_AZURE_ACCOUNT_NAME = "AzureAccountName";
+    /**
      * Parameter: comma separated metadata keys to look in azure events and then add to metadata
      */
     public static final String PARAMETER_INCLUDE_METADATA_KEYS = "Include_Metadata_keys";
@@ -164,6 +168,7 @@ public class LogEventForwarder {
     protected static LogEventAdapter configureAdapter() {
         return new LogEventAdapter(System.getenv(PARAMETER_REGEX_SCRUB),
             System.getenv(PARAMETER_AZURE_CLIENT_ID),
+            System.getenv(PARAMETER_AZURE_ACCOUNT_NAME),
             System.getenv(PARAMETER_INCLUDE_METADATA_KEYS));
     }
 

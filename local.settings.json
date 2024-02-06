@@ -15,6 +15,8 @@
         "APPLICATION_NAME": "lm-logs-azure",
         "Include_Metadata_keys" : "resourceId",
         "LOG_LEVEL" : "WARNING",
-        "LM_AUTH": "{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"token\"}"
+        "LM_TENANT_ID" : "sample_tenant_id",
+        "LM_AUTH": "{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"token\"}",
+        "AzureAccountName": "LMTest Account"
     }
 }

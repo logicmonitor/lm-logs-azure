@@ -50,6 +50,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
     protected static final String TEST_REQUEST_ID = "testRequestId";
     protected static final Pattern TEST_SCRUB_PATTERN = Pattern.compile("\\d");
     protected static final String TEST_AZURE_CLIENT_ID = "testClientId";
+    protected static final String TEST_AZURE_ACCOUNT_NAME = "testAccountName";
     protected static ExecutionContext mockExecutionContext;
 
     @Path("/rest")
@@ -82,6 +83,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
             .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
             .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
+            .and(LogEventForwarder.PARAMETER_AZURE_ACCOUNT_NAME, TEST_AZURE_ACCOUNT_NAME)
             .and(LogEventForwarder.PARAMETER_COMPANY_NAME, "localhost")
                 .execute(() -> {
                 LogEventForwarder.getAdapter();
@@ -134,6 +136,7 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
                 .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
                 .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
+                .and(LogEventForwarder.PARAMETER_AZURE_ACCOUNT_NAME, TEST_AZURE_ACCOUNT_NAME)
                 .and(LogEventForwarder.PARAMETER_COMPANY_NAME, "localhost")
                 .execute(() -> {
         new LogEventForwarder().forward(List.of(), mockExecutionContext);

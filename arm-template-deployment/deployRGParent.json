@@ -45,11 +45,25 @@
         "description": "Application Client Id provided during the creation of azure account in LM"
       }
     },
+    "Azure_Account_Name": {
+      "type": "string",
+      "defaultValue":"",
+      "metadata": {
+        "description": "Azure Account Name created during the creation of azure account in LM"
+      }
+    },
     "Include_Metadata_keys": {
       "type": "string",
       "defaultValue":"resourceId",
       "metadata": {
         "description": "comma separated keys to add as event metadata in a lm-log event. for nested json specify '.' eg - properties.functionName,properties.message "
+      }
+    },
+    "LMTenantId": {
+      "type": "string",
+      "defaultValue":"",
+      "metadata": {
+        "description": "LogicMonitor Tenant Identifier sent as event metadata to LogicMonitor"
       }
     },
     "enableActivityLogs": {
@@ -104,11 +118,17 @@
           "Azure_Client_Id": {
             "value": "[parameters('Azure_Client_Id')]"
           },
+          "Azure_Account_Name": {
+            "value": "[parameters('Azure_Account_Name')]"
+          },
           "sourceCodeBranch": {
             "value": "[variables('sourceCodeBranch')]"
           },
           "Include_Metadata_keys": {
             "value": "[parameters('Include_Metadata_keys')]"
+          },
+          "LMTenantId" : {
+            "value": "[parameters('LMTenantId')]"
           }
         }
       },
