@@ -151,7 +151,7 @@ public class LogEventAdapterTest {
     @ParameterizedTest
     @CsvSource({
         "activity_storage_account.json, ,                                              , xyz",
-        "activity_webapp1.json,          ,            [\\w-.#]+@[\\w-.]+                , abc",
+        "activity_webapp.json,          ,            [\\w-.#]+@[\\w-.]+                , abc",
         "resource_db_account.json,      ,            \\d+\\.\\d+\\.\\d+\\.\\d+         ,    ",
         "resource_sql.json,             ,            '\"SubscriptionId\":\"[^\"]+\",'  ,    ",
         "resource_vault.json,           ,            ''|\"                             ,    ",
