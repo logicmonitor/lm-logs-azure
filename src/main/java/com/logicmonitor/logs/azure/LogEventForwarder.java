@@ -14,21 +14,23 @@
 
 package com.logicmonitor.logs.azure;
 
-import java.io.IOException;
+import static com.logicmonitor.logs.azure.LoggingUtils.log;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.logicmonitor.sdk.data.Configuration;
 import com.logicmonitor.sdk.data.api.Logs;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -37,12 +39,11 @@ import com.microsoft.azure.functions.annotation.EventHubTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import org.apache.commons.lang3.StringUtils;
 import org.openapitools.client.ApiCallback;
-import org.openapitools.client.ApiException;
 import org.openapitools.client.ApiResponse;
 
 /**
- * Azure Function forwarding Azure logs to LogicMonitor endpoint.<br>
- * It is parametrized using the following environment variables:
+ * Azure Function forwarding Azure logs to LogicMonitor endpoint.<br> It is parametrized using the
+ * following environment variables:
  * <ul>
  * <li>{@value #PARAMETER_COMPANY_NAME} company in the target URL '{company}.logicmonitor.com'
  * <li>{@value #PARAMETER_ACCESS_ID} LogicMonitor access ID
@@ -55,6 +56,7 @@ import org.openapitools.client.ApiResponse;
  * </ul>
  */
 public class LogEventForwarder {
+
     /**
      * Parameter: company in the target URL '{company}.logicmonitor.com'.
      */
@@ -108,33 +110,9 @@ public class LogEventForwarder {
      * Transforms Azure log events into log entries.
      */
     private static LogEventAdapter adapter;
-    private static final String LOG_LEVEL = "LOG_LEVEL";
-    private static final Level DEFAULT_LOG_LEVEL = Level.WARNING;
-    private static final Logger LOGGER ;
 
     private static final Gson GSON = new GsonBuilder().create();
-
-    static {
-        setupGlobalLogger();
-        LOGGER = Logger.getLogger("LogForwarder");
-        try {
-            String logLevel = System.getenv(LOG_LEVEL);
-            if (StringUtils.isNotBlank(logLevel)) {
-                Level level = Level.parse(logLevel);
-                LOGGER.setLevel(level);
-            }
-        } catch (IllegalArgumentException e) {
-            LOGGER.setLevel(DEFAULT_LOG_LEVEL);
-        }
-    }
-    private static void setupGlobalLogger(){
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s%n");
-    }
-    protected static void log(Level level, String message) {
-        LOGGER.log(level,message);
-    }
-
-   public final Configuration conf = createDataSdkConfig();
+    public final Configuration conf = createDataSdkConfig();
 
     protected static Configuration createDataSdkConfig() {
         String company = System.getenv(PARAMETER_COMPANY_NAME);
@@ -154,7 +132,9 @@ public class LogEventForwarder {
                 return new Configuration(company, null, null, bearerToken);
             }
         } catch (Exception e) {
-            log(Level.SEVERE, "Unable to configure LM Data SDK config with ENV var LM_AUTH. Log Ingestion will be interrupted. Error : " + e.getMessage());
+            log(Level.SEVERE,
+                "Unable to configure LM Data SDK config with ENV var LM_AUTH. Log Ingestion will be interrupted. Error : "
+                    + e.getMessage());
             return new Configuration();
 
         }
@@ -164,10 +144,11 @@ public class LogEventForwarder {
         this.responseInterface = new LogIngestResponse(context, context.getLogger());
     }
 
-    public LogIngestResponse responseInterface ;
+    public LogIngestResponse responseInterface;
 
     /**
      * Gets the log adapter instance (initializes it when needed).
+     *
      * @return LogEventAdapter instance
      */
     protected synchronized static LogEventAdapter getAdapter() {
@@ -181,6 +162,7 @@ public class LogEventForwarder {
 
     /**
      * Configures the log adapter using the environment variables.
+     *
      * @return LogEventAdapter instance
      */
     protected static LogEventAdapter configureAdapter() {
@@ -190,20 +172,20 @@ public class LogEventForwarder {
             System.getenv(PARAMETER_INCLUDE_METADATA_KEYS));
     }
 
-    public Logs configureLogs(){
+    public Logs configureLogs() {
         return new Logs(conf, 5, true, responseInterface);
     }
 
     /**
-     * Reads an environment variable and sets using the specified consumer
-     * when not null nor empty.
+     * Reads an environment variable and sets using the specified consumer when not null nor empty.
+     *
      * @param <T> type of the variable
      * @param name name of the variable
      * @param mapper function mapping String to the desired type
      * @param setter consumer setting the property
      */
     private static <T> void setProperty(String name, Function<String, T> mapper,
-            Consumer<T> setter) {
+        Consumer<T> setter) {
         Optional.ofNullable(System.getenv(name))
             .map(String::trim)
             .filter(value -> !value.isEmpty())
@@ -212,17 +194,18 @@ public class LogEventForwarder {
     }
 
     /**
-     * The main method of the Azure Log Forwarder, triggered by events consumed
-     * from the configured Event Hub.
+     * The main method of the Azure Log Forwarder, triggered by events consumed from the configured
+     * Event Hub.
+     *
      * @param logEvents list of JSON strings containing Azure events
      * @param context execution context
      */
     @FunctionName("LogForwarder")
     public void forward(
-            @EventHubTrigger(name = "logEvents", eventHubName = "log-hub",
-                    dataType = "string", cardinality = Cardinality.MANY,
-                    connection = "LogsEventHubConnectionString") List<String> logEvents,
-            final ExecutionContext context
+        @EventHubTrigger(name = "logEvents", eventHubName = "log-hub",
+            dataType = "string", cardinality = Cardinality.MANY,
+            connection = "LogsEventHubConnectionString") List<String> logEvents,
+        final ExecutionContext context
     ) {
         setResponseInterface(context);
         Logs logs = configureLogs();
@@ -233,15 +216,17 @@ public class LogEventForwarder {
         }
 
         log(context, Level.FINE, () -> "Sending " + logEntries.size() +
-                " log entries for devices " + getResourceIds(logEntries));
-        for(LogEntry logEntry : logEntries){
+            " log entries for devices " + getResourceIds(logEntries));
+        for (LogEntry logEntry : logEntries) {
             try {
-                Optional<ApiResponse> response = logs.sendLogs(logEntry.getMessage(), logEntry.getLmResourceId(), logEntry.getMetadata(), logEntry.getTimestamp());
+                Optional<ApiResponse> response = logs.sendLogs(logEntry.getMessage(),
+                    logEntry.getLmResourceId(), logEntry.getMetadata(), logEntry.getTimestamp());
                 if (response != null && response.isPresent()) {
                     logResponse(context, response.get());
                 }
-            } catch (final Exception  e) {
-                log(context, Level.SEVERE, () -> "Exception occurred while processing the request: " + e.getMessage());
+            } catch (final Exception e) {
+                log(context, Level.SEVERE,
+                    () -> "Exception occurred while processing the request: " + e.getMessage());
             }
         }
 
@@ -249,18 +234,26 @@ public class LogEventForwarder {
 
     /**
      * Processes the received events and produces log events.
+     *
      * @param logEvents list of JSON strings containing Azure events
      * @return the log entries
      */
     protected static List<LogEntry> processEvents(List<String> logEvents) {
-        return logEvents.stream()
-            .map(getAdapter())
-            .flatMap(List::stream)
-            .collect(Collectors.toList());
+        List<LogEntry> validLogEntries = new ArrayList<>();
+        try {
+             logEvents.stream()
+                .map(getAdapter())
+                .flatMap(List::stream)
+                 .forEach(validLogEntries::add);
+        } catch (JsonSyntaxException e) {
+            log(Level.INFO, "Error while processing Json: " + e.getMessage());
+        }
+        return validLogEntries;
     }
 
     /**
      * Gets unique resource IDs.
+     *
      * @param logEntries log entries
      * @return set of resource IDs
      */
@@ -277,34 +270,26 @@ public class LogEventForwarder {
             .collect(Collectors.toSet());
     }
 
-    /**
-     * Logs a message with function name and invocation ID.
-     * @param context execution context
-     * @param level logging level
-     * @param msgSupplier produces the message to log
-     */
-    private static void log(final ExecutionContext context, Level level,
-            Supplier<String> msgSupplier) {
-        LOGGER.log(level, () -> String.format("[%s][%s] %s",
-                context.getFunctionName(), context.getInvocationId(), msgSupplier.get()));
-    }
+
 
     /**
      * Logs a response received from LogicMonitor.
+     *
      * @param context execution context
      * @param response the response to log
      */
     private static void logResponse(final ExecutionContext context,
-            ApiResponse<?> response) {
-        log(context, Level.INFO ,
-                () -> String.format("Received: status = %d ",
-                        response.getStatusCode()));
+        ApiResponse<?> response) {
         log(context, Level.INFO,
-                () -> "Response body: " + response.getData());
+            () -> String.format("Received: status = %d ",
+                response.getStatusCode()));
+        log(context, Level.INFO,
+            () -> "Response body: " + response.getData());
     }
 
     /**
      * gets the gradle 'Implementation-Version'.
+     *
      * @return the project version
      */
     private static String getBuildVersion() {
@@ -313,6 +298,7 @@ public class LogEventForwarder {
 
     /**
      * gets the gradle 'Implementation-Title'.
+     *
      * @return the project name
      */
     private static String getBuildName() {
@@ -321,6 +307,7 @@ public class LogEventForwarder {
 
     /**
      * generates user-agent as <buildname>/<buildversion>.
+     *
      * @return the user-agent
      */
     public static String getUserAgent() {
@@ -328,7 +315,7 @@ public class LogEventForwarder {
     }
 
 
-      class LogIngestResponse implements ApiCallback {
+    class LogIngestResponse implements ApiCallback {
 
         public static final String JSON_PROPERTY_SUCCESS = "success";
         private Boolean success;
@@ -342,6 +329,7 @@ public class LogEventForwarder {
         public LogIngestResponse(final ExecutionContext context, Logger logger) {
             this.context = context;
         }
+
         public LogIngestResponse success(Boolean success) {
             this.success = success;
             return this;
@@ -349,13 +337,19 @@ public class LogEventForwarder {
 
         @Override
         public void onFailure(org.openapitools.client.ApiException e, int i, Map map) {
-            LogEventForwarder.log(Level.SEVERE, String.format("[%s][%s] Failed to ingest logs to Logicmonitor. Error = %s", this.getContext().getFunctionName(), this.getContext().getInvocationId(), e.getMessage()));
+            log(Level.SEVERE,
+                String.format("[%s][%s] Failed to ingest logs to Logicmonitor. Error = %s",
+                    this.getContext().getFunctionName(), this.getContext().getInvocationId(),
+                    e.getMessage()));
         }
 
         @Override
         public void onSuccess(Object o, int i, Map map) {
-            LogEventForwarder.log(Level.INFO, String.format("[%s][%s] Successfully ingested logs to Logicmonitor. x-request-id=%s",this.getContext().getFunctionName(), this.getContext().getInvocationId(), map.get("x-request-id")));
-       }
+            log(Level.INFO, String.format(
+                "[%s][%s] Successfully ingested logs to Logicmonitor. x-request-id=%s",
+                this.getContext().getFunctionName(), this.getContext().getInvocationId(),
+                map.get("x-request-id")));
+        }
 
         @Override
         public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {

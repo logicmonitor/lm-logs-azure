@@ -19,14 +19,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import com.google.gson.GsonBuilder;
 import java.time.Instant;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 public class LogEventAdapterTest {
 
@@ -71,7 +73,8 @@ public class LogEventAdapterTest {
                     assertEquals(azureClientId, entry.getLmResourceId().get(LogEventAdapter.LM_CLIENT_ID));
                 } else {
                     String resourceId = event.get("resourceId").getAsString();
-                    assertEquals(resourceId, entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
+                    assertEquals(resourceId,
+                        entry.getLmResourceId().get(LogEventAdapter.LM_RESOURCE_PROPERTY));
                 }
             },
             () -> {
@@ -85,7 +88,8 @@ public class LogEventAdapterTest {
             () -> {
                 String message;
                 if (propertyName != null) {
-                    message = event.get("properties").getAsJsonObject().get(propertyName).getAsString();
+                    message = event.get("properties").getAsJsonObject().get(propertyName)
+                        .getAsString();
                 } else {
                     message = TestJsonUtils.toString(event);
                 }
@@ -130,5 +134,6 @@ public class LogEventAdapterTest {
             assertEquals(entry.getMetadata().get(LogEventAdapter.LM_TENANT_ID_KEY), "sample_tenant_id");
         });
     }
+
 
 }
