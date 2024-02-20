@@ -18,6 +18,9 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironment
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +47,7 @@ public class LogEventForwarderTest {
         withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
                 .and(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
             .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, "azureClientId")
+            .and(LogEventForwarder.PARAMETER_AZURE_ACCOUNT_NAME, "azureAccountName")
             .and(LogEventForwarder.PARAMETER_CONNECT_TIMEOUT,
                     connectTimeout != null ? connectTimeout.toString() : null)
             .and(LogEventForwarder.PARAMETER_READ_TIMEOUT,
@@ -81,8 +85,11 @@ public class LogEventForwarderTest {
                 .execute(() -> {
         List<String> events = TestJsonUtils.getJsonStringList(resourceName);
         List<LogEntry> entries = LogEventForwarder.processEvents(events);
+        List<String> invalidJsonEvents = List.of("invalidJson");
+        List<LogEntry> entriesTestWithInvalidJson = LogEventForwarder.processEvents(invalidJsonEvents);
         assertNotNull(entries);
         assertAll(
+            () -> assertTrue(entriesTestWithInvalidJson.isEmpty()),
             () -> assertEquals(expectedEntriesCount, entries.size()),
             () -> entries.forEach(entry -> assertNotNull(entry.getMessage())),
             () -> entries.forEach(entry -> assertNotNull(entry.getTimestamp())),
