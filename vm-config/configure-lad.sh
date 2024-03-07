@@ -97,7 +97,7 @@ echo -e "checking if the storage account exists\n\tresource group = ${storage_gr
 if [[ "$storage_name" != "$(az storage account show --subscription $subscription_id -g $storage_group -n $storage_name --query name -o tsv)" ]]
 then
     echo "creating the storage account"
-    az storage account create --subscription $subscription_id -g $storage_group -n $storage_name -l $location --sku Standard_LRS
+    az storage account create --subscription $subscription_id -g $storage_group -n $storage_name -l $location --sku Standard_LRS --min-tls-version TLS1_2
     if [ $? -ne 0 ]
     then
         echo "couldn't create the storage account"
