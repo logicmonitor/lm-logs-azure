@@ -14,6 +14,7 @@
 
 package com.logicmonitor.logs.azure;
 
+import static com.logicmonitor.logs.azure.JsonParsingUtils.removeQuotesAndUnescape;
 import static com.logicmonitor.logs.azure.LoggingUtils.log;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.Cardinality;
 import com.microsoft.azure.functions.annotation.EventHubTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openapitools.client.ApiCallback;
 import org.openapitools.client.ApiResponse;
@@ -114,10 +116,11 @@ public class LogEventForwarder {
     private static final Gson GSON = new GsonBuilder().create();
     public final Configuration conf = createDataSdkConfig();
 
+
     protected static Configuration createDataSdkConfig() {
         String company = System.getenv(PARAMETER_COMPANY_NAME);
         try {
-            JsonObject authConf = GSON.fromJson(System.getenv(PARAMETER_LM_AUTH), JsonObject.class);
+            JsonObject authConf = GSON.fromJson(removeQuotesAndUnescape(System.getenv(PARAMETER_LM_AUTH)), JsonObject.class);
             String accessId = authConf.get(PARAMETER_ACCESS_ID).getAsString();
             String accessKey = authConf.get(PARAMETER_ACCESS_KEY).getAsString();
             String bearerToken = authConf.get(PARAMETER_BEARER_TOKEN).getAsString();
@@ -215,7 +218,7 @@ public class LogEventForwarder {
             return;
         }
 
-        log(context, Level.FINE, () -> "Sending " + logEntries.size() +
+        log(Level.FINE, "Sending " + logEntries.size() +
             " log entries for devices " + getResourceIds(logEntries));
         for (LogEntry logEntry : logEntries) {
             try {
@@ -246,7 +249,7 @@ public class LogEventForwarder {
                 .flatMap(List::stream)
                  .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            log(Level.INFO, "Error while processing Json: " + e.getMessage());
+            log(Level.INFO, "Error while processing Json of events : " + e.getMessage() + " :: " +logEvents);
         }
         return validLogEntries;
     }
