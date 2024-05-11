@@ -171,7 +171,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         List<LogEntry> validLogEntries = new ArrayList<>();
         try {
             JsonObject log = (JsonObject) GSON.fromJson(parseJsonSafely(jsonString), JsonObject.class);
-            // if the JSON object contains "records" array, transform its members
             Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
                 .filter(JsonElement::isJsonArray)
                 .map(JsonElement::getAsJsonArray)
@@ -183,7 +182,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
                 .map(this::createEntry)
                 .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            log(Level.INFO, "Error while processing Json and applying log transformation: " + e.getMessage() + " :: " + jsonString);
+            log(Level.INFO, "Error while processing Json and applying log transformation: " + e.getMessage());
         }
         return validLogEntries;
     }
@@ -246,7 +245,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         if (!metadataDeepPath.isEmpty()) {
             metadata.putAll(addMissingMetadataFromJsonEvent(json));
         }
-
 
         String tenantId = System.getenv(LM_TENANT_ID);
         if (StringUtils.isNotBlank(tenantId)) {

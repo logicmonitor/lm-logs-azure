@@ -16,7 +16,6 @@ package com.logicmonitor.logs.azure;
 
 import static com.logicmonitor.logs.azure.JsonParsingUtils.removeQuotesAndUnescape;
 import static com.logicmonitor.logs.azure.LoggingUtils.log;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +40,7 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openapitools.client.ApiCallback;
+import org.openapitools.client.ApiException;
 import org.openapitools.client.ApiResponse;
 
 /**
@@ -114,6 +114,7 @@ public class LogEventForwarder {
     private static LogEventAdapter adapter;
 
     private static final Gson GSON = new GsonBuilder().create();
+
     public final Configuration conf = createDataSdkConfig();
 
 
@@ -218,7 +219,7 @@ public class LogEventForwarder {
             return;
         }
 
-        log(Level.FINE, "Sending " + logEntries.size() +
+        log(context, Level.FINE, () -> "Sending " + logEntries.size() +
             " log entries for devices " + getResourceIds(logEntries));
         for (LogEntry logEntry : logEntries) {
             try {
@@ -317,7 +318,6 @@ public class LogEventForwarder {
         return getBuildName() + "/" + getBuildVersion();
     }
 
-
     class LogIngestResponse implements ApiCallback {
 
         public static final String JSON_PROPERTY_SUCCESS = "success";
@@ -339,7 +339,7 @@ public class LogEventForwarder {
         }
 
         @Override
-        public void onFailure(org.openapitools.client.ApiException e, int i, Map map) {
+        public void onFailure(ApiException e, int i, Map map) {
             log(Level.SEVERE,
                 String.format("[%s][%s] Failed to ingest logs to Logicmonitor. Error = %s",
                     this.getContext().getFunctionName(), this.getContext().getInvocationId(),
