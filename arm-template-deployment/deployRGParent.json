@@ -23,7 +23,6 @@
       "metadata": {
         "description": "LogicMonitor API Token access ID."
       }
-
     },
     "LM_Access_Key": {
       "type": "String",
