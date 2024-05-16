@@ -265,7 +265,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
 
         String resourceType = System.getenv(RESOURCE_TYPE_KEY);
         if(StringUtils.isNotBlank(resourceType)){
-            metadata.put(RESOURCE_TYPE_KEY, resourceType);
+            metadata.put(RESOURCE_TYPE_KEY.toLowerCase(), resourceType);
         }
 
         entry.setMetadata(metadata);
