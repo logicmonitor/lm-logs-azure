@@ -18,6 +18,15 @@ public class LogEntry {
         return metadata;
     }
 
+    public String getResourceType() {
+        return resourceType;
+    }
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+    private String resourceType;
+    private static final String JSON_PROPERTY_RESOURCE_TYPE = "Resource_Type";
+
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
@@ -102,12 +111,13 @@ public class LogEntry {
         LogEntry logEntry = (LogEntry) o;
         return Objects.equals(this.message, logEntry.message) &&
                 Objects.equals(this.timestamp, logEntry.timestamp) &&
-                Objects.equals(this.lmResourceId, logEntry.lmResourceId) ;
+                Objects.equals(this.lmResourceId, logEntry.lmResourceId) &&
+                Objects.equals(this.resourceType, logEntry.resourceType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(message, timestamp, lmResourceId);
+        return Objects.hash(message, timestamp, lmResourceId, resourceType);
     }
 
 
@@ -118,6 +128,7 @@ public class LogEntry {
         sb.append("    message: ").append(toIndentedString(message)).append("\n");
         sb.append("    timestamp: ").append(toIndentedString(timestamp)).append("\n");
         sb.append("    lmResourceId: ").append(toIndentedString(lmResourceId)).append("\n");
+        sb.append("    resourceType: ").append(toIndentedString(resourceType)).append("\n");
         sb.append("}");
         return sb.toString();
     }

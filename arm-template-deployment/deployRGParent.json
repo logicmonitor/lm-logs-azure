@@ -23,7 +23,6 @@
       "metadata": {
         "description": "LogicMonitor API Token access ID."
       }
-
     },
     "LM_Access_Key": {
       "type": "String",
@@ -64,6 +63,13 @@
       "defaultValue":"",
       "metadata": {
         "description": "LogicMonitor Tenant Identifier sent as event metadata to LogicMonitor"
+      }
+    },
+    "Resource_Type": {
+      "type": "string",
+      "defaultValue": "Azure",
+      "metadata": {
+        "description": "Type of platform from where logs are coming."
       }
     },
     "enableActivityLogs": {
@@ -129,6 +135,9 @@
           },
           "LMTenantId" : {
             "value": "[parameters('LMTenantId')]"
+          },
+          "Resource_Type": {
+            "value": "[parameters('Resource_Type')]"
           }
         }
       },
