@@ -44,7 +44,8 @@
         },
         "level": "Information",
         "properties": {
-          "eventCategory": "Administrative"
+          "eventCategory": "Administrative",
+          "policies": "[{\"policyDefinitionId\":\"/providers/Microsoft.Authorization/policyDefinitions/a7aca53f-2ed4-4466-a25e-0b45ade68efd\",\"policySetDefinitionId\":\"/providers/Microsoft.Authorization/policySetDefinitions/1f3afdf9-d0c9-4c3d-847f-89da613e70a8\",\"policyDefinitionReferenceId\":\"vnetEnableDDoSProtectionMonitoring\",\"policySetDefinitionName\":\"1f3afdf9-d0c9-4c3d-847f-89da613e70a8\",\"policySetDefinitionDisplayName\":\"Microsoft cloud security benchmark\",\"policyDefinitionName\":\"a7aca53f-2ed4-4466-a25e-0b45ade68efd\",\"policyDefinitionDisplayName\":\"Azure DDoS Protection should be enabled\",\"policyDefinitionEffect\":\"AuditIfNotExists\",\"policyAssignmentId\":\"/subscriptions/318382e3-a165-4f0d-8906-01fb4cd06b74/providers/Microsoft.Authorization/policyAssignments/SecurityCenterBuiltIn\",\"policyAssignmentName\":\"SecurityCenterBuiltIn\",\"policyAssignmentDisplayName\":\"ASC Default (subscription: 318382e3-a165-4f0d-8906-01fb4cd06b74)\",\"policyAssignmentScope\":\"/subscriptions/318382e3-a165-4f0d-8906-01fb4cd06b74\",\"policyExemptionIds\":[]}]"
         }
       },
       {
