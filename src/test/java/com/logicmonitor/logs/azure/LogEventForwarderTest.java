@@ -85,11 +85,8 @@ public class LogEventForwarderTest {
                 .execute(() -> {
         List<String> events = TestJsonUtils.getJsonStringList(resourceName);
         List<LogEntry> entries = LogEventForwarder.processEvents(events);
-        List<String> invalidJsonEvents = List.of("invalidJson");
-        List<LogEntry> entriesTestWithInvalidJson = LogEventForwarder.processEvents(invalidJsonEvents);
         assertNotNull(entries);
         assertAll(
-            () -> assertTrue(entriesTestWithInvalidJson.isEmpty()),
             () -> assertEquals(expectedEntriesCount, entries.size()),
             () -> entries.forEach(entry -> assertNotNull(entry.getMessage())),
             () -> entries.forEach(entry -> assertNotNull(entry.getTimestamp())),

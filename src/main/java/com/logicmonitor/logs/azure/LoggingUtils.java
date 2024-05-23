@@ -1,7 +1,5 @@
 package com.logicmonitor.logs.azure;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.microsoft.azure.functions.ExecutionContext;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -21,6 +19,9 @@ public class LoggingUtils {
             if (StringUtils.isNotBlank(logLevel)) {
                 Level level = Level.parse(logLevel);
                 LOGGER.setLevel(level);
+                LOGGER.setUseParentHandlers(false);
+                LOGGER.addHandler(new java.util.logging.ConsoleHandler());
+                LOGGER.getHandlers()[0].setLevel(level);
             }
         } catch (IllegalArgumentException e) {
             LOGGER.setLevel(DEFAULT_LOG_LEVEL);

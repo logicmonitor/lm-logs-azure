@@ -15,7 +15,7 @@
 package com.logicmonitor.logs.azure;
 
 import static com.logicmonitor.logs.azure.LoggingUtils.log;
-
+import static com.logicmonitor.logs.azure.JsonParsingUtils.parseJsonSafely;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -101,6 +101,8 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     public static final String AZURE_RESOURCE_ID = "resourceId";
     public static final String AZURE_CATEGORY = "category";
     public static final String LM_TENANT_ID = "LM_TENANT_ID";
+
+    public static final String RESOURCE_TYPE_KEY = "RESOURCE_TYPE";
     public static final String LM_TENANT_ID_KEY = "_lm.tenantId";
 
     public static final Pattern RESOURCE_TYPE = Pattern.compile("/subscriptions/.*/resourceGroups/.*/providers/(?<type>[^/]*/[^/]*)/.*", Pattern.CASE_INSENSITIVE);
@@ -160,13 +162,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         return scrubPattern;
     }
 
-
-    private String removeQuotesAndUnescape(String uncleanJson) {
-        String noQuotes = uncleanJson.replaceAll("^\"|\"$", "");
-        return StringEscapeUtils.unescapeJava(noQuotes);
-    }
-
-
     /**
      * Applies the log transformation.
      *
@@ -177,9 +172,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     public List<LogEntry> apply(String jsonString) {
         List<LogEntry> validLogEntries = new ArrayList<>();
         try {
-            JsonObject log = GSON.fromJson(this.removeQuotesAndUnescape(jsonString),
-                JsonObject.class);
-            // if the JSON object contains "records" array, transform its members
+            JsonObject log = (JsonObject) GSON.fromJson(parseJsonSafely(jsonString), JsonObject.class);
             Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
                 .filter(JsonElement::isJsonArray)
                 .map(JsonElement::getAsJsonArray)
@@ -191,7 +184,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
                 .map(this::createEntry)
                 .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            log(Level.INFO, "Error while processing Json: " + e.getMessage());
+            log(Level.INFO, "Error while processing Json and applying log transformation: " + e.getMessage());
         }
         return validLogEntries;
     }
@@ -203,7 +196,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
      * @return log entry
      */
     protected LogEntry createEntry(JsonObject json) {
-        LogEventMessage event = GSON.fromJson(json, LogEventMessage.class);
+        LogEventMessage event = GSON.fromJson(parseJsonSafely(json.toString()), LogEventMessage.class);
         LogEntry entry = new LogEntry();
         if ((azureAccountName != null && StringUtils.isNotBlank(azureAccountName)) && (event.getCategory() != null) && (AUDIT_LOG_CATEGORIES.contains(event.getCategory().toLowerCase()))) {
             //client ID and Azure account for activity logs
@@ -255,10 +248,14 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
             metadata.putAll(addMissingMetadataFromJsonEvent(json));
         }
 
-
         String tenantId = System.getenv(LM_TENANT_ID);
         if (StringUtils.isNotBlank(tenantId)) {
             metadata.put(LM_TENANT_ID_KEY, tenantId);
+        }
+
+        String resourceType = System.getenv(RESOURCE_TYPE_KEY);
+        if(StringUtils.isNotBlank(resourceType)){
+            metadata.put(RESOURCE_TYPE_KEY.toLowerCase(), resourceType);
         }
 
         entry.setMetadata(metadata);
