@@ -4,7 +4,7 @@
   "variables": {
     "sourceCodeBranch": "master",
     "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',variables('sourceCodeBranch'),'/arm-template-deployment/')]",
-    "deploymentResourceGroupName": "[concat('lm-logs-',parameters('LM_Company_name'),'-',resourceGroup().Location,'-group')]",
+    "deploymentResourceGroupName": "testResourceGroupName",
     "managedIdentityName": "[concat('msi-', variables('deploymentResourceGroupName'), '-deploy')]",
     "managedIdentityId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('managedIdentityName'))]"
   },

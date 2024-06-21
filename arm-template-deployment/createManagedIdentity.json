@@ -11,7 +11,7 @@
     }
   },
   "variables": {
-    "deploymentResourceGroupName": "[concat('lm-logs-',parameters('LM_Company_name'),'-', replace(parameters('resource_group_region'),' ',''), '-group')]",
+    "deploymentResourceGroupName": "testResourceGroupName",
     "identityDeploymentName": "deployment-assets-except-role-assignment",
     "managedIdentityName": "[concat('msi-', variables('deploymentResourceGroupName'), '-deploy')]",
     "managedIdentityId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('managedIdentityName'))]",

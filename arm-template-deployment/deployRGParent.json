@@ -4,7 +4,7 @@
   "variables": {
     "sourceCodeBranch" : "master",
     "templateBaseUri": "[concat('https://raw.githubusercontent.com/ckcompton/lm-logs-azure/',variables('sourceCodeBranch'),'/arm-template-deployment/')]",
-    "deploymentResourceGroupName": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('resource_group_region'),' ',''),'-group')]",
+    "deploymentResourceGroupName": "testResourceGroupName",
     "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('resource_group_region'),' ',''))]",
     "eventhubLogsName": "log-hub",
     "subscriptionId": "[subscription().subscriptionId]",
