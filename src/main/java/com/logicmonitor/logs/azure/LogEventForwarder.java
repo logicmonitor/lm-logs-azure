@@ -117,6 +117,7 @@ public class LogEventForwarder {
 
     public final Configuration conf = createDataSdkConfig();
 
+    private static Logs logs;
 
     protected static Configuration createDataSdkConfig() {
         String company = System.getenv(PARAMETER_COMPANY_NAME);
@@ -177,7 +178,10 @@ public class LogEventForwarder {
     }
 
     public Logs configureLogs() {
-        return new Logs(conf, 5, true, responseInterface);
+        if (logs == null) {
+            logs = new Logs(conf, 5, true, responseInterface);
+        }
+        return logs;
     }
 
     /**
