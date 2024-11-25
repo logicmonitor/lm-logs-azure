@@ -82,7 +82,16 @@
         "description": "Enable Activity logs to be sent to the event hub that will get created in this deployment"
       },
       "defaultValue": "Yes"
+    },
+    "TLSVersion": {
+      "type": "string",
+      "defaultValue": "1_3",
+      "metadata": {
+        "description": "Provide an appropriate TLS version for storage account."
+      }
     }
+
+
   },
   "resources": [
     {
