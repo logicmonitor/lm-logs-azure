@@ -217,9 +217,9 @@
               "name": "RESOURCE_TYPE",
               "value": "[Parameters('Resource_Type')]"
             }
-          ]
-        },
-        "minTlsVersion" : "[variables('tlsVersionFunctionApp')]"
+          ],
+          "minTlsVersion" : "[variables('tlsVersionFunctionApp')]"
+        }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', variables('functionServerfarms'))]",
