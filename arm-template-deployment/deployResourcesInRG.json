@@ -34,9 +34,12 @@
     },
     "Resource_Type": {
       "type": "string"
-    }    ,
-    "TLSVersion" : {
+    },
+    "TLSVersionStorageAccount" : {
       "type"  : "string"
+    },
+    "TLSVersionFunctionApp" : {
+      "type" : "string"
     }
   },
   "variables": {
@@ -50,7 +53,8 @@
     "listener": "listener",
     "sender": "sender",
     "lm_auth": "[concat('{ \"LM_ACCESS_ID\" : \"',parameters('LM_Access_Id'),'\", \"LM_ACCESS_KEY\" : \"', parameters('LM_Access_Key'), '\", \"LM_BEARER_TOKEN\" : \"', parameters('LM_Bearer_Token'), '\" }')]",
-    "tlsVersion" : "[concat('TLS',parameters('TLSVersion')]"
+    "tlsVersionStorageAccount" : "[concat('TLS',parameters('TLSVersionStorageAccount'))]",
+    "tlsVersionFunctionApp" : "[parameters('TLSVersionFunctionApp')]"
   },
   "resources": [
     {
@@ -78,7 +82,7 @@
       "apiVersion": "2019-06-01",
       "location": "[resourceGroup().location]",
       "properties": {
-        "minimumTlsVersion": "[variables('tlsVersion')]",
+        "minimumTlsVersion": "[variables('tlsVersionStorageAccount')]",
         "encryption": {
           "services": {
             "file": {
@@ -214,7 +218,8 @@
               "value": "[Parameters('Resource_Type')]"
             }
           ]
-        }
+        },
+        "minTlsVersion" : "[variables('tlsVersionFunctionApp')]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', variables('functionServerfarms'))]",
