@@ -53,8 +53,7 @@
     "listener": "listener",
     "sender": "sender",
     "lm_auth": "[concat('{ \"LM_ACCESS_ID\" : \"',parameters('LM_Access_Id'),'\", \"LM_ACCESS_KEY\" : \"', parameters('LM_Access_Key'), '\", \"LM_BEARER_TOKEN\" : \"', parameters('LM_Bearer_Token'), '\" }')]",
-    "tlsVersionStorageAccount" : "[concat('TLS',parameters('TLSVersionStorageAccount'))]",
-    "tlsVersionFunctionApp" : "[parameters('TLSVersionFunctionApp')]"
+    "tlsVersionStorageAccount" : "[concat('TLS',parameters('TLSVersionStorageAccount'))]"
   },
   "resources": [
     {
@@ -218,7 +217,7 @@
               "value": "[Parameters('Resource_Type')]"
             }
           ],
-          "minTlsVersion" : "[variables('tlsVersionFunctionApp')]"
+          "minTlsVersion" : "[parameters('TLSVersionFunctionApp')]"
         }
       },
       "dependsOn": [
