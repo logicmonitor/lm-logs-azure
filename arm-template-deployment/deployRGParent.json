@@ -154,6 +154,12 @@
           },
           "Resource_Type": {
             "value": "[parameters('Resource_Type')]"
+          },
+          "TLSVersionStorageAccount": {
+            "value": "[parameters('TLSVersionStorageAccount')]"
+          },
+          "TLSVersionFunctionApp": {
+            "value": "[parameters('TLSVersionFunctionApp')]"
           }
         }
       },
