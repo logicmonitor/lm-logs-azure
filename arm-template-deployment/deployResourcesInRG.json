@@ -34,6 +34,12 @@
     },
     "Resource_Type": {
       "type": "string"
+    },
+    "TLSVersionStorageAccount" : {
+      "type"  : "string"
+    },
+    "TLSVersionFunctionApp" : {
+      "type" : "string"
     }
   },
   "variables": {
@@ -46,7 +52,8 @@
     "functionServerfarms": "[concat(variables('eventhubNamespace'),'-service-plan')]",
     "listener": "listener",
     "sender": "sender",
-    "lm_auth": "[concat('{ \"LM_ACCESS_ID\" : \"',parameters('LM_Access_Id'),'\", \"LM_ACCESS_KEY\" : \"', parameters('LM_Access_Key'), '\", \"LM_BEARER_TOKEN\" : \"', parameters('LM_Bearer_Token'), '\" }')]"
+    "lm_auth": "[concat('{ \"LM_ACCESS_ID\" : \"',parameters('LM_Access_Id'),'\", \"LM_ACCESS_KEY\" : \"', parameters('LM_Access_Key'), '\", \"LM_BEARER_TOKEN\" : \"', parameters('LM_Bearer_Token'), '\" }')]",
+    "tlsVersionStorageAccount" : "[concat('TLS',parameters('TLSVersionStorageAccount'))]"
   },
   "resources": [
     {
@@ -74,7 +81,7 @@
       "apiVersion": "2019-06-01",
       "location": "[resourceGroup().location]",
       "properties": {
-        "minimumTlsVersion": "TLS1_2",
+        "minimumTlsVersion": "[variables('tlsVersionStorageAccount')]",
         "encryption": {
           "services": {
             "file": {
@@ -209,7 +216,8 @@
               "name": "RESOURCE_TYPE",
               "value": "[Parameters('Resource_Type')]"
             }
-          ]
+          ],
+          "minTlsVersion" : "[parameters('TLSVersionFunctionApp')]"
         }
       },
       "dependsOn": [
