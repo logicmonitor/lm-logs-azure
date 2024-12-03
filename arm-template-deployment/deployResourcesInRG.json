@@ -32,8 +32,8 @@
     "sourceCodeBranch": {
       "type": "string"
     },
-    "Resource_Type": {
-      "type": "string"
+    "LM_Domain_Name": {
+      "type" : "string"
     }
   },
   "variables": {
@@ -208,6 +208,10 @@
             {
               "name": "RESOURCE_TYPE",
               "value": "[Parameters('Resource_Type')]"
+            },
+            {
+              "name" : "LM_DOMAIN_NAME",
+              "value" : "[Parameters('LM_Domain_name')]"
             }
           ]
         }

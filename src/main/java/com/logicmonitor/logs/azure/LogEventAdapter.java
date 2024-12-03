@@ -254,7 +254,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
             metadata.put(LM_TENANT_ID_KEY, tenantId);
         }
 
-        String resourceType = System.getenv(RESOURCE_TYPE_KEY);
+        String resourceType = "Azure";
         if(StringUtils.isNotBlank(resourceType)){
             metadata.put(RESOURCE_TYPE_FIELD, resourceType);
         }

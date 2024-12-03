@@ -21,16 +21,23 @@ repositories {
         url "https://maven.pkg.github.com/logicmonitor/lm-data-sdk-java"
     }
     mavenCentral()
+//    flatDir {
+//        dirs 'libs'
+//    }
 
 }
 
 dependencies {
+//    implementation files('libs/lm-data-sdk-0.0.4-alpha.jar')
     implementation (
         "com.microsoft.azure.functions:azure-functions-java-library:1.4.0",
         "com.logicmonitor:lm-logs-sdk-java:1.2",
-        "com.logicmonitor:lm-data-sdk:0.0.4-alpha",
+        "com.logicmonitor:lm-data-sdk:0.0.5-alpha",
         "com.google.code.gson:gson:2.8.6"
     )
+
+
+
    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
     implementation 'io.gsonfire:gson-fire:1.8.5'
@@ -46,6 +53,8 @@ dependencies {
         "org.glassfish.jersey.test-framework:jersey-test-framework-core:${jerseyVersion}",
         "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:${jerseyVersion}"
     )
+
+//    compile fileTree(dir: 'libs', include: 'lm-data-sdk-0.0.4-alpha.jar')
     testCompileOnly(
         "junit:junit:4.12"
     )
