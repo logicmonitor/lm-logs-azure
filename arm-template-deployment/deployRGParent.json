@@ -4,18 +4,30 @@
   "variables": {
     "sourceCodeBranch" : "master",
     "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',variables('sourceCodeBranch'),'/arm-template-deployment/')]",
-    "deploymentResourceGroupName": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('resource_group_region'),' ',''),'-group')]",
-    "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('resource_group_region'),' ',''))]",
+    "deploymentResourceGroupName": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Resource_Group_Region'),' ',''),'-group')]",
+    "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Resource_Group_Region'),' ',''))]",
     "eventhubLogsName": "log-hub",
     "subscriptionId": "[subscription().subscriptionId]",
     "eventHubAuthorizationRuleId": "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.EventHub/namespaces/', variables('eventhubNamespace'), '/authorizationRules/RootManageSharedAccessKey')]"
   },
   "parameters": {
-    "resource_group_region": {
+    "Resource_Group_Region": {
       "type": "String"
     },
-    "LM_Company_name": {
+    "LM_Company_Name": {
       "type": "String"
+    },
+    "LM_Domain_Name": {
+      "type": "string",
+      "defaultValue": "logicmonitor.com",
+      "allowedValues": [
+        "logicmonitor.com",
+        "lmgov.us",
+        "qa-lmgov.us"
+      ],
+      "metadata": {
+        "description": "Domain of LM Platform where logs are to be sent."
+      }
     },
     "LM_Access_Id": {
       "type": "String",
@@ -58,21 +70,14 @@
         "description": "comma separated keys to add as event metadata in a lm-log event. for nested json specify '.' eg - properties.functionName,properties.message "
       }
     },
-    "LMTenantId": {
+    "LM_Tenant_Id": {
       "type": "string",
       "defaultValue":"",
       "metadata": {
         "description": "LogicMonitor Tenant Identifier sent as event metadata to LogicMonitor"
       }
     },
-    "Resource_Type": {
-      "type": "string",
-      "defaultValue": "Azure",
-      "metadata": {
-        "description": "Type of platform from where logs are coming."
-      }
-    },
-    "enableActivityLogs": {
+    "Enable_Activity_Logs": {
       "type": "String",
       "allowedValues": [
         "Yes",
@@ -89,7 +94,7 @@
       "condition": "[or(and(not(empty(parameters('LM_Access_Id'))), not(empty(parameters('LM_Access_Key')))), not(empty(parameters('LM_Bearer_Token'))))]",
       "type": "Microsoft.Resources/resourceGroups",
       "apiVersion": "2018-05-01",
-      "location": "[parameters('resource_group_region')]",
+      "location": "[parameters('Resource_Group_Region')]",
       "name": "[variables('deploymentResourceGroupName')]",
       "properties": {}
     },
@@ -106,11 +111,14 @@
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
-          "azure_region": {
-            "value": "[parameters('resource_group_region')]"
+          "Azure_Region": {
+            "value": "[parameters('Resource_Group_Region')]"
           },
-          "LM_Company_name": {
-            "value": "[parameters('LM_Company_name')]"
+          "LM_Company_Name": {
+            "value": "[parameters('LM_Company_Name')]"
+          },
+          "LM_Domain_Name": {
+            "value": "[parameters('LM_Domain_Name')]"
           },
           "LM_Access_Id": {
             "value": "[parameters('LM_Access_Id')]"
@@ -133,11 +141,8 @@
           "Include_Metadata_keys": {
             "value": "[parameters('Include_Metadata_keys')]"
           },
-          "LMTenantId" : {
-            "value": "[parameters('LMTenantId')]"
-          },
-          "Resource_Type": {
-            "value": "[parameters('Resource_Type')]"
+          "LM_Tenant_Id" : {
+            "value": "[parameters('LM_Tenant_Id')]"
           }
         }
       },
@@ -146,7 +151,7 @@
       ]
     },
     {
-      "condition": "[equals(parameters('enableActivityLogs'), 'Yes')]",
+      "condition": "[equals(parameters('Enable_Activity_Logs'), 'Yes')]",
       "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2017-05-01-preview",
       "name": "[variables('deploymentResourceGroupName')]",

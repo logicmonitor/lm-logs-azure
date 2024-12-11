@@ -111,6 +111,12 @@ public class LogEventForwarder {
     /**
      * Transforms Azure log events into log entries.
      */
+
+
+    /**
+     * Parameter: domain in the target URL '{company}.{domainName}'.
+     */
+    public static final String PARAMETER_DOMAIN_NAME = "LM_DOMAIN_NAME";
     private static LogEventAdapter adapter;
 
     private static final Gson GSON = new GsonBuilder().create();
@@ -121,6 +127,7 @@ public class LogEventForwarder {
 
     protected static Configuration createDataSdkConfig() {
         String company = System.getenv(PARAMETER_COMPANY_NAME);
+        String domainName = System.getenv(PARAMETER_DOMAIN_NAME);
         try {
             JsonObject authConf = GSON.fromJson(removeQuotesAndUnescape(System.getenv(PARAMETER_LM_AUTH)), JsonObject.class);
             String accessId = authConf.get(PARAMETER_ACCESS_ID).getAsString();
@@ -130,11 +137,11 @@ public class LogEventForwarder {
             if (StringUtils.isNoneBlank(accessKey, accessId)) {
                 // configure with null bearer token
                 log(Level.FINE, "Using LMv1 for authentication with Logicmonitor.");
-                return new Configuration(company, accessId, accessKey, null);
+                return new Configuration(company, accessId, accessKey, null,domainName);
             } else {
                 // configure with just Bearer token
                 log(Level.FINE, "Using bearer token for authentication with Logicmonitor.");
-                return new Configuration(company, null, null, bearerToken);
+                return new Configuration(company, null, null, bearerToken,domainName);
             }
         } catch (Exception e) {
             log(Level.SEVERE,

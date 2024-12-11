@@ -102,8 +102,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     public static final String AZURE_CATEGORY = "category";
     public static final String LM_TENANT_ID = "LM_TENANT_ID";
 
-    public static final String RESOURCE_TYPE_KEY = "RESOURCE_TYPE";
-    public static final String RESOURCE_TYPE_FIELD = "_resource.type";
     public static final String LM_TENANT_ID_KEY = "_lm.tenantId";
 
     public static final Pattern RESOURCE_TYPE = Pattern.compile("/subscriptions/.*/resourceGroups/.*/providers/(?<type>[^/]*/[^/]*)/.*", Pattern.CASE_INSENSITIVE);
@@ -115,7 +113,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     /**
      * Required static metadata to be added in every LogEntry.
      */
-    public static final Map<String, String> REQ_STATIC_METADATA = Map.of("_integration", "azure");
+    public static final Map<String, String> REQ_STATIC_METADATA = Map.of("_integration", "azure","_resource.type","Azure");
 
     /**
      * Required metadata key to LogEventMessage method map.
@@ -252,11 +250,6 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         String tenantId = System.getenv(LM_TENANT_ID);
         if (StringUtils.isNotBlank(tenantId)) {
             metadata.put(LM_TENANT_ID_KEY, tenantId);
-        }
-
-        String resourceType = System.getenv(RESOURCE_TYPE_KEY);
-        if(StringUtils.isNotBlank(resourceType)){
-            metadata.put(RESOURCE_TYPE_FIELD, resourceType);
         }
 
         entry.setMetadata(metadata);

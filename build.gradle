@@ -26,10 +26,10 @@ repositories {
 
 dependencies {
     implementation (
-        "com.microsoft.azure.functions:azure-functions-java-library:1.4.0",
-        "com.logicmonitor:lm-logs-sdk-java:1.2",
-        "com.logicmonitor:lm-data-sdk:0.0.4-alpha",
-        "com.google.code.gson:gson:2.8.6"
+            "com.logicmonitor:lm-data-sdk:0.0.5-alpha",
+            "com.microsoft.azure.functions:azure-functions-java-library:1.4.0",
+            "com.logicmonitor:lm-logs-sdk-java:1.2",
+            "com.google.code.gson:gson:2.8.6"
     )
    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
