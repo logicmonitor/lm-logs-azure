@@ -33,7 +33,7 @@
       "type": "string"
     },
     "LM_Domain_Name": {
-      "type" : "string"
+      "type": "string"
     }
   },
   "variables": {
@@ -162,12 +162,12 @@
               "value": "[parameters('LM_Company_Name')]"
             },
             {
-              "name" : "LM_AUTH",
-              "value" : "[variables('lm_auth')]"
+              "name": "LM_AUTH",
+              "value": "[variables('lm_auth')]"
             },
             {
-              "name" : "LM_TENANT_ID",
-              "value" : "[parameters('LM_Tenant_Id')]"
+              "name": "LM_TENANT_ID",
+              "value": "[parameters('LM_Tenant_Id')]"
             },
             {
               "name": "AzureClientID",
@@ -199,15 +199,15 @@
             },
             {
               "name": "Include_Metadata_keys",
-              "value" : "[parameters('Include_Metadata_keys')]"
+              "value": "[parameters('Include_Metadata_keys')]"
             },
             {
               "name": "LOG_LEVEL",
-              "value" : "WARNING"
+              "value": "WARNING"
             },
             {
-              "name" : "LM_DOMAIN_NAME",
-              "value" : "[parameters('LM_Domain_Name')]"
+              "name": "LM_DOMAIN_NAME",
+              "value": "[parameters('LM_Domain_Name')]"
             }
           ]
         }

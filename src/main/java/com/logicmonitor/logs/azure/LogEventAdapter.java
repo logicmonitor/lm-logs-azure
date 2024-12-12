@@ -113,7 +113,7 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     /**
      * Required static metadata to be added in every LogEntry.
      */
-    public static final Map<String, String> REQ_STATIC_METADATA = Map.of("_integration", "azure","_resource.type","Azure");
+    public static final Map<String, String> REQ_STATIC_METADATA = Map.of("_integration", "azure", "_resource.type", "Azure");
 
     /**
      * Required metadata key to LogEventMessage method map.

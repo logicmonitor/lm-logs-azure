@@ -137,11 +137,11 @@ public class LogEventForwarder {
             if (StringUtils.isNoneBlank(accessKey, accessId)) {
                 // configure with null bearer token
                 log(Level.FINE, "Using LMv1 for authentication with Logicmonitor.");
-                return new Configuration(company, accessId, accessKey, null,domainName);
+                return new Configuration(company, accessId, accessKey, null, domainName);
             } else {
                 // configure with just Bearer token
                 log(Level.FINE, "Using bearer token for authentication with Logicmonitor.");
-                return new Configuration(company, null, null, bearerToken,domainName);
+                return new Configuration(company, null, null, bearerToken, domainName);
             }
         } catch (Exception e) {
             log(Level.SEVERE,

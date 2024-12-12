@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "variables": {
-    "sourceCodeBranch" : "master",
+    "sourceCodeBranch": "master",
     "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',variables('sourceCodeBranch'),'/arm-template-deployment/')]",
     "deploymentResourceGroupName": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Resource_Group_Region'),' ',''),'-group')]",
     "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Resource_Group_Region'),' ',''))]",
@@ -31,21 +31,21 @@
     },
     "LM_Access_Id": {
       "type": "String",
-      "defaultValue":"",
+      "defaultValue": "",
       "metadata": {
         "description": "LogicMonitor API Token access ID."
       }
     },
     "LM_Access_Key": {
       "type": "String",
-      "defaultValue":"",
+      "defaultValue": "",
       "metadata": {
         "description": "LogicMonitor API Token access Key."
       }
     },
     "LM_Bearer_Token": {
       "type": "String",
-      "defaultValue":"",
+      "defaultValue": "",
       "metadata": {
         "description": "LM API Bearer Token.\nEither specify access_id and access_key both or bearer_token. If all specified, LMv1 token(access_id and access_key) will be used for authentication with LogicMonitor."
       }
@@ -58,21 +58,21 @@
     },
     "Azure_Account_Name": {
       "type": "string",
-      "defaultValue":"",
+      "defaultValue": "",
       "metadata": {
         "description": "Azure Account Name created during the creation of azure account in LM"
       }
     },
     "Include_Metadata_keys": {
       "type": "string",
-      "defaultValue":"resourceId",
+      "defaultValue": "resourceId",
       "metadata": {
         "description": "comma separated keys to add as event metadata in a lm-log event. for nested json specify '.' eg - properties.functionName,properties.message "
       }
     },
     "LM_Tenant_Id": {
       "type": "string",
-      "defaultValue":"",
+      "defaultValue": "",
       "metadata": {
         "description": "LogicMonitor Tenant Identifier sent as event metadata to LogicMonitor"
       }
@@ -141,7 +141,7 @@
           "Include_Metadata_keys": {
             "value": "[parameters('Include_Metadata_keys')]"
           },
-          "LM_Tenant_Id" : {
+          "LM_Tenant_Id": {
             "value": "[parameters('LM_Tenant_Id')]"
           }
         }
