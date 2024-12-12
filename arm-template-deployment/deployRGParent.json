@@ -87,7 +87,23 @@
         "description": "Enable Activity logs to be sent to the event hub that will get created in this deployment"
       },
       "defaultValue": "Yes"
+    },
+    "TLSVersionStorageAccount": {
+      "type": "string",
+      "defaultValue": "1_2",
+      "metadata": {
+        "description": "Provide an appropriate TLS version for storage account. Format - X_X"
+      }
+    },
+    "TLSVersionFunctionApp": {
+      "type": "string",
+      "defaultValue": "1.3",
+      "metadata": {
+        "description": "Provide an appropriate TLS version for function app. Format - X.X"
+      }
     }
+
+
   },
   "resources": [
     {
@@ -141,8 +157,14 @@
           "Include_Metadata_keys": {
             "value": "[parameters('Include_Metadata_keys')]"
           },
-          "LM_Tenant_Id": {
+          "LM_Tenant_Id" : {
             "value": "[parameters('LM_Tenant_Id')]"
+          },
+          "TLSVersionStorageAccount": {
+            "value": "[parameters('TLSVersionStorageAccount')]"
+          },
+          "TLSVersionFunctionApp": {
+            "value": "[parameters('TLSVersionFunctionApp')]"
           }
         }
       },
