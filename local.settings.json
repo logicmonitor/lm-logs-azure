@@ -17,7 +17,7 @@
         "LOG_LEVEL" : "WARNING",
         "LM_TENANT_ID" : "sample_tenant_id",
         "LM_AUTH": "{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"token\"}",
-        "AzureAccountName": "LMTest Account",
-        "RESOURCE_TYPE": "Azure"
+        "AzureAccountName": "<Logicmonitor Azure Account>",
+        "LM_DOMAIN_NAME" : "<LogicMonitor company domain>"
     }
 }

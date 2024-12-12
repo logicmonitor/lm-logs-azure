@@ -2,7 +2,7 @@
   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "LM_Company_name": {
+    "LM_Company_Name": {
       "type": "string"
     },
     "LM_Access_Id": {
@@ -23,16 +23,16 @@
     "Include_Metadata_keys": {
       "type": "string"
     },
-    "LMTenantId": {
+    "LM_Tenant_Id": {
       "type": "string"
     },
-    "azure_region": {
+    "Azure_Region": {
       "type": "string"
     },
     "sourceCodeBranch": {
       "type": "string"
     },
-    "Resource_Type": {
+    "LM_Domain_Name": {
       "type": "string"
     },
     "TLSVersionStorageAccount" : {
@@ -43,9 +43,9 @@
     }
   },
   "variables": {
-    "logsFunctionAppName": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('azure_region'),' ',''))]",
-    "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_name'), '-', replace(parameters('azure_region'),' ',''))]",
-    "storage": "[toLower(concat(parameters('LM_Company_name'), replace(parameters('azure_region'),' ','')))]",
+    "logsFunctionAppName": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Azure_Region'),' ',''))]",
+    "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Azure_Region'),' ',''))]",
+    "storage": "[toLower(concat(parameters('LM_Company_Name'), replace(parameters('Azure_Region'),' ','')))]",
     "lmAppStorageAccounts": "[if(greater(length(variables('storage')) , 24), substring(variables('storage'), sub(length(variables('storage')) , 24), 24) , variables('storage'))]",
     "eventhubLogsName": "log-hub",
     "ConsumergroupsLogsName": "LMConsumerGroup",
@@ -166,15 +166,15 @@
             },
             {
               "name": "LM_COMPANY",
-              "value": "[parameters('LM_Company_name')]"
+              "value": "[parameters('LM_Company_Name')]"
             },
             {
-              "name" : "LM_AUTH",
-              "value" : "[variables('lm_auth')]"
+              "name": "LM_AUTH",
+              "value": "[variables('lm_auth')]"
             },
             {
-              "name" : "LM_TENANT_ID",
-              "value" : "[parameters('LMTenantId')]"
+              "name": "LM_TENANT_ID",
+              "value": "[parameters('LM_Tenant_Id')]"
             },
             {
               "name": "AzureClientID",
@@ -206,15 +206,15 @@
             },
             {
               "name": "Include_Metadata_keys",
-              "value" : "[parameters('Include_Metadata_keys')]"
+              "value": "[parameters('Include_Metadata_keys')]"
             },
             {
               "name": "LOG_LEVEL",
-              "value" : "WARNING"
+              "value": "WARNING"
             },
             {
-              "name": "RESOURCE_TYPE",
-              "value": "[Parameters('Resource_Type')]"
+              "name": "LM_DOMAIN_NAME",
+              "value": "[parameters('LM_Domain_Name')]"
             }
           ],
           "minTlsVersion" : "[parameters('TLSVersionFunctionApp')]"
