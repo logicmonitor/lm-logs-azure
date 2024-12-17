@@ -25,13 +25,13 @@ repositories {
 }
 
 dependencies {
-    implementation (
-        "com.microsoft.azure.functions:azure-functions-java-library:1.4.0",
-        "com.logicmonitor:lm-logs-sdk-java:1.2",
-        "com.logicmonitor:lm-data-sdk:0.0.4-alpha",
-        "com.google.code.gson:gson:2.8.6"
+    implementation(
+            "com.logicmonitor:lm-data-sdk:0.0.5-alpha",
+            "com.microsoft.azure.functions:azure-functions-java-library:1.4.0",
+            "com.logicmonitor:lm-logs-sdk-java:1.2",
+            "com.google.code.gson:gson:2.8.6"
     )
-   implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
     implementation 'io.gsonfire:gson-fire:1.8.5'
     implementation 'org.slf4j:slf4j-api:1.7.25'
@@ -39,18 +39,18 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.5.0'
     implementation 'org.slf4j:slf4j-nop:1.7.25'
 
-    testImplementation (
-        "org.junit.jupiter:junit-jupiter:${junitVersion}",
-        "com.github.stefanbirkner:system-lambda:1.0.0",
-        "org.mockito:mockito-core:3.4.4",
-        "org.glassfish.jersey.test-framework:jersey-test-framework-core:${jerseyVersion}",
-        "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:${jerseyVersion}"
+    testImplementation(
+            "org.junit.jupiter:junit-jupiter:${junitVersion}",
+            "com.github.stefanbirkner:system-lambda:1.0.0",
+            "org.mockito:mockito-core:3.4.4",
+            "org.glassfish.jersey.test-framework:jersey-test-framework-core:${jerseyVersion}",
+            "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:${jerseyVersion}"
     )
     testCompileOnly(
-        "junit:junit:4.12"
+            "junit:junit:4.12"
     )
     testRuntimeOnly(
-        "org.junit.vintage:junit-vintage-engine:${junitVersion}"
+            "org.junit.vintage:junit-vintage-engine:${junitVersion}"
     )
 }
 
@@ -68,7 +68,7 @@ test {
 jar {
     manifest {
         attributes 'Implementation-Title': project.getName(),
-                   'Implementation-Version': project.getVersion()
+                'Implementation-Version': project.getVersion()
     }
 }
 
