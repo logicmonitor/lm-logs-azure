@@ -47,10 +47,10 @@
         "azPowerShellVersion": "5.6",
         "timeout": "PT1H",
         "arguments": "[format(' -resourceGroup {0} -lmCompanyName {1} -subscriptionId {2} -location {3} -sourceCodeBranch {4}', parameters('resourceGroup'),parameters('LM_Company_name'), parameters('subscriptionId'), parameters('location'), parameters('sourceCodeBranch'))]",
-        "primaryScriptURI": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',parameters('sourceCodeBranch'),'/diagnostic-settings-scripts/policyCreationAndRemediationTemplate.ps1')]",
+        "primaryScriptURI": "[concat('https://raw.githubusercontent.com/ckcompton/lm-logs-azure/',parameters('sourceCodeBranch'),'/diagnostic-settings-scripts/policyCreationAndRemediationTemplate.ps1')]",
         "supportingScriptUris": [
-          "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',parameters('sourceCodeBranch'),'/diagnostic-settings-scripts/policyAssignment.ps1')]",
-          "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',parameters('sourceCodeBranch'),'/diagnostic-settings-scripts/policyInitiativeRemediation.ps1')]"
+          "[concat('https://raw.githubusercontent.com/ckcompton/lm-logs-azure/',parameters('sourceCodeBranch'),'/diagnostic-settings-scripts/policyAssignment.ps1')]",
+          "[concat('https://raw.githubusercontent.com/ckcompton/lm-logs-azure/',parameters('sourceCodeBranch'),'/diagnostic-settings-scripts/policyInitiativeRemediation.ps1')]"
         ],
         "cleanupPreference": "Always",
         "retentionInterval": "P1D"

@@ -15,7 +15,7 @@ Each Azure region requires a separate deployment. This is because devices can on
 
 ### Deploying using Terraform
 
-* Download [deploy.tf file](https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/deploy.tf)
+* Download [deploy.tf file](https://raw.githubusercontent.com/ckcompton/lm-logs-azure/master/deploy.tf)
 * (optional) Update `app_settings` in the file to set the optional parameters
 * Exceute `terraform init`
 * Execute `terraform plan --var-file terraform.tfvars -out tf.plan`
@@ -81,7 +81,7 @@ Forwarding Linux VM's system and application logs requires [installation of diag
 
 #### Configuration
 
-* Download the configuration script: `wget https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/vm-config/configure-lad.sh`
+* Download the configuration script: `wget https://raw.githubusercontent.com/ckcompton/lm-logs-azure/master/vm-config/configure-lad.sh`
 * execute it to create the storage account needed by the extension, and the configuration files: `./configure-lad.sh <LM company name>`
 * update `lad_public_settings.json` to configure types of system logs and their levels (`syslogEvents`), and application logs (`fileLogs`) to collect
 * execute `az vm extension set --publisher Microsoft.Azure.Diagnostics --name LinuxDiagnostic --version 3.0 --resource-group <your VM's Resource Group name> --vm-name <your VM name> --protected-settings lad_protected_settings.json --settings lad_public_settings.json` - the exact command was printed by the `configure-lad.sh` script
@@ -99,7 +99,7 @@ Forwarding Windows VM's system and application logs requires [installation of di
 
 #### Configuration
 
-* Download the configuration script: `Invoke-WebRequest -Uri https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/vm-config/configure-wad.ps1 -OutFile .\configure-wad.ps1`
+* Download the configuration script: `Invoke-WebRequest -Uri https://raw.githubusercontent.com/ckcompton/lm-logs-azure/master/vm-config/configure-wad.ps1 -OutFile .\configure-wad.ps1`
 * execute it to create the storage account needed by the extension, and the configuration files: `.\configure-wad.ps1 -lm_company_name <LM company name>`
 * update `wad_public_settings.json` to configure types of [event logs](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostics-extension-schema-windows#windowseventlog-element) (`Applicaiton, System, Setup, Security, etc`) and their levels (`Info, Warning, Critical`) to collect
 * execute `az vm extension set --publisher Microsoft.Azure.Diagnostics --name IaaSDiagnostics --version 1.18 --resource-group <your VM's Resource Group name> --vm-name <your VM name> --protected-settings wad_protected_settings.json --settings wad_public_settings.json` - the exact command was printed by the `configure-wad.ps1` script

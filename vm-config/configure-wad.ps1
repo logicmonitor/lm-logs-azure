@@ -83,7 +83,7 @@ if (!$?){
 
 Try{
     Write-Host "[Info]:writing the protected settings" -ForegroundColor White -BackgroundColor Black
-    $wad_protected_settings = (Invoke-WebRequest -Uri https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/vm-config/wad_protected_settings.json).Content | Out-File wad_protected_settings.json
+    $wad_protected_settings = (Invoke-WebRequest -Uri https://raw.githubusercontent.com/ckcompton/lm-logs-azure/master/vm-config/wad_protected_settings.json).Content | Out-File wad_protected_settings.json
 
     (Get-Content wad_protected_settings.json).Replace('__DIAGNOSTIC_STORAGE_ACCOUNT__', $storage_name) | Set-Content wad_protected_settings.json
     (Get-Content wad_protected_settings.json).Replace('__DIAGNOSTIC_STORAGE_KEY__', $storage_account_key) | Set-Content wad_protected_settings.json
@@ -96,7 +96,7 @@ Catch{
 
 Try{
     Write-Host "[Info]:writing the public settings" -ForegroundColor White -BackgroundColor Black
-    $wad_public_settings = (Invoke-WebRequest -Uri https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/vm-config/wad_public_settings.json).Content | Out-File wad_public_settings.json
+    $wad_public_settings = (Invoke-WebRequest -Uri https://raw.githubusercontent.com/ckcompton/lm-logs-azure/master/vm-config/wad_public_settings.json).Content | Out-File wad_public_settings.json
     
     (Get-Content wad_public_settings.json).Replace('__LOGS_EVENT_HUB_URI__', $event_hub_uri) | Set-Content wad_public_settings.json
     (Get-Content wad_public_settings.json).Replace('__DIAGNOSTIC_STORAGE_ACCOUNT__', $storage_name) | Set-Content wad_public_settings.json

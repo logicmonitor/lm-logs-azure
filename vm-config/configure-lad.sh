@@ -115,13 +115,13 @@ then
 fi
 
 echo "writing the protected settings"
-wget -q --backups=2 https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/vm-config/lad_protected_settings.json
+wget -q --backups=2 https://raw.githubusercontent.com/ckcompton/lm-logs-azure/master/vm-config/lad_protected_settings.json
 sed -i "s#__DIAGNOSTIC_STORAGE_ACCOUNT__#$storage_name#g" lad_protected_settings.json
 sed -i "s#__DIAGNOSTIC_STORAGE_SAS_TOKEN__#${storage_account_sas_token//&/\\&}#g" lad_protected_settings.json
 
 echo "writing the public settings"
 sed -i "s#__LOGS_EVENT_HUB_URI__#${event_hub_sas_uri//&/\\&}#g" lad_protected_settings.json
-wget -q --backups=2 https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/vm-config/lad_public_settings.json
+wget -q --backups=2 https://raw.githubusercontent.com/ckcompton/lm-logs-azure/master/vm-config/lad_public_settings.json
 sed -i "s#__DIAGNOSTIC_STORAGE_ACCOUNT__#$storage_name#g" lad_public_settings.json
 sed -i "s#__VM_RESOURCE_ID__#$vm_resource_id#g" lad_public_settings.json
 
