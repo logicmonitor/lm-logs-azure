@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # ----------- CONFIG SECTION ------------
-SUBSCRIPTION_ID="318382e3-a165-4f0d-8906-01fb4cd06b74"
-RESOURCE_GROUP="lm-logs-qauatfeature03-westus-group"
-VM_NAMES=("rhel-ama-test" "debian-ama-test")
-LAW_NAME="lm-logs-qauatfeature03-westus-workspace"
-LOCATION="westus"
+SUBSCRIPTION_ID=""
+RESOURCE_GROUP=""
+VM_NAMES=("")
+LAW_NAME=""
+LOCATION=""
 DCR_NAME="dcr-${RESOURCE_GROUP}"
 DCR_FILE="dcr.json"
-NAMESPACE="lm-logs-qauatfeature03-westus"
+NAMESPACE=""
 EVENTHUB_NAME="log-hub"
 MAX_RETRIES=3
 RETRY_INTERVAL=20
