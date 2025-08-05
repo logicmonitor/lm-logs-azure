@@ -35,6 +35,7 @@ LAW_NAME="" #the name of the Log Analytics Workspace that will be created.
 LOCATION="" #the region of the resources to be created in. Note - the region should be same as the vm and the deployment resources in step 1.
 NAMESPACE="" #the eventhub namespace created as a part of the deployment in step 1.
 EVENTHUB_NAME="log-hub"
+EXPORT_RULE_NAME="" #the name of the export rule which will be created in the LAW
 ```
 
 ### 📜 Deployment Script

@@ -10,8 +10,7 @@ DCR_NAME="dcr-${RESOURCE_GROUP}"
 DCR_FILE="dcr.json"
 NAMESPACE=""
 EVENTHUB_NAME="log-hub"
-MAX_RETRIES=3
-RETRY_INTERVAL=20
+EXPORT_RULE_NAME=""
 # ---------------------------------------
 
 az config set extension.use_dynamic_install=yes_without_prompt
@@ -30,7 +29,9 @@ LAW_ID=$(az monitor log-analytics workspace show \
   --resource-group "$RESOURCE_GROUP" \
   --workspace-name "$LAW_NAME" \
   --query id -o tsv)
+
 sleep 30
+
 echo "Writing DCR JSON..."
 cat > "$DCR_FILE" <<EOF
 {
@@ -85,31 +86,19 @@ cat > "$DCR_FILE" <<EOF
 }
 EOF
 
-# ------------------ Retry Block for DCR ------------------
-ATTEMPT=1
-while [ $ATTEMPT -le $MAX_RETRIES ]; do
-  echo "Attempt $ATTEMPT: Creating Data Collection Rule..."
+# ------------------ Idempotent DCR Creation ------------------
+echo "Checking for existing Data Collection Rule..."
+if ! az monitor data-collection rule show --name "$DCR_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+  echo "Creating Data Collection Rule..."
   az monitor data-collection rule create \
     --name "$DCR_NAME" \
     --resource-group "$RESOURCE_GROUP" \
     --rule-file "$DCR_FILE" \
     --only-show-errors
-
-  if [ $? -eq 0 ]; then
-    echo "DCR created successfully on attempt $ATTEMPT."
-    break
-  else
-    echo "DCR creation failed (likely due to table unavailability). Retrying in $RETRY_INTERVAL seconds..."
-    sleep $RETRY_INTERVAL
-    ((ATTEMPT++))
-  fi
-done
-
-if [ $ATTEMPT -gt $MAX_RETRIES ]; then
-  echo "ERROR: DCR creation failed after $MAX_RETRIES attempts. Exiting."
-  exit 1
+else
+  echo "DCR '$DCR_NAME' already exists. Skipping creation."
 fi
-# ----------------------------------------------------------
+# -------------------------------------------------------------
 
 for VM_NAME in "${VM_NAMES[@]}"; do
   echo "Processing VM: $VM_NAME"
@@ -120,7 +109,7 @@ for VM_NAME in "${VM_NAMES[@]}"; do
   echo "Removing OMS agent if present..."
   az vm extension delete --vm-name "$VM_NAME" --resource-group "$RESOURCE_GROUP" --name OmsAgentForLinux &>/dev/null
 
-  echo "Reinstalling AMA..."
+  echo "Installing AMA..."
   az vm extension delete --vm-name "$VM_NAME" --resource-group "$RESOURCE_GROUP" --name AzureMonitorLinuxAgent &>/dev/null
   az vm extension set \
     --name AzureMonitorLinuxAgent \
@@ -130,6 +119,7 @@ for VM_NAME in "${VM_NAMES[@]}"; do
     --enable-auto-upgrade true --only-show-errors
 
   sleep 30
+
   echo "Associating DCR with VM..."
   az monitor data-collection rule association create \
     --name "dcr-association-${VM_NAME}" \
@@ -138,13 +128,23 @@ for VM_NAME in "${VM_NAMES[@]}"; do
     --only-show-errors
 done
 
-echo "Creating Data Export Rule to Event Hub..."
-az monitor log-analytics workspace data-export create \
-  --resource-group $RESOURCE_GROUP \
-  --workspace-name $LAW_NAME \
-  --name MyLinuxExporttoLM \
-  --destination "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.EventHub/namespaces/$NAMESPACE/eventhubs/$EVENTHUB_NAME" \
-  --enable \
-  --tables Syslog Perf Heartbeat
+# ------------------ Idempotent Export Rule ------------------
+echo "Checking for existing Data Export Rule..."
+if ! az monitor log-analytics workspace data-export show \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$LAW_NAME" \
+  --name "$EXPORT_RULE_NAME" &>/dev/null; then
+  echo "Creating Data Export Rule to Event Hub..."
+  az monitor log-analytics workspace data-export create \
+    --resource-group "$RESOURCE_GROUP" \
+    --workspace-name "$LAW_NAME" \
+    --name "$EXPORT_RULE_NAME" \
+    --destination "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.EventHub/namespaces/$NAMESPACE/eventhubs/$EVENTHUB_NAME" \
+    --enable \
+    --tables Syslog Perf Heartbeat
+else
+  echo "Export rule '$EXPORT_RULE_NAME' already exists. Skipping creation."
+fi
+# ------------------------------------------------------------
 
-echo "Setup complete for all VMs. Logs and metrics are now forwarded to Log Analytics and Event Hub."
+echo "Setup complete. Logs and metrics are being forwarded to Log Analytics and Event Hub."
