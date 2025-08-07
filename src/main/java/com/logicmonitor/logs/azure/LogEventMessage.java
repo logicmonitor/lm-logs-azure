@@ -14,13 +14,17 @@
 
 package com.logicmonitor.logs.azure;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * POJO containing common Azure log structure.
  */
 public class LogEventMessage {
 
     private String operationName;
+    @SerializedName(value = "resourceId", alternate = {"_ResourceId"})
     private String resourceId;
+    @SerializedName(value = "time", alternate = {"EventTime"})
     private String time;
     private String category;
     private String level;

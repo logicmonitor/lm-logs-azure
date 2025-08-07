@@ -29,7 +29,7 @@ dependencies {
             "com.logicmonitor:lm-data-sdk:0.0.5-alpha",
             "com.microsoft.azure.functions:azure-functions-java-library:1.4.0",
             "com.logicmonitor:lm-logs-sdk-java:1.2",
-            "com.google.code.gson:gson:2.8.6"
+            "com.google.code.gson:gson:2.13.1"
     )
     implementation 'com.squareup.okhttp3:okhttp:4.9.3'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
