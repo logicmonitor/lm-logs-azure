@@ -235,10 +235,10 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         //     otherwise the whole JSON
         String message = properties
                 .map(LogEventProperties::getMsg)
-                .filter(msg -> msg != null && !msg.isBlank())
+                .filter(StringUtils::isNotBlank)
                 .or(() -> properties
                         .map(LogEventProperties::getDescription)
-                        .filter(desc -> desc != null && !desc.isBlank()))
+                        .filter(StringUtils::isNotBlank))
                 .orElseGet(() -> GSON.toJson(json));
 
 
