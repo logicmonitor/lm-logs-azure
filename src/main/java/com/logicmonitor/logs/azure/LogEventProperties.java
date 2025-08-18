@@ -23,7 +23,7 @@ public class LogEventProperties {
     private String Description;
 
     public String getMsg() {
-        return Msg;
+        return Msg != null ? Msg : "";
     }
 
     public void setMsg(String msg) {
@@ -31,7 +31,7 @@ public class LogEventProperties {
     }
 
     protected String getDescription() {
-        return Description;
+        return Description !=null ? Description : "";
     }
 
     protected void setDescription(String description) {

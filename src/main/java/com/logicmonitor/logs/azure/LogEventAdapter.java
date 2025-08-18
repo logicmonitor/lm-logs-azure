@@ -108,7 +108,8 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     /**
      * GSON instance.
      */
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(LogEventProperties.class, new LogEventPropertiesDeserializer())
+            .create();
 
     /**
      * Required static metadata to be added in every LogEntry.
@@ -221,6 +222,10 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
             entry.setTimestamp(System.currentTimeMillis());
         }
 
+        if(entry.getTimestamp()==null) {
+            entry.setTimestamp(System.currentTimeMillis());
+        }
+
         // get properties from event if present
         Optional<LogEventProperties> properties = Optional.ofNullable(event.getProperties());
 
@@ -228,9 +233,14 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
         //     properties.Msg if present,
         //     else properties.Description if present,
         //     otherwise the whole JSON
-        String message = properties.map(LogEventProperties::getMsg)
-                .or(() -> properties.map(LogEventProperties::getDescription))
+        String message = properties
+                .map(LogEventProperties::getMsg)
+                .filter(StringUtils::isNotBlank)
+                .or(() -> properties
+                        .map(LogEventProperties::getDescription)
+                        .filter(StringUtils::isNotBlank))
                 .orElseGet(() -> GSON.toJson(json));
+
 
         Map<String, String> metadata = new HashMap<>();
         for (String key : METADATA_KEYS_TO_GETTERS.keySet()) {

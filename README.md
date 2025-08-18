@@ -69,7 +69,7 @@ Then they can be observed using [Azure CLI webapp log tail](https://docs.microso
 After the deployment is complete, the Azure function listens for logs from the Event Hub. We need to redirect them there from resources.
 For most of them, this can be done by [creating diagnostic settings](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings). If the function was deployed using Terraform, the logs should be sent to Event Hub named `log-hub` in namespace `lm-logs-<LM company name>-<Azure region>`.
 
-### Linux Virtual Machines
+### Linux Virtual Machines (using Linux Diagnostic Extension (LAD))
 
 Forwarding Linux VM's system and application logs requires [installation of diagnostic extension](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/diagnostics-linux#installing-the-extension-in-your-vm) on the machine.
 
@@ -103,3 +103,7 @@ Forwarding Windows VM's system and application logs requires [installation of di
 * execute it to create the storage account needed by the extension, and the configuration files: `.\configure-wad.ps1 -lm_company_name <LM company name>`
 * update `wad_public_settings.json` to configure types of [event logs](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostics-extension-schema-windows#windowseventlog-element) (`Applicaiton, System, Setup, Security, etc`) and their levels (`Info, Warning, Critical`) to collect
 * execute `az vm extension set --publisher Microsoft.Azure.Diagnostics --name IaaSDiagnostics --version 1.18 --resource-group <your VM's Resource Group name> --vm-name <your VM name> --protected-settings wad_protected_settings.json --settings wad_public_settings.json` - the exact command was printed by the `configure-wad.ps1` script
+
+> ⚠️ **Deprecation Notice**
+>
+> Support for the **Linux Diagnostic Extension (LAD)** on Linux VMs is scheduled to be **fully deprecated on March 31, 2026**. Please **migrate to the Azure Monitor Agent (AMA)** to ensure ongoing support and compatibility. See our [AMA Deployment For Linux Guide](./vm-config/ama-linux-deployment.md).

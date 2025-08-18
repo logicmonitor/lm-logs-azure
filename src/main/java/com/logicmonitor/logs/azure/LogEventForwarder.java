@@ -119,7 +119,8 @@ public class LogEventForwarder {
     public static final String PARAMETER_DOMAIN_NAME = "LM_DOMAIN_NAME";
     private static LogEventAdapter adapter;
 
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(LogEventProperties.class, new LogEventPropertiesDeserializer())
+            .create();
 
     public final Configuration conf = createDataSdkConfig();
 
