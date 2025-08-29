@@ -106,4 +106,4 @@ Forwarding Windows VM's system and application logs requires [installation of di
 
 > ⚠️ **Deprecation Notice**
 >
-> Support for the **Linux Diagnostic Extension (LAD)** on Linux VMs is scheduled to be **fully deprecated on March 31, 2026**. Please **migrate to the Azure Monitor Agent (AMA)** to ensure ongoing support and compatibility. See our [AMA Deployment For Linux Guide](./vm-config/ama-linux-deployment.md).
+> Support for the **Linux Diagnostic Extension (LAD)** on Linux VMs and **Windows Diagnostic Extension (WAD)** on Windows VMs is scheduled to be **fully deprecated on March 31, 2026**. Please **migrate to the Azure Monitor Agent (AMA)** to ensure ongoing support and compatibility. See our [AMA Deployment For Linux Guide](./vm-config/ama-linux-deployment.md) and [AMA Deployment For Windows Guide](./vm-config/ama-windows-deployment.md).
