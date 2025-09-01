@@ -38,7 +38,7 @@ dataExportRuleName="" #the name of the export rule which will be created in the 
 ```
 
 ### ⚙️ Step 1: Deployment Script to Create LAW and Install AMA
-Save the following script as windows-commands.sh and run it in Cloud Shell:
+Save the following script [setup_ama_windows_first_script.sh](./setup_ama_windows_first_script.sh) and run it in Cloud Shell:
 ```bash
 #!/bin/bash
 
@@ -110,7 +110,7 @@ You must use the Azure Portal to create the DCR that connects the VMs to the LAW
    💡 This ensures the Event table is created and AMA-enabled in the workspace.
 
 ### ⚙️ Step 3: Send a Test Event + Create Export Rule
-After the DCR is created, use the following script (windows-data-export-rule.sh) to:
+After the DCR is created, use the following script [setup_ama_windows_second_script.sh](./setup_ama_windows_second_script.sh) to:
 - Send a test Windows Event
 - Create a data export rule to send logs to Event Hub (optional)
 ```bash
