@@ -26,15 +26,15 @@ az vm extension delete \
 - Event Hub ready
 - The VM OS is supported for AMA. Ref - https://learn.microsoft.com/en-us/azure/azure-monitor/agents/azure-monitor-agent-supported-operating-systems
 
-### ⚙️ Configurable Variables (edit in the script)
+### ⚙️ Configurable Variables (edit in the scripts accordingly)
 ```bash
-resourceGroup="" #the resource grp where you want to create the LAW and DCR.
+resourceGroup="" #resource group where you want to create the LAW and DCR.
 vmNames=("vm1" "vm2") #name of the windows vms from which you want to collect the logs.
-workspaceName="" #the name of the Log Analytics Workspace that will be created.
-location="" #the region of the resources to be created in. Note - the region should be same as the vm and the deployment resources in step 1.
-namespace="" #the eventhub namespace created as a part of the deployment in step 1.
-eventhubName="log-hub"
-dataExportRuleName="" #the name of the export rule which will be created in the LAW
+workspaceName="" #name of the Log Analytics Workspace that will be created.
+location="" #region of the resources to be created in. Note - the region should be same as the vm and the deployment resources in step 1.
+namespace="" #eventhub namespace created as a part of the deployment in step 1.
+eventhubName="log-hub" #name of the event hub created as a part of the deployment in step 1. ie. log-hub
+dataExportRuleName="" #name of the export rule which will be created in the LAW
 ```
 
 ### ⚙️ Step 1: Deployment Script to Create LAW and Install AMA
@@ -43,6 +43,15 @@ Save the following script [setup_ama_windows_first_script.sh](./setup_ama_window
 #!/bin/bash
 
 set -euo pipefail
+trap 'log_error "Script failed at line $LINENO: $BASH_COMMAND"; exit 1' ERR
+
+log_info() {
+  echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') $*"
+}
+
+log_error() {
+  echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') $*" >&2
+}
 
 # -------- CONFIGURATION --------
 resourceGroup=""
@@ -50,23 +59,37 @@ location=""
 workspaceName=""
 vmNames=("vm1" "vm2")
 retentionInDays=30
-namespace=""
-eventhubName="log-hub"
-dataExportRuleName=""
 # ------------------------------
 
-echo "Getting subscription ID..."
+# -------- PARAMETER VALIDATION --------
+required_vars=("resourceGroup" "location" "workspaceName")
+
+for var_name in "${required_vars[@]}"; do
+  if [[ -z "${!var_name:-}" ]]; then
+    log_error "Error: Required variable '$var_name' is not set."
+    exit 1
+  fi
+done
+
+if [[ ${#vmNames[@]} -eq 0 ]]; then
+  log_error "Error: vmNames array is empty."
+  exit 1
+fi
+
+# --------------------------------------
+
+log_info "Getting subscription ID..."
 subscriptionId=$(az account show --query id -o tsv)
 az config set extension.use_dynamic_install=yes_without_prompt
 
-echo "Creating Log Analytics Workspace: $workspaceName"
+log_info "Creating Log Analytics Workspace: $workspaceName"
 workspaceId=$(az monitor log-analytics workspace create \
   --resource-group "$resourceGroup" \
   --workspace-name "$workspaceName" \
   --location "$location" \
   --query id -o tsv)
 
-echo "Setting retention to $retentionInDays days..."
+log_info "Setting retention to $retentionInDays days..."
 az monitor log-analytics workspace update \
   --resource-group "$resourceGroup" \
   --workspace-name "$workspaceName" \
@@ -74,16 +97,16 @@ az monitor log-analytics workspace update \
 
 # Install AMA on each VM
 for vmName in "${vmNames[@]}"; do
-  echo "Checking if AMA is installed on $vmName..."
+  log_info "Checking if AMA is installed on $vmName..."
   if az vm extension show \
     --vm-name "$vmName" \
     --resource-group "$resourceGroup" \
     --name "AzureMonitorWindowsAgent" \
     --only-show-errors &>/dev/null; then
 
-    echo "AMA already installed on $vmName"
+    log_info "AMA already installed on $vmName"
   else
-    echo "Installing AMA on $vmName..."
+    log_info "Installing AMA on $vmName..."
     az vm extension set \
       --vm-name "$vmName" \
       --resource-group "$resourceGroup" \
@@ -116,6 +139,17 @@ After the DCR is created, use the following script [setup_ama_windows_second_scr
 ```bash
 #!/bin/bash
 
+set -euo pipefail
+trap 'log_error "Script failed at line $LINENO: $BASH_COMMAND"; exit 1' ERR
+
+log_info() {
+  echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') $*"
+}
+
+log_error() {
+  echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') $*" >&2
+}
+
 # -------- CONFIGURATION --------
 resourceGroup=""
 workspaceName=""
@@ -125,12 +159,27 @@ eventhubName="log-hub"
 dataExportRuleName=""
 # ------------------------------
 
-echo "Getting subscription ID..."
+# -------- PARAMETER VALIDATION --------
+required_vars=("resourceGroup" "workspaceName" "namespace" "dataExportRuleName" "eventhubName")
+
+for var_name in "${required_vars[@]}"; do
+  if [[ -z "${!var_name:-}" ]]; then
+    log_error "Error: Required variable '$var_name' is not set."
+    exit 1
+  fi
+done
+
+if [[ ${#vmNames[@]} -eq 0 ]]; then
+  log_error "Error: vmNames array is empty."
+  exit 1
+fi
+
+log_info "Getting subscription ID..."
 subscriptionId=$(az account show --query id -o tsv)
 
 # Send test event to VMs
 for vmName in "${vmNames[@]}"; do
-  echo "Sending test event from $vmName..."
+  log_info "Sending test event from $vmName..."
   az vm run-command invoke \
     --resource-group "$resourceGroup" \
     --name "$vmName" \
@@ -138,11 +187,11 @@ for vmName in "${vmNames[@]}"; do
     --scripts 'eventcreate /ID 1000 /L APPLICATION /T INFORMATION /SO "DCRValidation" /D "Test event for AMA verification"' \
     --only-show-errors
 
-  sleep 30
+  sleep 45
 done
 
 # Create Data Export Rule
-echo "Creating Data Export Rule to Event Hub..."
+log_info "Creating Data Export Rule to Event Hub..."
 az monitor log-analytics workspace data-export create \
   --resource-group "$resourceGroup" \
   --workspace-name "$workspaceName" \
