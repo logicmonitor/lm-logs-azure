@@ -12,10 +12,10 @@ log_error() {
 }
 
 # -------- CONFIGURATION --------
-resourceGroup="lm-logs-qauatfeature03-eastus-group"
-location="eastus"
-workspaceName="law-lm-logs-qauatfeature03-eastus"
-vmNames=("test-ama-windows-new")
+resourceGroup=""
+location=""
+workspaceName=""
+vmNames=("vm1" "vm2")
 retentionInDays=30
 # ------------------------------
 

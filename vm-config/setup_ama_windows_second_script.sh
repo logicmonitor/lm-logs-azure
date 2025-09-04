@@ -12,12 +12,12 @@ log_error() {
 }
 
 # -------- CONFIGURATION --------
-resourceGroup="lm-logs-qauatfeature03-eastus-group"
-workspaceName="law-lm-logs-qauatfeature03-eastus"
-vmNames=("test-ama-windows-new")
-namespace="lm-logs-qauatfeature03-eastus"
+resourceGroup=""
+workspaceName=""
+vmNames=("vm1" "vm2")
+namespace=""
 eventhubName="log-hub"
-dataExportRuleName="der-lm-logs-qauatfeature03-eastus"
+dataExportRuleName=""
 # ------------------------------
 
 # -------- PARAMETER VALIDATION --------
