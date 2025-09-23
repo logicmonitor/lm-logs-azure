@@ -12,7 +12,7 @@
       "type": "string"
     },
     "LM_Bearer_Token": {
-      "type": "String"
+      "type": "string"
     },
     "Azure_Client_Id": {
       "type": "string"
@@ -67,7 +67,9 @@
       "apiVersion": "2018-01-01-preview",
       "location": "[resourceGroup().location]",
       "tags": {},
-      "properties": {},
+      "properties": {
+        "minimumTlsVersion": "1.2"
+      },
       "dependsOn": []
     },
     {
