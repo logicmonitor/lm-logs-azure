@@ -5,11 +5,6 @@
 > Support for the **Linux Diagnostic Extension (LAD)** on Linux VMs and **Windows Diagnostic Extension (WAD)** on Windows VMs is scheduled to be **fully deprecated on March 31, 2026**. Please **migrate to the Azure Monitor Agent (AMA)** to ensure ongoing support and compatibility. See our [AMA Deployment For Linux Guide](./vm-config/ama-linux-deployment.md) and [AMA Deployment For Windows Guide](./vm-config/ama-windows-deployment.md).
 
 
-> ⚠️ **Deprecation Notice**
->
-> Support for the **Linux Diagnostic Extension (LAD)** on Linux VMs and **Windows Diagnostic Extension (WAD)** on Windows VMs is scheduled to be **fully deprecated on March 31, 2026**. Please **migrate to the Azure Monitor Agent (AMA)** to ensure ongoing support and compatibility. See our [AMA Deployment For Linux Guide](./vm-config/ama-linux-deployment.md) and [AMA Deployment For Windows Guide](./vm-config/ama-windows-deployment.md).
-
-
 Azure integration for sending logs to LogicMonitor.
 It's implemented as [Azure Function](https://azure.microsoft.com/en-us/services/functions/) consuming logs from an [Event Hub](https://azure.microsoft.com/en-us/services/event-hubs/), and forwarding them to LogicMonitor log ingestion REST API.
 
