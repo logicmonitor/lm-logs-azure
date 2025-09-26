@@ -1,5 +1,10 @@
 # lm-logs-azure
 
+> ⚠️ **Deprecation Notice**
+>
+> Support for the **Linux Diagnostic Extension (LAD)** on Linux VMs and **Windows Diagnostic Extension (WAD)** on Windows VMs is scheduled to be **fully deprecated on March 31, 2026**. Please **migrate to the Azure Monitor Agent (AMA)** to ensure ongoing support and compatibility. See our [AMA Deployment For Linux Guide](./vm-config/ama-linux-deployment.md) and [AMA Deployment For Windows Guide](./vm-config/ama-windows-deployment.md).
+
+
 Azure integration for sending logs to LogicMonitor.
 It's implemented as [Azure Function](https://azure.microsoft.com/en-us/services/functions/) consuming logs from an [Event Hub](https://azure.microsoft.com/en-us/services/event-hubs/), and forwarding them to LogicMonitor log ingestion REST API.
 
@@ -104,6 +109,4 @@ Forwarding Windows VM's system and application logs requires [installation of di
 * update `wad_public_settings.json` to configure types of [event logs](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostics-extension-schema-windows#windowseventlog-element) (`Applicaiton, System, Setup, Security, etc`) and their levels (`Info, Warning, Critical`) to collect
 * execute `az vm extension set --publisher Microsoft.Azure.Diagnostics --name IaaSDiagnostics --version 1.18 --resource-group <your VM's Resource Group name> --vm-name <your VM name> --protected-settings wad_protected_settings.json --settings wad_public_settings.json` - the exact command was printed by the `configure-wad.ps1` script
 
-> ⚠️ **Deprecation Notice**
->
-> Support for the **Linux Diagnostic Extension (LAD)** on Linux VMs and **Windows Diagnostic Extension (WAD)** on Windows VMs is scheduled to be **fully deprecated on March 31, 2026**. Please **migrate to the Azure Monitor Agent (AMA)** to ensure ongoing support and compatibility. See our [AMA Deployment For Linux Guide](./vm-config/ama-linux-deployment.md) and [AMA Deployment For Windows Guide](./vm-config/ama-windows-deployment.md).
+
