@@ -55,6 +55,7 @@ import org.openapitools.client.ApiResponse;
  * <li>{@value #PARAMETER_DEBUGGING} HTTP client debugging
  * <li>{@value #PARAMETER_REGEX_SCRUB} Regex to scrub text from logs
  * <li>{@value #PARAMETER_AZURE_CLIENT_ID} Azure Application Client ID
+ * <li>{@value #PARAMETER_EVENT_HUB_NAME} Event Hub name (default {@value #DEFAULT_EVENT_HUB_NAME})
  * </ul>
  */
 public class LogEventForwarder {
@@ -108,6 +109,14 @@ public class LogEventForwarder {
      * Parameter: comma separated metadata keys to look in azure events and then add to metadata
      */
     public static final String PARAMETER_INCLUDE_METADATA_KEYS = "Include_Metadata_keys";
+    /**
+     * Parameter: Event Hub name. Resolved from function.json binding; defaults to log-hub when unset.
+     */
+    public static final String PARAMETER_EVENT_HUB_NAME = "eventHubName";
+    /**
+     * Default Event Hub name used when {@value #PARAMETER_EVENT_HUB_NAME} is not configured.
+     */
+    public static final String DEFAULT_EVENT_HUB_NAME = "log-hub";
     /**
      * Transforms Azure log events into log entries.
      */

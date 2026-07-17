@@ -6,7 +6,7 @@
     "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',variables('sourceCodeBranch'),'/arm-template-deployment/')]",
     "deploymentResourceGroupName": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Resource_Group_Region'),' ',''),'-group')]",
     "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Resource_Group_Region'),' ',''))]",
-    "eventhubLogsName": "log-hub",
+    "eventhubLogsName": "[parameters('Event_Hub_Name')]",
     "subscriptionId": "[subscription().subscriptionId]",
     "eventHubAuthorizationRuleId": "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.EventHub/namespaces/', variables('eventhubNamespace'), '/authorizationRules/RootManageSharedAccessKey')]"
   },
@@ -101,6 +101,13 @@
       "metadata": {
         "description": "Provide an appropriate TLS version for function app. Format - X.X"
       }
+    },
+    "Event_Hub_Name": {
+      "type": "string",
+      "defaultValue": "log-hub",
+      "metadata": {
+        "description": "Event Hub name for log ingestion. Defaults to log-hub."
+      }
     }
 
 
@@ -165,6 +172,9 @@
           },
           "TLSVersionFunctionApp": {
             "value": "[parameters('TLSVersionFunctionApp')]"
+          },
+          "Event_Hub_Name": {
+            "value": "[parameters('Event_Hub_Name')]"
           }
         }
       },

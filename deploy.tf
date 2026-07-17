@@ -38,6 +38,12 @@ variable "azure_client_id" {
   description = "Azure Application Client ID"
 }
 
+variable "event_hub_name" {
+  type        = string
+  description = "Event Hub name for log ingestion"
+  default     = "log-hub"
+}
+
 variable "tags" {
   description = "Tags given to the resources created by this template"
   type        = map(string)
@@ -88,7 +94,7 @@ resource "azurerm_eventhub_namespace" "lm_logs" {
 
 # Event Hub #
 resource "azurerm_eventhub" "lm_logs" {
-  name                = "log-hub"
+  name                = var.event_hub_name
   resource_group_name = azurerm_resource_group.lm_logs.name
   namespace_name      = azurerm_eventhub_namespace.lm_logs.name
   partition_count     = 1
@@ -163,10 +169,16 @@ resource "azurerm_function_app" "lm_logs" {
     FUNCTIONS_EXTENSION_VERSION  = "~3"
     WEBSITE_RUN_FROM_PACKAGE     = "https://github.com/logicmonitor/lm-logs-azure/raw/master/package/lm-logs-azure.zip"
     LogsEventHubConnectionString = azurerm_eventhub_authorization_rule.lm_logs_listener.primary_connection_string
+    eventHubName                 = var.event_hub_name
     LogicMonitorCompanyName      = var.lm_company_name
     LogicMonitorAccessId         = var.lm_access_id
     LogicMonitorAccessKey        = var.lm_access_key
     AzureClientID                = var.azure_client_id
+    LM_AUTH                      = jsonencode({
+      LM_ACCESS_ID     = var.lm_access_id
+      LM_ACCESS_KEY    = var.lm_access_key
+      LM_BEARER_TOKEN  = ""
+    })
     /* Uncomment to set custom connection timeout */
     # LogApiClientConnectTimeout   = 10000
 

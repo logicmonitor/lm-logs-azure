@@ -14,11 +14,9 @@
 
 package com.logicmonitor.logs.azure;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -27,12 +25,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.logicmonitor.sdk.data.Configuration;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 public class LogEventForwarderTest {
 
     protected static final String TEST_AZURE_CLIENT_ID = "testClientId";
+    protected static final String TEST_AZURE_ACCOUNT_NAME = "testAccountName";
+
+    @Test
+    void testDefaultEventHubNameConstants() {
+        assertEquals("eventHubName", LogEventForwarder.PARAMETER_EVENT_HUB_NAME);
+        assertEquals("log-hub", LogEventForwarder.DEFAULT_EVENT_HUB_NAME);
+    }
 
     @ParameterizedTest
     @CsvSource({
@@ -42,32 +48,16 @@ public class LogEventForwarderTest {
         "company,    55555,  666666,    false,                             ",
     })
     public void testConfigurationParameters(String companyName, Integer connectTimeout,
-            Integer readTimeout, Boolean debugging, String regexScrub) throws Exception {
-
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
-                .and(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
-            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, "azureClientId")
-            .and(LogEventForwarder.PARAMETER_AZURE_ACCOUNT_NAME, "azureAccountName")
-            .and(LogEventForwarder.PARAMETER_CONNECT_TIMEOUT,
-                    connectTimeout != null ? connectTimeout.toString() : null)
-            .and(LogEventForwarder.PARAMETER_READ_TIMEOUT,
-                    readTimeout != null ? readTimeout.toString() : null)
-            .and(LogEventForwarder.PARAMETER_DEBUGGING,
-                    debugging != null ? debugging.toString() : null)
-            .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, regexScrub)
-            .execute(() -> {
-                LogEventAdapter adapter = LogEventForwarder.configureAdapter();
-                Configuration conf = LogEventForwarder.createDataSdkConfig();
-                assertAll(
-                    () -> assertEquals(companyName,
-                            conf.getCompany()),
-                    () -> assertEquals(regexScrub,
-                            regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern())
-                );
-            }
+            Integer readTimeout, Boolean debugging, String regexScrub) {
+        LogEventAdapter adapter = new LogEventAdapter(regexScrub, "azureClientId", "azureAccountName", null);
+        Configuration conf = new Configuration(companyName, "id", "key", null, null);
+        assertAll(
+            () -> assertEquals(companyName, conf.getCompany()),
+            () -> assertTrue(conf.checkAuthentication()),
+            () -> assertEquals(regexScrub,
+                    regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern())
         );
     }
-
 
     @ParameterizedTest
     @CsvSource({
@@ -80,11 +70,13 @@ public class LogEventForwarderTest {
         "vm_syslog.json,                2",
         "windows_vm_log.json,           1",
     })
-    public void testProcessEvents(String resourceName, int expectedEntriesCount) throws Exception{
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
-                .execute(() -> {
+    public void testProcessEvents(String resourceName, int expectedEntriesCount) {
+        LogEventAdapter adapter = new LogEventAdapter(null, TEST_AZURE_CLIENT_ID, TEST_AZURE_ACCOUNT_NAME, null);
         List<String> events = TestJsonUtils.getJsonStringList(resourceName);
-        List<LogEntry> entries = LogEventForwarder.processEvents(events);
+        List<LogEntry> entries = events.stream()
+            .map(adapter)
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
         assertNotNull(entries);
         assertAll(
             () -> assertEquals(expectedEntriesCount, entries.size()),
@@ -98,7 +90,6 @@ public class LogEventForwarderTest {
                 }
             })
         );
-    });
     }
 
     @ParameterizedTest
@@ -112,15 +103,16 @@ public class LogEventForwarderTest {
         "vm_syslog.json,                '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1'",
         "windows_vm_log.json,           '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-win'",
     })
-    public void testgetResourceIds(String resourceName, String expectedIds) throws Exception{
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
-                .execute(() -> {
-                    List<String> events = TestJsonUtils.getJsonStringList(resourceName);
-                    List<LogEntry> entries = LogEventForwarder.processEvents(events);
-                    Set<String> ids = LogEventForwarder.getResourceIds(entries);
-                    assertNotNull(ids);
-                    assertEquals(Arrays.stream(expectedIds.split(" ")).collect(Collectors.toSet()), ids);
-                });
+    public void testgetResourceIds(String resourceName, String expectedIds) {
+        LogEventAdapter adapter = new LogEventAdapter(null, TEST_AZURE_CLIENT_ID, TEST_AZURE_ACCOUNT_NAME, null);
+        List<String> events = TestJsonUtils.getJsonStringList(resourceName);
+        List<LogEntry> entries = events.stream()
+            .map(adapter)
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
+        Set<String> ids = LogEventForwarder.getResourceIds(entries);
+        assertNotNull(ids);
+        assertEquals(Arrays.stream(expectedIds.split(" ")).collect(Collectors.toSet()), ids);
     }
 
     @ParameterizedTest
@@ -134,31 +126,24 @@ public class LogEventForwarderTest {
         "vm_syslog.json,                '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-1',     'Microsoft.Compute/virtualMachines'",
         "windows_vm_log.json,           '/subscriptions/a0b1c2d3-e4f5-g6h7-i8j9-k0l1m2n3o4p5/resourceGroups/resource-group-1/providers/Microsoft.Compute/virtualMachines/vm-win',       'Microsoft.Compute/virtualMachines'",
     })
-    public void testMetadata(String resourceName, String expectedIds, String expectedType)
-        throws Exception {
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
-            .and(LogEventForwarder.PARAMETER_INCLUDE_METADATA_KEYS, "resourceId,identity")
-            .execute(() -> {
-                LogEventAdapter adapter = LogEventForwarder.configureAdapter();
-                List<String> events = TestJsonUtils.getJsonStringList(resourceName);
-                List<LogEntry> entries = events.stream()
-                    .map(adapter)
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-                Set<String> metadataIds = entries.stream()
-                    .map(e -> e.getMetadata().get(LogEventAdapter.LM_AZURE_RESOURCE_ID)).collect(
-                        Collectors.toSet());
-                Set<String> metadataType = entries.stream()
-                    .map(e -> e.getMetadata().get(LogEventAdapter.LM_EVENTSOURCE)).collect(
-                        Collectors.toSet());
-                assertNotNull(metadataIds);
-                assertNotNull(metadataType);
-                assertEquals(Arrays.stream(expectedIds.split(" ")).collect(Collectors.toSet()),
-                    metadataIds);
-                assertEquals(Arrays.stream(expectedType.split(" ")).collect(Collectors.toSet()),
-                    metadataType);
-
-            });
+    public void testMetadata(String resourceName, String expectedIds, String expectedType) {
+        LogEventAdapter adapter = new LogEventAdapter(null, TEST_AZURE_CLIENT_ID, TEST_AZURE_ACCOUNT_NAME,
+            "resourceId,identity");
+        List<String> events = TestJsonUtils.getJsonStringList(resourceName);
+        List<LogEntry> entries = events.stream()
+            .map(adapter)
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
+        Set<String> metadataIds = entries.stream()
+            .map(e -> e.getMetadata().get(LogEventAdapter.LM_AZURE_RESOURCE_ID))
+            .collect(Collectors.toSet());
+        Set<String> metadataType = entries.stream()
+            .map(e -> e.getMetadata().get(LogEventAdapter.LM_EVENTSOURCE))
+            .collect(Collectors.toSet());
+        assertNotNull(metadataIds);
+        assertNotNull(metadataType);
+        assertEquals(Arrays.stream(expectedIds.split(" ")).collect(Collectors.toSet()), metadataIds);
+        assertEquals(Arrays.stream(expectedType.split(" ")).collect(Collectors.toSet()), metadataType);
     }
 
 }

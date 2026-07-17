@@ -40,6 +40,13 @@
     },
     "TLSVersionFunctionApp" : {
       "type" : "string"
+    },
+    "Event_Hub_Name": {
+      "type": "string",
+      "defaultValue": "log-hub",
+      "metadata": {
+        "description": "Event Hub name for log ingestion. Defaults to log-hub."
+      }
     }
   },
   "variables": {
@@ -47,7 +54,7 @@
     "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Azure_Region'),' ',''))]",
     "storage": "[toLower(concat(parameters('LM_Company_Name'), replace(parameters('Azure_Region'),' ','')))]",
     "lmAppStorageAccounts": "[if(greater(length(variables('storage')) , 24), substring(variables('storage'), sub(length(variables('storage')) , 24), 24) , variables('storage'))]",
-    "eventhubLogsName": "log-hub",
+    "eventhubLogsName": "[parameters('Event_Hub_Name')]",
     "ConsumergroupsLogsName": "LMConsumerGroup",
     "functionServerfarms": "[concat(variables('eventhubNamespace'),'-service-plan')]",
     "listener": "listener",
@@ -165,6 +172,10 @@
             {
               "name": "LogsEventHubConnectionString",
               "value": "[listkeys(resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventhubNamespace'),variables('eventhubLogsName'), variables('listener')), '2017-04-01').primaryConnectionString]"
+            },
+            {
+              "name": "eventHubName",
+              "value": "[parameters('Event_Hub_Name')]"
             },
             {
               "name": "LM_COMPANY",

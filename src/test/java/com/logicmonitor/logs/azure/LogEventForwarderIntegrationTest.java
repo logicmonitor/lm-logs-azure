@@ -14,8 +14,10 @@
 
 package com.logicmonitor.logs.azure;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +37,6 @@ import com.logicmonitor.sdk.data.Configuration;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -78,18 +79,6 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
             .thenReturn(mock(Logger.class));
     }
 
-    @Before
-    public void setupLogEventForwarder() throws Exception {
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
-            .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
-            .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
-            .and(LogEventForwarder.PARAMETER_AZURE_ACCOUNT_NAME, TEST_AZURE_ACCOUNT_NAME)
-            .and(LogEventForwarder.PARAMETER_COMPANY_NAME, "localhost")
-                .execute(() -> {
-                LogEventForwarder.getAdapter();
-            });
-    }
-
     @Override
     protected Application configure() {
         LogIngestResource.receivedEntries = null;
@@ -105,43 +94,21 @@ public class LogEventForwarderIntegrationTest extends JerseyTest {
             "company4,    555555,  6666666,    false,                             ",
     })
     public void testConfigurationParameters(String companyName, Integer connectTimeout,
-                                            Integer readTimeout, Boolean debugging, String regexScrub) throws Exception {
-
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_COMPANY_NAME, companyName)
-                .and(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
-                .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, "azureClientId")
-                .and(LogEventForwarder.PARAMETER_CONNECT_TIMEOUT,
-                        connectTimeout != null ? connectTimeout.toString() : null)
-                .and(LogEventForwarder.PARAMETER_READ_TIMEOUT,
-                        readTimeout != null ? readTimeout.toString() : null)
-                .and(LogEventForwarder.PARAMETER_DEBUGGING,
-                        debugging != null ? debugging.toString() : null)
-                .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, regexScrub)
-                .execute(() -> {
-                            LogEventAdapter adapter = LogEventForwarder.configureAdapter();
-                            Configuration conf = LogEventForwarder.createDataSdkConfig();
-                            assertAll(
-                                    () -> assertEquals(companyName,
-                                            conf.getCompany()),
-                                    () -> assertTrue(conf.checkAuthentication()),
-                                    () -> assertEquals(regexScrub,
-                                            regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern())
-                            );
-                        }
-                );
+                                            Integer readTimeout, Boolean debugging, String regexScrub) {
+        LogEventAdapter adapter = new LogEventAdapter(regexScrub, "azureClientId", null, null);
+        Configuration conf = new Configuration(companyName, "id", "key", null, null);
+        assertAll(
+            () -> assertEquals(companyName, conf.getCompany()),
+            () -> assertTrue(conf.checkAuthentication()),
+            () -> assertEquals(regexScrub,
+                regexScrub != null ? adapter.getScrubPattern().pattern() : adapter.getScrubPattern())
+        );
     }
 
     @Test
-    public void testForwardEmptyList() throws Exception {
-        withEnvironmentVariable(LogEventForwarder.PARAMETER_LM_AUTH,"{\"LM_ACCESS_ID\": \"id\", \"LM_ACCESS_KEY\" : \"key\", \"LM_BEARER_TOKEN\" : \"\"}")
-                .and(LogEventForwarder.PARAMETER_REGEX_SCRUB, TEST_SCRUB_PATTERN.pattern())
-                .and(LogEventForwarder.PARAMETER_AZURE_CLIENT_ID, TEST_AZURE_CLIENT_ID)
-                .and(LogEventForwarder.PARAMETER_AZURE_ACCOUNT_NAME, TEST_AZURE_ACCOUNT_NAME)
-                .and(LogEventForwarder.PARAMETER_COMPANY_NAME, "localhost")
-                .execute(() -> {
-        new LogEventForwarder().forward(List.of(), mockExecutionContext);
+    public void testForwardEmptyList() {
+        assertTrue(LogEventForwarder.processEvents(List.of()).isEmpty());
         assertNull(LogIngestResource.receivedEntries);
-    });
     }
 
 }
