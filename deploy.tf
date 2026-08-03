@@ -38,6 +38,18 @@ variable "azure_client_id" {
   description = "Azure Application Client ID"
 }
 
+variable "event_hub_name" {
+  type        = string
+  description = "Event Hub name for log ingestion. Defaults to log-hub."
+  default     = "log-hub"
+}
+
+variable "event_hub_consumer_group" {
+  type        = string
+  description = "Event Hub consumer group for the Function trigger. Defaults to $Default."
+  default     = "$Default"
+}
+
 variable "tags" {
   description = "Tags given to the resources created by this template"
   type        = map(string)
@@ -88,11 +100,20 @@ resource "azurerm_eventhub_namespace" "lm_logs" {
 
 # Event Hub #
 resource "azurerm_eventhub" "lm_logs" {
-  name                = "log-hub"
+  name                = var.event_hub_name
   resource_group_name = azurerm_resource_group.lm_logs.name
   namespace_name      = azurerm_eventhub_namespace.lm_logs.name
   partition_count     = 1
   message_retention   = 1
+}
+
+# Event Hub Consumer Group (skipped when using built-in $Default) #
+resource "azurerm_eventhub_consumer_group" "lm_logs" {
+  count               = var.event_hub_consumer_group == "$Default" ? 0 : 1
+  name                = var.event_hub_consumer_group
+  namespace_name      = azurerm_eventhub_namespace.lm_logs.name
+  eventhub_name       = azurerm_eventhub.lm_logs.name
+  resource_group_name = azurerm_resource_group.lm_logs.name
 }
 
 # Event Hub Authorization Sender Role #
@@ -153,6 +174,7 @@ resource "azurerm_function_app" "lm_logs" {
   https_only                 = true
   version                    = "~3"
   tags                       = local.tags
+  depends_on                 = [azurerm_eventhub_consumer_group.lm_logs]
   site_config {
     always_on                    = true
     linux_fx_version             = "java|11"
@@ -163,6 +185,8 @@ resource "azurerm_function_app" "lm_logs" {
     FUNCTIONS_EXTENSION_VERSION  = "~3"
     WEBSITE_RUN_FROM_PACKAGE     = "https://github.com/logicmonitor/lm-logs-azure/raw/master/package/lm-logs-azure.zip"
     LogsEventHubConnectionString = azurerm_eventhub_authorization_rule.lm_logs_listener.primary_connection_string
+    EventHubName                 = var.event_hub_name
+    EventHubConsumerGroup        = var.event_hub_consumer_group
     LogicMonitorCompanyName      = var.lm_company_name
     LogicMonitorAccessId         = var.lm_access_id
     LogicMonitorAccessKey        = var.lm_access_key

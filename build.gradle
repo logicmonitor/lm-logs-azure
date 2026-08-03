@@ -103,3 +103,22 @@ task copyPackage(type: Copy) {
 
 copyPackage.dependsOn azureFunctionsPackageZip
 build.finalizedBy copyPackage
+
+// Keep app-setting placeholders in generated function.json so custom Event Hub name
+// and consumer group work after azureFunctionsPackageZip.
+tasks.named('azureFunctionsPackageZip').configure {
+    doLast {
+        def functionJson = file("${buildDir}/azure-functions/${rootProject.name}/LogForwarder/function.json")
+        if (functionJson.exists()) {
+            functionJson.text = functionJson.text
+                .replaceAll(/"eventHubName"\s*:\s*"[^"]*"/, '"eventHubName" : "%eventHubName%"')
+                .replaceAll(/"consumerGroup"\s*:\s*"[^"]*"/, '"consumerGroup" : "%eventHubConsumerGroup%"')
+            if (!functionJson.text.contains('"consumerGroup"')) {
+                functionJson.text = functionJson.text.replace(
+                    '"eventHubName" : "%eventHubName%"',
+                    '"eventHubName" : "%eventHubName%",\n    "consumerGroup" : "%eventHubConsumerGroup%"'
+                )
+            }
+        }
+    }
+}

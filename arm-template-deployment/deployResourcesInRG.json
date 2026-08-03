@@ -40,6 +40,20 @@
     },
     "TLSVersionFunctionApp" : {
       "type" : "string"
+    },
+    "Event_Hub_Name": {
+      "type": "string",
+      "defaultValue": "log-hub",
+      "metadata": {
+        "description": "Event Hub name for log ingestion. Defaults to log-hub."
+      }
+    },
+    "Event_Hub_Consumer_Group": {
+      "type": "string",
+      "defaultValue": "$Default",
+      "metadata": {
+        "description": "Event Hub consumer group for LogForwarder. Defaults to $Default. Set a custom name (for example LMConsumerGroup) to isolate checkpoints."
+      }
     }
   },
   "variables": {
@@ -47,8 +61,8 @@
     "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Azure_Region'),' ',''))]",
     "storage": "[toLower(concat(parameters('LM_Company_Name'), replace(parameters('Azure_Region'),' ','')))]",
     "lmAppStorageAccounts": "[if(greater(length(variables('storage')) , 24), substring(variables('storage'), sub(length(variables('storage')) , 24), 24) , variables('storage'))]",
-    "eventhubLogsName": "log-hub",
-    "ConsumergroupsLogsName": "LMConsumerGroup",
+    "eventhubLogsName": "[parameters('Event_Hub_Name')]",
+    "ConsumergroupsLogsName": "[parameters('Event_Hub_Consumer_Group')]",
     "functionServerfarms": "[concat(variables('eventhubNamespace'),'-service-plan')]",
     "listener": "listener",
     "sender": "sender",
@@ -167,6 +181,14 @@
               "value": "[listkeys(resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventhubNamespace'),variables('eventhubLogsName'), variables('listener')), '2017-04-01').primaryConnectionString]"
             },
             {
+              "name": "EventHubName",
+              "value": "[parameters('Event_Hub_Name')]"
+            },
+            {
+              "name": "EventHubConsumerGroup",
+              "value": "[parameters('Event_Hub_Consumer_Group')]"
+            },
+            {
               "name": "LM_COMPANY",
               "value": "[parameters('LM_Company_Name')]"
             },
@@ -273,6 +295,7 @@
       }
     },
     {
+      "condition": "[not(equals(parameters('Event_Hub_Consumer_Group'), '$Default'))]",
       "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
       "name": "[concat(variables('eventhubNamespace'), '/', variables('eventhubLogsName'), '/', variables('ConsumergroupsLogsName'))]",
       "apiVersion": "2017-04-01",

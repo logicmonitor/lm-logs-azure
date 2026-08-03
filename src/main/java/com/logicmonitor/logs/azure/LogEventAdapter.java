@@ -184,7 +184,10 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
                 .map(this::createEntry)
                 .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            log(Level.INFO, "Error while processing Json and applying log transformation: " + e.getMessage());
+            log(Level.SEVERE,
+                "Error while processing Json and applying log transformation: " + e.getMessage());
+            // Rethrow so callers fail the Function invocation and Event Hub is not checkpointed.
+            throw e;
         }
         return validLogEntries;
     }

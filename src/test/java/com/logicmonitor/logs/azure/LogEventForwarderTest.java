@@ -34,6 +34,14 @@ public class LogEventForwarderTest {
 
     protected static final String TEST_AZURE_CLIENT_ID = "testClientId";
 
+    @org.junit.jupiter.api.Test
+    public void testEventHubBindingDefaults() {
+        assertEquals("eventHubName", LogEventForwarder.PARAMETER_EVENT_HUB_NAME);
+        assertEquals("log-hub", LogEventForwarder.DEFAULT_EVENT_HUB_NAME);
+        assertEquals("eventHubConsumerGroup", LogEventForwarder.PARAMETER_EVENT_HUB_CONSUMER_GROUP);
+        assertEquals("$Default", LogEventForwarder.DEFAULT_EVENT_HUB_CONSUMER_GROUP);
+    }
+
     @ParameterizedTest
     @CsvSource({
         "company,    ,       0,         false,    \\d                       ",

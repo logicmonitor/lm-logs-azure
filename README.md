@@ -21,6 +21,7 @@ Each Azure region requires a separate deployment. This is because devices can on
 ### Deploying using Terraform
 
 * Download [deploy.tf file](https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/deploy.tf)
+* (optional) Set `event_hub_name` / `event_hub_consumer_group` (or ARM `Event_Hub_Name` / `Event_Hub_Consumer_Group`) to use a custom Event Hub name and consumer group (defaults: `log-hub`, `$Default`)
 * (optional) Update `app_settings` in the file to set the optional parameters
 * Exceute `terraform init`
 * Execute `terraform plan --var-file terraform.tfvars -out tf.plan`
@@ -36,6 +37,8 @@ Each Azure region requires a separate deployment. This is because devices can on
 Gradle plugin can only build the function package and deploy it to Azure. Before it can be used, you need to create an [Event Hub](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-create) and [Function App](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-app-portal).
 The runtime stack should be set to Java version 11. The function uses the following [Application settings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-how-to-use-azure-function-app-settings#settings)
 * `LogsEventHubConnectionString` - Event Hub [connection string](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-get-connection-string)
+* `EventHubName` (optional) - Event Hub name the Function listens to (default `log-hub`). Required when using a non-default Event Hub name.
+* `EventHubConsumerGroup` (optional) - Event Hub consumer group the Function listens to (default `$Default`). Set a custom value (for example `LMConsumerGroup`) to isolate checkpoints from other consumers.
 * `LogicMonitorCompanyName` - Company in the target URL '{company}.logicmonitor.com'
 * `LogicMonitorAccessId` - LogicMonitor access ID
 * `LogicMonitorAccessKey` - LogicMonitor access key
@@ -72,7 +75,7 @@ Then they can be observed using [Azure CLI webapp log tail](https://docs.microso
 ## Forwarding Azure logs to Event Hub
 
 After the deployment is complete, the Azure function listens for logs from the Event Hub. We need to redirect them there from resources.
-For most of them, this can be done by [creating diagnostic settings](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings). If the function was deployed using Terraform, the logs should be sent to Event Hub named `log-hub` in namespace `lm-logs-<LM company name>-<Azure region>`.
+For most of them, this can be done by [creating diagnostic settings](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings). If the function was deployed using Terraform or ARM, the logs should be sent to the configured Event Hub (default name `log-hub`) in namespace `lm-logs-<LM company name>-<Azure region>`.
 
 ### Linux Virtual Machines (using Linux Diagnostic Extension (LAD))
 
