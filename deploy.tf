@@ -38,6 +38,76 @@ variable "azure_client_id" {
   description = "Azure Application Client ID"
 }
 
+variable "event_hub_name" {
+  type        = string
+  description = "Event Hub name for log ingestion. Created when use_existing_event_hub=false; must already exist when true."
+  default     = "log-hub"
+}
+
+variable "event_hub_consumer_group" {
+  type        = string
+  description = "Event Hub consumer group for the Function trigger. Created when use_existing_event_hub=false and not $Default; must already exist when true."
+  default     = "$Default"
+}
+
+variable "use_existing_event_hub" {
+  type        = bool
+  description = "If true, reuse an existing Event Hub instead of creating namespace/hub/consumer group."
+  default     = false
+}
+
+variable "existing_event_hub_resource_group" {
+  type        = string
+  description = "Required when use_existing_event_hub=true. Resource group of the existing Event Hub namespace."
+  default     = ""
+}
+
+variable "existing_event_hub_namespace" {
+  type        = string
+  description = "Required when use_existing_event_hub=true. Existing Event Hub namespace name."
+  default     = ""
+}
+
+variable "existing_event_hub_authorization_rule" {
+  type        = string
+  description = "Listen-only authorization rule for LogsEventHubConnectionString. Prefer a hub-level listener rule."
+  default     = "listener"
+}
+
+variable "existing_event_hub_auth_rule_scope" {
+  type        = string
+  description = "Namespace or EventHub scope for existing_event_hub_authorization_rule. Default EventHub matches a typical listener rule."
+  default     = "EventHub"
+
+  validation {
+    condition     = contains(["Namespace", "EventHub"], var.existing_event_hub_auth_rule_scope)
+    error_message = "existing_event_hub_auth_rule_scope must be Namespace or EventHub."
+  }
+}
+
+variable "enable_activity_logs" {
+  type        = bool
+  description = "Enable subscription Activity Logs to the Event Hub. Create mode uses LM namespace RootManageSharedAccessKey. Reuse mode requires existing_event_hub_send_authorization_rule."
+  default     = true
+}
+
+variable "existing_event_hub_send_authorization_rule" {
+  type        = string
+  description = "Required when use_existing_event_hub=true and enable_activity_logs=true. Send-capable rule for Activity Logs. Not stored on the Function App."
+  default     = ""
+}
+
+variable "existing_event_hub_send_auth_rule_scope" {
+  type        = string
+  description = "Namespace or EventHub scope for existing_event_hub_send_authorization_rule."
+  default     = "Namespace"
+
+  validation {
+    condition     = contains(["Namespace", "EventHub"], var.existing_event_hub_send_auth_rule_scope)
+    error_message = "existing_event_hub_send_auth_rule_scope must be Namespace or EventHub."
+  }
+}
+
 variable "tags" {
   description = "Tags given to the resources created by this template"
   type        = map(string)
@@ -59,12 +129,94 @@ locals {
       deployedBy = "Terraform"
     }
   )
+  create_event_hub = !var.use_existing_event_hub
+  existing_config_complete = (
+    var.existing_event_hub_resource_group != "" &&
+    var.existing_event_hub_namespace != "" &&
+    var.event_hub_name != "" &&
+    var.existing_event_hub_authorization_rule != ""
+  )
+  event_hub_name = var.event_hub_name
+  event_hub_consumer_group = var.event_hub_consumer_group
+  event_hub_connection_string = (
+    var.use_existing_event_hub
+    ? (
+      var.existing_event_hub_auth_rule_scope == "EventHub"
+      ? data.azurerm_eventhub_authorization_rule.existing_hub[0].primary_connection_string
+      : data.azurerm_eventhub_namespace_authorization_rule.existing_namespace[0].primary_connection_string
+    )
+    : azurerm_eventhub_authorization_rule.lm_logs_listener[0].primary_connection_string
+  )
 }
 
 ### Providers ###
 provider "azurerm" {
   version = ">= 2.0.0"
   features {}
+}
+
+### Validation ###
+resource "null_resource" "validate_existing_event_hub_inputs" {
+  count = var.use_existing_event_hub && !local.existing_config_complete ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "echo 'ERROR: use_existing_event_hub=true requires existing_event_hub_resource_group, existing_event_hub_namespace, event_hub_name, and existing_event_hub_authorization_rule.' && exit 1"
+  }
+}
+
+resource "null_resource" "validate_activity_logs_send_rule" {
+  count = var.use_existing_event_hub && var.enable_activity_logs && var.existing_event_hub_send_authorization_rule == "" ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "echo 'ERROR: use_existing_event_hub=true with enable_activity_logs=true requires existing_event_hub_send_authorization_rule (Send). Set enable_activity_logs=false or provide a Send rule. The Function Listen rule is not used for Activity Logs.' && exit 1"
+  }
+}
+
+### Data sources for Mode B (fail deployment if missing) ###
+data "azurerm_eventhub_namespace" "existing" {
+  count               = var.use_existing_event_hub ? 1 : 0
+  name                = var.existing_event_hub_namespace
+  resource_group_name = var.existing_event_hub_resource_group
+
+  depends_on = [null_resource.validate_existing_event_hub_inputs]
+}
+
+data "azurerm_eventhub" "existing" {
+  count               = var.use_existing_event_hub ? 1 : 0
+  name                = var.event_hub_name
+  namespace_name      = var.existing_event_hub_namespace
+  resource_group_name = var.existing_event_hub_resource_group
+
+  depends_on = [data.azurerm_eventhub_namespace.existing]
+}
+
+data "azurerm_eventhub_consumer_group" "existing" {
+  count               = var.use_existing_event_hub && var.event_hub_consumer_group != "$Default" ? 1 : 0
+  name                = var.event_hub_consumer_group
+  namespace_name      = var.existing_event_hub_namespace
+  eventhub_name       = var.event_hub_name
+  resource_group_name = var.existing_event_hub_resource_group
+
+  depends_on = [data.azurerm_eventhub.existing]
+}
+
+data "azurerm_eventhub_namespace_authorization_rule" "existing_namespace" {
+  count               = var.use_existing_event_hub && var.existing_event_hub_auth_rule_scope == "Namespace" ? 1 : 0
+  name                = var.existing_event_hub_authorization_rule
+  namespace_name      = var.existing_event_hub_namespace
+  resource_group_name = var.existing_event_hub_resource_group
+
+  depends_on = [data.azurerm_eventhub_namespace.existing]
+}
+
+data "azurerm_eventhub_authorization_rule" "existing_hub" {
+  count               = var.use_existing_event_hub && var.existing_event_hub_auth_rule_scope == "EventHub" ? 1 : 0
+  name                = var.existing_event_hub_authorization_rule
+  namespace_name      = var.existing_event_hub_namespace
+  eventhub_name       = var.event_hub_name
+  resource_group_name = var.existing_event_hub_resource_group
+
+  depends_on = [data.azurerm_eventhub.existing]
 }
 
 ### Resources ###
@@ -78,6 +230,7 @@ resource "azurerm_resource_group" "lm_logs" {
 ## Event Hub ##
 # Namespace #
 resource "azurerm_eventhub_namespace" "lm_logs" {
+  count               = local.create_event_hub ? 1 : 0
   name                = local.namespace
   resource_group_name = azurerm_resource_group.lm_logs.name
   location            = var.azure_region
@@ -88,19 +241,30 @@ resource "azurerm_eventhub_namespace" "lm_logs" {
 
 # Event Hub #
 resource "azurerm_eventhub" "lm_logs" {
-  name                = "log-hub"
+  count               = local.create_event_hub ? 1 : 0
+  name                = var.event_hub_name
   resource_group_name = azurerm_resource_group.lm_logs.name
-  namespace_name      = azurerm_eventhub_namespace.lm_logs.name
+  namespace_name      = azurerm_eventhub_namespace.lm_logs[0].name
   partition_count     = 1
   message_retention   = 1
 }
 
+# Event Hub Consumer Group (skipped when using built-in $Default) #
+resource "azurerm_eventhub_consumer_group" "lm_logs" {
+  count               = local.create_event_hub && var.event_hub_consumer_group != "$Default" ? 1 : 0
+  name                = var.event_hub_consumer_group
+  namespace_name      = azurerm_eventhub_namespace.lm_logs[0].name
+  eventhub_name       = azurerm_eventhub.lm_logs[0].name
+  resource_group_name = azurerm_resource_group.lm_logs.name
+}
+
 # Event Hub Authorization Sender Role #
 resource "azurerm_eventhub_authorization_rule" "lm_logs_sender" {
+  count               = local.create_event_hub ? 1 : 0
   name                = "sender"
   resource_group_name = azurerm_resource_group.lm_logs.name
-  namespace_name      = azurerm_eventhub_namespace.lm_logs.name
-  eventhub_name       = azurerm_eventhub.lm_logs.name
+  namespace_name      = azurerm_eventhub_namespace.lm_logs[0].name
+  eventhub_name       = azurerm_eventhub.lm_logs[0].name
   listen              = false
   send                = true
   manage              = false
@@ -108,10 +272,11 @@ resource "azurerm_eventhub_authorization_rule" "lm_logs_sender" {
 
 # Event Hub Authorization Listener Role #
 resource "azurerm_eventhub_authorization_rule" "lm_logs_listener" {
+  count               = local.create_event_hub ? 1 : 0
   name                = "listener"
   resource_group_name = azurerm_resource_group.lm_logs.name
-  namespace_name      = azurerm_eventhub_namespace.lm_logs.name
-  eventhub_name       = azurerm_eventhub.lm_logs.name
+  namespace_name      = azurerm_eventhub_namespace.lm_logs[0].name
+  eventhub_name       = azurerm_eventhub.lm_logs[0].name
   listen              = true
   send                = false
   manage              = false
@@ -153,6 +318,13 @@ resource "azurerm_function_app" "lm_logs" {
   https_only                 = true
   version                    = "~3"
   tags                       = local.tags
+  depends_on = concat(
+    azurerm_eventhub_consumer_group.lm_logs,
+    data.azurerm_eventhub_consumer_group.existing,
+    data.azurerm_eventhub.existing,
+    data.azurerm_eventhub_namespace_authorization_rule.existing_namespace,
+    data.azurerm_eventhub_authorization_rule.existing_hub,
+  )
   site_config {
     always_on                    = true
     linux_fx_version             = "java|11"
@@ -162,7 +334,13 @@ resource "azurerm_function_app" "lm_logs" {
     FUNCTIONS_WORKER_RUNTIME     = "java"
     FUNCTIONS_EXTENSION_VERSION  = "~3"
     WEBSITE_RUN_FROM_PACKAGE     = "https://github.com/logicmonitor/lm-logs-azure/raw/master/package/lm-logs-azure.zip"
-    LogsEventHubConnectionString = azurerm_eventhub_authorization_rule.lm_logs_listener.primary_connection_string
+    # EventHubName / EventHubConsumerGroup are required by the package bindings. Keep them in
+    # app_settings so terraform apply migrates existing Function Apps before/with package updates.
+    LogsEventHubConnectionString = local.event_hub_connection_string
+    EventHubName                 = local.event_hub_name
+    EventHubConsumerGroup        = local.event_hub_consumer_group
+    # false = historical checkpoint-on-error (possible loss). true = fail closed (possible duplicates).
+    LM_FAIL_CLOSED_ON_INGEST     = "false"
     LogicMonitorCompanyName      = var.lm_company_name
     LogicMonitorAccessId         = var.lm_access_id
     LogicMonitorAccessKey        = var.lm_access_key

@@ -35,35 +35,235 @@
     "LM_Domain_Name": {
       "type": "string"
     },
-    "TLSVersionStorageAccount" : {
-      "type"  : "string"
+    "TLSVersionStorageAccount": {
+      "type": "string"
     },
-    "TLSVersionFunctionApp" : {
-      "type" : "string"
+    "TLSVersionFunctionApp": {
+      "type": "string"
+    },
+    "Event_Hub_Name": {
+      "type": "string",
+      "defaultValue": "log-hub",
+      "metadata": {
+        "description": "Event Hub name. Created when Use_Existing_Event_Hub=No; must already exist when Yes."
+      }
+    },
+    "Event_Hub_Consumer_Group": {
+      "type": "string",
+      "defaultValue": "$Default",
+      "metadata": {
+        "description": "Consumer group for LogForwarder. Created when Use_Existing_Event_Hub=No and not $Default; must already exist when Yes."
+      }
+    },
+    "Use_Existing_Event_Hub": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Yes = reuse an existing Event Hub (do not create namespace/hub/CG). No = create them in this deployment."
+      }
+    },
+    "Existing_Event_Hub_Resource_Group": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Existing_Event_Hub=Yes. Resource group of the existing Event Hub namespace."
+      }
+    },
+    "Existing_Event_Hub_Namespace": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Existing_Event_Hub=Yes. Existing Event Hub namespace name."
+      }
+    },
+    "Existing_Event_Hub_Authorization_Rule": {
+      "type": "string",
+      "defaultValue": "listener",
+      "metadata": {
+        "description": "Listen-only authorization rule for LogsEventHubConnectionString. Prefer hub-level listener (default). Avoid RootManageSharedAccessKey."
+      }
+    },
+    "Existing_Event_Hub_Auth_Rule_Scope": {
+      "type": "string",
+      "defaultValue": "EventHub",
+      "allowedValues": [
+        "Namespace",
+        "EventHub"
+      ],
+      "metadata": {
+        "description": "Whether Existing_Event_Hub_Authorization_Rule is a namespace-level or event-hub-level rule. Default EventHub matches a typical listener rule."
+      }
     }
   },
   "variables": {
     "logsFunctionAppName": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Azure_Region'),' ',''))]",
-    "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Azure_Region'),' ',''))]",
+    "createdEventHubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Azure_Region'),' ',''))]",
     "storage": "[toLower(concat(parameters('LM_Company_Name'), replace(parameters('Azure_Region'),' ','')))]",
     "lmAppStorageAccounts": "[if(greater(length(variables('storage')) , 24), substring(variables('storage'), sub(length(variables('storage')) , 24), 24) , variables('storage'))]",
-    "eventhubLogsName": "log-hub",
-    "ConsumergroupsLogsName": "LMConsumerGroup",
-    "functionServerfarms": "[concat(variables('eventhubNamespace'),'-service-plan')]",
+    "eventhubLogsName": "[parameters('Event_Hub_Name')]",
+    "ConsumergroupsLogsName": "[parameters('Event_Hub_Consumer_Group')]",
+    "functionServerfarms": "[concat(variables('createdEventHubNamespace'),'-service-plan')]",
     "listener": "listener",
     "sender": "sender",
     "lm_auth": "[concat('{ \"LM_ACCESS_ID\" : \"',parameters('LM_Access_Id'),'\", \"LM_ACCESS_KEY\" : \"', parameters('LM_Access_Key'), '\", \"LM_BEARER_TOKEN\" : \"', parameters('LM_Bearer_Token'), '\" }')]",
-    "tlsVersionStorageAccount" : "[concat('TLS',parameters('TLSVersionStorageAccount'))]"
+    "tlsVersionStorageAccount": "[concat('TLS',parameters('TLSVersionStorageAccount'))]",
+    "useExistingEventHub": "[equals(parameters('Use_Existing_Event_Hub'), 'Yes')]",
+    "createEventHubResources": "[not(variables('useExistingEventHub'))]",
+    "createCustomConsumerGroup": "[and(variables('createEventHubResources'), not(equals(parameters('Event_Hub_Consumer_Group'), '$Default')))]",
+    "existingHubFullyConfigured": "[and(not(empty(parameters('Existing_Event_Hub_Resource_Group'))), not(empty(parameters('Existing_Event_Hub_Namespace'))), not(empty(parameters('Event_Hub_Name'))), not(empty(parameters('Existing_Event_Hub_Authorization_Rule'))))]",
+    "eventHubResourceGroup": "[if(variables('useExistingEventHub'), parameters('Existing_Event_Hub_Resource_Group'), resourceGroup().name)]",
+    "eventHubNamespaceName": "[if(variables('useExistingEventHub'), parameters('Existing_Event_Hub_Namespace'), variables('createdEventHubNamespace'))]",
+    "safeExistingRg": "[if(empty(parameters('Existing_Event_Hub_Resource_Group')), 'missing-existing-eventhub-rg', parameters('Existing_Event_Hub_Resource_Group'))]",
+    "safeExistingNamespace": "[if(empty(parameters('Existing_Event_Hub_Namespace')), 'missing-existing-eventhub-namespace', parameters('Existing_Event_Hub_Namespace'))]",
+    "safeExistingHub": "[if(empty(parameters('Event_Hub_Name')), 'missing-eventhub-name', parameters('Event_Hub_Name'))]",
+    "safeExistingRule": "[if(empty(parameters('Existing_Event_Hub_Authorization_Rule')), 'missing-auth-rule', parameters('Existing_Event_Hub_Authorization_Rule'))]",
+    "existingNamespaceAuthRuleId": "[resourceId(variables('safeExistingRg'), 'Microsoft.EventHub/namespaces/authorizationRules', variables('safeExistingNamespace'), variables('safeExistingRule'))]",
+    "existingEventHubAuthRuleId": "[resourceId(variables('safeExistingRg'), 'Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('safeExistingNamespace'), variables('safeExistingHub'), variables('safeExistingRule'))]",
+    "existingAuthRuleId": "[if(equals(parameters('Existing_Event_Hub_Auth_Rule_Scope'), 'EventHub'), variables('existingEventHubAuthRuleId'), variables('existingNamespaceAuthRuleId'))]",
+    "createdListenerAuthRuleId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('createdEventHubNamespace'), variables('eventhubLogsName'), variables('listener'))]",
+    "activeAuthRuleId": "[if(variables('useExistingEventHub'), variables('existingAuthRuleId'), variables('createdListenerAuthRuleId'))]"
   },
   "resources": [
     {
+      "condition": "[and(variables('useExistingEventHub'), not(variables('existingHubFullyConfigured')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "validate-existing-event-hub-params",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "variables": {
+            "configError": "Use_Existing_Event_Hub=Yes requires Existing_Event_Hub_Resource_Group, Existing_Event_Hub_Namespace, Event_Hub_Name, and Existing_Event_Hub_Authorization_Rule."
+          },
+          "resources": [],
+          "outputs": {
+            "parameterCheck": {
+              "type": "string",
+              "value": "[int(variables('configError'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[and(variables('useExistingEventHub'), variables('existingHubFullyConfigured'))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "validate-existing-event-hub",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "parameters": {
+          "existingResourceGroup": {
+            "value": "[parameters('Existing_Event_Hub_Resource_Group')]"
+          },
+          "existingNamespace": {
+            "value": "[parameters('Existing_Event_Hub_Namespace')]"
+          },
+          "eventHubName": {
+            "value": "[parameters('Event_Hub_Name')]"
+          },
+          "consumerGroup": {
+            "value": "[parameters('Event_Hub_Consumer_Group')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "existingResourceGroup": {
+              "type": "string"
+            },
+            "existingNamespace": {
+              "type": "string"
+            },
+            "eventHubName": {
+              "type": "string"
+            },
+            "consumerGroup": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "namespaceId": "[resourceId(parameters('existingResourceGroup'), 'Microsoft.EventHub/namespaces', parameters('existingNamespace'))]",
+            "hubId": "[resourceId(parameters('existingResourceGroup'), 'Microsoft.EventHub/namespaces/eventhubs', parameters('existingNamespace'), parameters('eventHubName'))]",
+            "consumerGroupId": "[resourceId(parameters('existingResourceGroup'), 'Microsoft.EventHub/namespaces/eventhubs/consumergroups', parameters('existingNamespace'), parameters('eventHubName'), parameters('consumerGroup'))]"
+          },
+          "resources": [],
+          "outputs": {
+            "namespaceExists": {
+              "type": "object",
+              "value": "[reference(variables('namespaceId'), '2021-11-01')]"
+            },
+            "eventHubExists": {
+              "type": "object",
+              "value": "[reference(variables('hubId'), '2021-11-01')]"
+            },
+            "consumerGroupExists": {
+              "type": "object",
+              "value": "[reference(variables('consumerGroupId'), '2021-11-01')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "resolve-eventhub-connection",
+      "dependsOn": [
+        "validate-existing-event-hub-params",
+        "validate-existing-event-hub",
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('createdEventHubNamespace'), variables('eventhubLogsName'), variables('listener'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "parameters": {
+          "authRuleId": {
+            "value": "[variables('activeAuthRuleId')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "authRuleId": {
+              "type": "string"
+            }
+          },
+          "resources": [],
+          "outputs": {
+            "connectionString": {
+              "type": "string",
+              "value": "[listKeys(parameters('authRuleId'), '2021-11-01').primaryConnectionString]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[variables('createEventHubResources')]",
       "type": "Microsoft.EventHub/namespaces",
       "sku": {
         "name": "Standard",
         "tier": "Standard",
         "capacity": 1
       },
-      "name": "[variables('eventhubNamespace')]",
+      "name": "[variables('createdEventHubNamespace')]",
       "apiVersion": "2018-01-01-preview",
       "location": "[resourceGroup().location]",
       "tags": {},
@@ -164,7 +364,15 @@
             },
             {
               "name": "LogsEventHubConnectionString",
-              "value": "[listkeys(resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventhubNamespace'),variables('eventhubLogsName'), variables('listener')), '2017-04-01').primaryConnectionString]"
+              "value": "[reference('resolve-eventhub-connection').outputs.connectionString.value]"
+            },
+            {
+              "name": "EventHubName",
+              "value": "[parameters('Event_Hub_Name')]"
+            },
+            {
+              "name": "EventHubConsumerGroup",
+              "value": "[parameters('Event_Hub_Consumer_Group')]"
             },
             {
               "name": "LM_COMPANY",
@@ -215,22 +423,27 @@
               "value": "WARNING"
             },
             {
+              "name": "LM_FAIL_CLOSED_ON_INGEST",
+              "value": "false"
+            },
+            {
               "name": "LM_DOMAIN_NAME",
               "value": "[parameters('LM_Domain_Name')]"
             }
           ],
-          "minTlsVersion" : "[parameters('TLSVersionFunctionApp')]"
+          "minTlsVersion": "[parameters('TLSVersionFunctionApp')]"
         }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', variables('functionServerfarms'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('lmAppStorageAccounts'))]",
-        "[concat('Microsoft.EventHub/namespaces/', variables('eventhubNamespace'))]"
+        "resolve-eventhub-connection"
       ]
     },
     {
+      "condition": "[variables('createEventHubResources')]",
       "type": "Microsoft.EventHub/namespaces/eventhubs",
-      "name": "[concat(variables('eventhubNamespace'), '/', variables('eventhubLogsName'))]",
+      "name": "[concat(variables('createdEventHubNamespace'), '/', variables('eventhubLogsName'))]",
       "apiVersion": "2017-04-01",
       "location": "[resourceGroup().location]",
       "properties": {
@@ -239,17 +452,18 @@
         "status": "Active"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.EventHub/namespaces', variables('eventhubNamespace'))]"
+        "[resourceId('Microsoft.EventHub/namespaces', variables('createdEventHubNamespace'))]"
       ]
     },
     {
+      "condition": "[variables('createEventHubResources')]",
       "type": "Microsoft.EventHub/namespaces/eventhubs/authorizationRules",
       "apiVersion": "2017-04-01",
-      "name": "[concat(variables('eventhubNamespace'), '/', variables('eventhubLogsName'),'/',variables('listener'))]",
+      "name": "[concat(variables('createdEventHubNamespace'), '/', variables('eventhubLogsName'),'/',variables('listener'))]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
-        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventhubNamespace'), variables('eventhubLogsName'))]",
-        "[resourceId('Microsoft.EventHub/namespaces', variables('eventhubNamespace'))]"
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('createdEventHubNamespace'), variables('eventhubLogsName'))]",
+        "[resourceId('Microsoft.EventHub/namespaces', variables('createdEventHubNamespace'))]"
       ],
       "properties": {
         "rights": [
@@ -258,13 +472,14 @@
       }
     },
     {
+      "condition": "[variables('createEventHubResources')]",
       "type": "Microsoft.EventHub/namespaces/eventhubs/authorizationRules",
       "apiVersion": "2017-04-01",
-      "name": "[concat(variables('eventhubNamespace'), '/', variables('eventhubLogsName'),'/',variables('sender'))]",
+      "name": "[concat(variables('createdEventHubNamespace'), '/', variables('eventhubLogsName'),'/',variables('sender'))]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
-        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventhubNamespace'), variables('eventhubLogsName'))]",
-        "[resourceId('Microsoft.EventHub/namespaces', variables('eventhubNamespace'))]"
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('createdEventHubNamespace'), variables('eventhubLogsName'))]",
+        "[resourceId('Microsoft.EventHub/namespaces', variables('createdEventHubNamespace'))]"
       ],
       "properties": {
         "rights": [
@@ -273,16 +488,39 @@
       }
     },
     {
+      "condition": "[variables('createCustomConsumerGroup')]",
       "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
-      "name": "[concat(variables('eventhubNamespace'), '/', variables('eventhubLogsName'), '/', variables('ConsumergroupsLogsName'))]",
+      "name": "[concat(variables('createdEventHubNamespace'), '/', variables('eventhubLogsName'), '/', variables('ConsumergroupsLogsName'))]",
       "apiVersion": "2017-04-01",
       "location": "[resourceGroup().location]",
       "scale": null,
       "properties": {},
       "dependsOn": [
-        "[resourceId('Microsoft.EventHub/namespaces', variables('eventhubNamespace'))]",
-        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventhubNamespace'), variables('eventhubLogsName'))]"
+        "[resourceId('Microsoft.EventHub/namespaces', variables('createdEventHubNamespace'))]",
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('createdEventHubNamespace'), variables('eventhubLogsName'))]"
       ]
     }
-  ]
+  ],
+  "outputs": {
+    "useExistingEventHub": {
+      "type": "bool",
+      "value": "[variables('useExistingEventHub')]"
+    },
+    "eventHubName": {
+      "type": "string",
+      "value": "[variables('eventhubLogsName')]"
+    },
+    "eventHubNamespace": {
+      "type": "string",
+      "value": "[variables('eventHubNamespaceName')]"
+    },
+    "eventHubResourceGroup": {
+      "type": "string",
+      "value": "[variables('eventHubResourceGroup')]"
+    },
+    "eventHubAuthorizationRuleId": {
+      "type": "string",
+      "value": "[if(variables('useExistingEventHub'), variables('existingAuthRuleId'), resourceId('Microsoft.EventHub/namespaces/authorizationRules', variables('createdEventHubNamespace'), 'RootManageSharedAccessKey'))]"
+    }
+  }
 }
