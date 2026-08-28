@@ -115,7 +115,17 @@ public class LogEventForwarder {
      */
     private static final Object LOGS_LOCK = new Object();
     /**
-     * Overall per-entry send budget (connect + read), applied via {@link #sendLogsWithTimeout}.
+     * LM Data SDK batch flush interval in seconds (passed to {@code new Logs(conf, interval, batch)}).
+     */
+    private static final int LM_BATCH_INTERVAL_SEC = 5;
+    /**
+     * When true, {@link Logs#sendLogs} queues entries and returns empty immediately; ingest
+     * completion is tracked via {@link LogIngestResponse} and {@link #waitForBatchIngest}.
+     */
+    private static final boolean LM_BATCH_ENABLED = true;
+    /**
+     * Overall per-entry send budget (connect + read), applied via {@link #sendLogsWithTimeout}
+     * and as the HTTP portion of {@link #waitForBatchIngest}.
      */
     private static volatile int sendTimeoutMs =
         DEFAULT_CONNECT_TIMEOUT_MS + DEFAULT_READ_TIMEOUT_MS;
@@ -248,8 +258,9 @@ public class LogEventForwarder {
     }
 
     public Logs configureLogs(final ExecutionContext context) {
-        // batch=false: send synchronously on the Function thread.
-        // batch=true uses background merge/request threads that can hold SDK locks
+        // batch=true: sendLogs queues immediately; background threads merge/flush. Completion is
+        // tracked via ApiCallback and waitForBatchIngest before checkpointing.
+        // batch=false: sendLogs blocks until HTTP completes (sync path).
         synchronized (LOGS_LOCK) {
             if (logs == null) {
                 final int connectTimeoutMs = resolveTimeoutMs(
@@ -258,11 +269,13 @@ public class LogEventForwarder {
                     PARAMETER_READ_TIMEOUT, DEFAULT_READ_TIMEOUT_MS);
                 final int callTimeoutMs = connectTimeoutMs + readTimeoutMs;
                 log(context, Level.FINE,
-                    () -> "Initializing LM Logs SDK client,"
+                    () -> "Initializing LM Logs SDK client (batch=" + LM_BATCH_ENABLED
+                        + ", intervalSec=" + LM_BATCH_INTERVAL_SEC + "),"
                         + " connectTimeoutMs=" + connectTimeoutMs
                         + ", readTimeoutMs=" + readTimeoutMs
                         + ", callTimeoutMs=" + callTimeoutMs + ")");
-                logs = new Logs(conf, 5, true, responseInterface);
+                logs = new Logs(conf, LM_BATCH_INTERVAL_SEC, LM_BATCH_ENABLED,
+                    responseInterface);
                 sendTimeoutMs = callTimeoutMs;
                 applyApiClientTimeouts(logs, connectTimeoutMs, readTimeoutMs, callTimeoutMs,
                     context);
@@ -270,6 +283,8 @@ public class LogEventForwarder {
             } else {
                 log(context, Level.FINE, () -> "Reusing existing LM Logs SDK client");
             }
+            // Per-invocation callback so batch results attach to the current tracker/context.
+            logs.setApiCallback(responseInterface);
             return logs;
         }
     }
@@ -351,6 +366,36 @@ public class LogEventForwarder {
     }
 
     /**
+     * After queuing batch-mode sends, waits until the SDK drains its queues and reports ingest
+     * outcome via {@link LogIngestResponse}.
+     */
+    protected void waitForBatchIngest(Logs logsClient, LogIngestResponse ingestResponse,
+        int entryCount, int timeoutMs) throws Exception {
+        ingestResponse.getBatchTracker().begin(entryCount);
+        log(ingestResponse.getContext(), Level.FINE,
+            () -> "Waiting for batch ingest of " + entryCount + " entr"
+                + (entryCount == 1 ? "y" : "ies") + " (timeoutMs=" + timeoutMs + ")");
+        ingestResponse.getBatchTracker().awaitCompletion(logsClient, timeoutMs);
+        BatchIngestTracker tracker = ingestResponse.getBatchTracker();
+        if (tracker.hasFailure()) {
+            ApiException failure = tracker.getLastFailure();
+            String detail = failure != null ? failure.getMessage() : "unknown batch failure";
+            throw new RuntimeException(
+                "Batch ingest failed for LogicMonitor (" + detail + ")", failure);
+        }
+        log(ingestResponse.getContext(), Level.FINE,
+            () -> "Batch ingest complete: callbacks=" + tracker.getSuccessCallbacks()
+                + ", queuedEntries=" + entryCount);
+    }
+
+    /**
+     * Batch flush wait budget: SDK interval plus HTTP connect+read budget per send.
+     */
+    protected static int batchIngestTimeoutMs(int sendTimeoutMs) {
+        return (LM_BATCH_INTERVAL_SEC * 1000) + sendTimeoutMs;
+    }
+
+    /**
      * Reads an environment variable and sets using the specified consumer when not null nor empty.
      *
      * @param <T> type of the variable
@@ -407,62 +452,43 @@ public class LogEventForwarder {
         log(context, Level.INFO, () -> "Sending " + logEntries.size() +
             " log entries for devices " + getResourceIds(logEntries));
 
-        int successCount = 0;
-        int emptyResponseCount = 0;
-        int errorCount = 0;
-        Exception lastSendException = null;
-        for (int i = 0; i < logEntries.size(); i++) {
-            LogEntry logEntry = logEntries.get(i);
-            final int entryIndex = i + 1;
-            final int totalEntries = logEntries.size();
-            log(context, Level.FINE,
-                () -> "Calling LM sendLogs " + entryIndex + "/" + totalEntries
-                    + " (resourceIds=" + logEntry.getLmResourceId() + ")");
-            long sendStartMs = System.currentTimeMillis();
-            try {
-                Optional<ApiResponse> response =
-                    sendLogsWithTimeout(logsClient, logEntry, sendTimeoutMs);
-                long sendElapsedMs = System.currentTimeMillis() - sendStartMs;
-                if (response != null && response.isPresent()) {
-                    int statusCode = response.get().getStatusCode();
-                    if (statusCode >= 200 && statusCode < 300) {
-                        successCount++;
-                        log(context, Level.FINE,
-                            () -> "LM sendLogs " + entryIndex + "/" + totalEntries
-                                + " returned HTTP " + statusCode + " in " + sendElapsedMs + "ms");
-                        logResponse(context, response.get());
-                    } else {
-                        errorCount++;
-                        final int failedStatus = statusCode;
+        final boolean batchMode = logsClient.isBatch();
+        SendResult sendResult;
+        if (batchMode) {
+            synchronized (LOGS_LOCK) {
+                logsClient.setApiCallback(responseInterface);
+                sendResult = sendLogEntries(logsClient, logEntries, context, true);
+                if (sendResult.queuedCount > 0 && sendResult.errorCount == 0) {
+                    try {
+                        waitForBatchIngest(logsClient, responseInterface,
+                            sendResult.queuedCount, batchIngestTimeoutMs(sendTimeoutMs));
+                        sendResult.successCount += sendResult.queuedCount;
+                    } catch (Exception e) {
+                        sendResult.errorCount += sendResult.queuedCount;
+                        sendResult.lastException = e;
                         log(context, Level.SEVERE,
-                            () -> "LM sendLogs " + entryIndex + "/" + totalEntries
-                                + " returned HTTP " + failedStatus + " in " + sendElapsedMs
-                                + "ms (treating as failure to avoid Event Hub checkpoint)");
+                            () -> "Batch ingest did not complete: " + e.getMessage());
                     }
-                } else {
-                    emptyResponseCount++;
-                    log(context, Level.SEVERE,
-                        () -> "LM sendLogs " + entryIndex + "/" + totalEntries
-                            + " returned no response in " + sendElapsedMs
-                            + "ms (treating as failure to avoid Event Hub checkpoint)");
                 }
-            } catch (final Exception e) {
-                errorCount++;
-                lastSendException = e;
-                long sendElapsedMs = System.currentTimeMillis() - sendStartMs;
-                log(context, Level.SEVERE,
-                    () -> "Exception on LM sendLogs " + entryIndex + "/" + totalEntries
-                        + " after " + sendElapsedMs + "ms: " + e.getMessage());
             }
+        } else {
+            sendResult = sendLogEntries(logsClient, logEntries, context, false);
         }
 
+        final int successCount = sendResult.successCount;
+        final int queuedCount = sendResult.queuedCount;
+        final int emptyResponseCount = sendResult.emptyResponseCount;
+        final int errorCount = sendResult.errorCount;
+        final Exception lastSendException = sendResult.lastException;
+
         final int sentOk = successCount;
-        final int sentQueued = emptyResponseCount;
+        final int sentQueued = queuedCount;
+        final int sentEmpty = emptyResponseCount;
         final int sentFailed = errorCount;
         log(context, Level.INFO,
             () -> "Invocation finished: entries=" + logEntries.size()
                 + ", httpResponses=" + sentOk
-                + ", emptyResponses=" + sentQueued
+                + (batchMode ? ", queued=" + sentQueued : ", emptyResponses=" + sentEmpty)
                 + ", errors=" + sentFailed
                 + ", elapsedMs=" + (System.currentTimeMillis() - invocationStartMs));
 
@@ -470,9 +496,12 @@ public class LogEventForwarder {
         // advance the offset checkpoint for a batch that was not fully delivered to LM.
         if (errorCount > 0 || emptyResponseCount > 0) {
             String message = String.format(
-                "Failed to ingest logs to LogicMonitor (httpOk=%d, emptyResponses=%d, errors=%d, entries=%d). "
+                "Failed to ingest logs to LogicMonitor (httpOk=%d, %s=%d, errors=%d, entries=%d). "
                     + "Failing Function invocation to prevent Event Hub checkpoint advance.",
-                successCount, emptyResponseCount, errorCount, logEntries.size());
+                successCount,
+                batchMode ? "queuedNotConfirmed" : "emptyResponses",
+                batchMode ? Math.max(0, queuedCount - successCount) : emptyResponseCount,
+                errorCount, logEntries.size());
             log(context, Level.SEVERE, () -> message);
             RuntimeException failure = new RuntimeException(message);
             if (lastSendException != null) {
@@ -480,6 +509,81 @@ public class LogEventForwarder {
             }
             throw failure;
         }
+    }
+
+    /**
+     * Sends parsed log entries to LogicMonitor.
+     *
+     * @return counts and the last send exception, if any
+     */
+    protected SendResult sendLogEntries(Logs logsClient, List<LogEntry> logEntries,
+        final ExecutionContext context, boolean batchMode) {
+        SendResult result = new SendResult();
+        for (int i = 0; i < logEntries.size(); i++) {
+            LogEntry logEntry = logEntries.get(i);
+            final int entryIndex = i + 1;
+            final int totalEntries = logEntries.size();
+            log(context, Level.FINE,
+                () -> "Calling LM sendLogs " + entryIndex + "/" + totalEntries
+                    + " (resourceIds=" + logEntry.getLmResourceId()
+                    + (batchMode ? ", batch=true" : "") + ")");
+            long sendStartMs = System.currentTimeMillis();
+            try {
+                Optional<ApiResponse> response;
+                if (batchMode) {
+                    response = logsClient.sendLogs(
+                        logEntry.getMessage(), logEntry.getLmResourceId(),
+                        logEntry.getMetadata(), logEntry.getTimestamp());
+                } else {
+                    response = sendLogsWithTimeout(logsClient, logEntry, sendTimeoutMs);
+                }
+                long sendElapsedMs = System.currentTimeMillis() - sendStartMs;
+                if (response != null && response.isPresent()) {
+                    int statusCode = response.get().getStatusCode();
+                    if (statusCode >= 200 && statusCode < 300) {
+                        result.successCount++;
+                        log(context, Level.FINE,
+                            () -> "LM sendLogs " + entryIndex + "/" + totalEntries
+                                + " returned HTTP " + statusCode + " in " + sendElapsedMs + "ms");
+                        logResponse(context, response.get());
+                    } else {
+                        result.errorCount++;
+                        final int failedStatus = statusCode;
+                        log(context, Level.SEVERE,
+                            () -> "LM sendLogs " + entryIndex + "/" + totalEntries
+                                + " returned HTTP " + failedStatus + " in " + sendElapsedMs
+                                + "ms (treating as failure to avoid Event Hub checkpoint)");
+                    }
+                } else if (batchMode && (response == null || !response.isPresent())) {
+                    result.queuedCount++;
+                    log(context, Level.FINE,
+                        () -> "LM sendLogs " + entryIndex + "/" + totalEntries
+                            + " queued for batch ingest in " + sendElapsedMs + "ms");
+                } else {
+                    result.emptyResponseCount++;
+                    log(context, Level.SEVERE,
+                        () -> "LM sendLogs " + entryIndex + "/" + totalEntries
+                            + " returned no response in " + sendElapsedMs
+                            + "ms (treating as failure to avoid Event Hub checkpoint)");
+                }
+            } catch (final Exception e) {
+                result.errorCount++;
+                result.lastException = e;
+                long sendElapsedMs = System.currentTimeMillis() - sendStartMs;
+                log(context, Level.SEVERE,
+                    () -> "Exception on LM sendLogs " + entryIndex + "/" + totalEntries
+                        + " after " + sendElapsedMs + "ms: " + e.getMessage());
+            }
+        }
+        return result;
+    }
+
+    static class SendResult {
+        int successCount;
+        int queuedCount;
+        int emptyResponseCount;
+        int errorCount;
+        Exception lastException;
     }
 
     /**
@@ -593,6 +697,7 @@ public class LogEventForwarder {
 
         public static final String JSON_PROPERTY_SUCCESS = "success";
         private Boolean success;
+        private final BatchIngestTracker batchTracker = new BatchIngestTracker();
 
         public ExecutionContext getContext() {
             return context;
@@ -604,24 +709,29 @@ public class LogEventForwarder {
             this.context = context;
         }
 
+        public BatchIngestTracker getBatchTracker() {
+            return batchTracker;
+        }
+
         public LogIngestResponse success(Boolean success) {
             this.success = success;
             return this;
         }
 
         @Override
-        public void onFailure(ApiException e, int i, Map map) {
+        public void onFailure(ApiException e, int statusCode, Map responseHeaders) {
+            batchTracker.recordFailure(e, statusCode);
             log(this.getContext(), Level.SEVERE,
-                () -> "Failed to ingest logs to Logicmonitor. Error = " + e.getMessage());
-            // With batch=false, sendLogs should surface failures synchronously; this callback
-            // is retained for SDK compatibility. Synchronous path failures are handled in forward().
+                () -> "Failed to ingest logs to Logicmonitor (HTTP " + statusCode
+                    + "). Error = " + e.getMessage());
         }
 
         @Override
-        public void onSuccess(Object o, int i, Map map) {
+        public void onSuccess(Object responseBody, int statusCode, Map responseHeaders) {
+            batchTracker.recordSuccess(statusCode);
             log(this.getContext(), Level.INFO,
-                () -> "Successfully ingested logs to Logicmonitor. x-request-id="
-                    + map.get("x-request-id"));
+                () -> "Successfully ingested logs to Logicmonitor (HTTP " + statusCode
+                    + ", x-request-id=" + responseHeaders.get("x-request-id") + ")");
         }
 
         @Override
@@ -630,6 +740,85 @@ public class LogEventForwarder {
 
         @Override
         public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+        }
+    }
+
+    /**
+     * Tracks batch-mode ingest completion reported by the LM Data SDK {@link ApiCallback}.
+     */
+    static class BatchIngestTracker {
+
+        private static final long QUIET_PERIOD_MS = 250;
+
+        private int expectedEntries;
+        private int successCallbacks;
+        private int failureCallbacks;
+        private volatile ApiException lastFailure;
+        private volatile long lastCallbackMs;
+
+        void begin(int expectedEntries) {
+            this.expectedEntries = expectedEntries;
+            this.successCallbacks = 0;
+            this.failureCallbacks = 0;
+            this.lastFailure = null;
+            this.lastCallbackMs = 0;
+        }
+
+        void recordSuccess(int statusCode) {
+            if (statusCode < 200 || statusCode >= 300) {
+                recordFailure(new ApiException(statusCode, "Unexpected HTTP status " + statusCode),
+                    statusCode);
+                return;
+            }
+            successCallbacks++;
+            lastCallbackMs = System.currentTimeMillis();
+        }
+
+        void recordFailure(ApiException e, int statusCode) {
+            failureCallbacks++;
+            lastFailure = e;
+            lastCallbackMs = System.currentTimeMillis();
+        }
+
+        boolean hasFailure() {
+            return failureCallbacks > 0;
+        }
+
+        ApiException getLastFailure() {
+            return lastFailure;
+        }
+
+        int getSuccessCallbacks() {
+            return successCallbacks;
+        }
+
+        void awaitCompletion(Logs logsClient, long timeoutMs)
+            throws InterruptedException, TimeoutException {
+            long deadline = System.currentTimeMillis() + timeoutMs;
+            while (System.currentTimeMillis() < deadline) {
+                if (hasFailure()) {
+                    return;
+                }
+                if (isDrained(logsClient) && successCallbacks > 0
+                    && System.currentTimeMillis() - lastCallbackMs >= QUIET_PERIOD_MS) {
+                    return;
+                }
+                Thread.sleep(50);
+            }
+            if (hasFailure()) {
+                return;
+            }
+            if (successCallbacks == 0 || !isDrained(logsClient)) {
+                throw new TimeoutException(
+                    "Batch ingest of " + expectedEntries + " entries did not complete within "
+                        + timeoutMs + "ms (successCallbacks=" + successCallbacks
+                        + ", drained=" + isDrained(logsClient) + ")");
+            }
+        }
+
+        private static boolean isDrained(Logs logsClient) {
+            return logsClient.getRawRequest().isEmpty()
+                && logsClient.getLogPayloadCache().isEmpty();
         }
     }
 }
