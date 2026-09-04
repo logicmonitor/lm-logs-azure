@@ -5,10 +5,26 @@
     "sourceCodeBranch": "master",
     "templateBaseUri": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',variables('sourceCodeBranch'),'/arm-template-deployment/')]",
     "deploymentResourceGroupName": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Resource_Group_Region'),' ',''),'-group')]",
-    "eventhubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Resource_Group_Region'),' ',''))]",
-    "eventhubLogsName": "log-hub",
+    "createdEventHubNamespace": "[concat('lm-logs','-',parameters('LM_Company_Name'), '-', replace(parameters('Resource_Group_Region'),' ',''))]",
+    "eventhubLogsName": "[parameters('Event_Hub_Name')]",
     "subscriptionId": "[subscription().subscriptionId]",
-    "eventHubAuthorizationRuleId": "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.EventHub/namespaces/', variables('eventhubNamespace'), '/authorizationRules/RootManageSharedAccessKey')]"
+    "useExistingEventHub": "[equals(parameters('Use_Existing_Event_Hub'), 'Yes')]",
+    "enableActivityLogs": "[equals(parameters('Enable_Activity_Logs'), 'Yes')]",
+    "existingSendRuleConfigured": "[not(empty(parameters('Existing_Event_Hub_Send_Authorization_Rule')))]",
+    "activityLogsMisconfigured": "[and(variables('useExistingEventHub'), variables('enableActivityLogs'), not(variables('existingSendRuleConfigured')))]",
+    "createdEventHubAuthorizationRuleId": "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('deploymentResourceGroupName'), '/providers/Microsoft.EventHub/namespaces/', variables('createdEventHubNamespace'), '/authorizationRules/RootManageSharedAccessKey')]",
+    "existingNamespaceAuthRuleId": "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', parameters('Existing_Event_Hub_Resource_Group'), '/providers/Microsoft.EventHub/namespaces/', parameters('Existing_Event_Hub_Namespace'), '/authorizationRules/', parameters('Existing_Event_Hub_Authorization_Rule'))]",
+    "existingEventHubAuthRuleId": "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', parameters('Existing_Event_Hub_Resource_Group'), '/providers/Microsoft.EventHub/namespaces/', parameters('Existing_Event_Hub_Namespace'), '/eventhubs/', parameters('Event_Hub_Name'), '/authorizationRules/', parameters('Existing_Event_Hub_Authorization_Rule'))]",
+    "existingAuthRuleId": "[if(equals(parameters('Existing_Event_Hub_Auth_Rule_Scope'), 'EventHub'), variables('existingEventHubAuthRuleId'), variables('existingNamespaceAuthRuleId'))]",
+    "safeExistingRg": "[if(empty(parameters('Existing_Event_Hub_Resource_Group')), 'missing-existing-eventhub-rg', parameters('Existing_Event_Hub_Resource_Group'))]",
+    "safeExistingNamespace": "[if(empty(parameters('Existing_Event_Hub_Namespace')), 'missing-existing-eventhub-namespace', parameters('Existing_Event_Hub_Namespace'))]",
+    "safeExistingHub": "[if(empty(parameters('Event_Hub_Name')), 'missing-eventhub-name', parameters('Event_Hub_Name'))]",
+    "safeExistingSendRule": "[if(empty(parameters('Existing_Event_Hub_Send_Authorization_Rule')), 'missing-send-auth-rule', parameters('Existing_Event_Hub_Send_Authorization_Rule'))]",
+    "existingActivityLogsNamespaceRuleId": "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('safeExistingRg'), '/providers/Microsoft.EventHub/namespaces/', variables('safeExistingNamespace'), '/authorizationRules/', variables('safeExistingSendRule'))]",
+    "existingActivityLogsEventHubRuleId": "[concat('/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('safeExistingRg'), '/providers/Microsoft.EventHub/namespaces/', variables('safeExistingNamespace'), '/eventhubs/', variables('safeExistingHub'), '/authorizationRules/', variables('safeExistingSendRule'))]",
+    "existingActivityLogsAuthRuleId": "[if(equals(parameters('Existing_Event_Hub_Send_Auth_Rule_Scope'), 'EventHub'), variables('existingActivityLogsEventHubRuleId'), variables('existingActivityLogsNamespaceRuleId'))]",
+    "activityLogsAuthRuleId": "[if(variables('useExistingEventHub'), variables('existingActivityLogsAuthRuleId'), variables('createdEventHubAuthorizationRuleId'))]",
+    "deployActivityLogs": "[and(variables('enableActivityLogs'), or(not(variables('useExistingEventHub')), variables('existingSendRuleConfigured')))]"
   },
   "parameters": {
     "Resource_Group_Region": {
@@ -84,7 +100,7 @@
         "No"
       ],
       "metadata": {
-        "description": "Enable Activity logs to be sent to the event hub that will get created in this deployment"
+        "description": "Enable subscription Activity Logs to the Event Hub. Create mode uses the LM namespace RootManageSharedAccessKey (Send). Reuse mode requires Existing_Event_Hub_Send_Authorization_Rule (Send); it does not use the Function Listen rule or assume RootManageSharedAccessKey."
       },
       "defaultValue": "Yes"
     },
@@ -101,9 +117,82 @@
       "metadata": {
         "description": "Provide an appropriate TLS version for function app. Format - X.X"
       }
+    },
+    "Event_Hub_Name": {
+      "type": "string",
+      "defaultValue": "log-hub",
+      "metadata": {
+        "description": "Event Hub name. Created when Use_Existing_Event_Hub=No; must already exist when Yes."
+      }
+    },
+    "Event_Hub_Consumer_Group": {
+      "type": "string",
+      "defaultValue": "$Default",
+      "metadata": {
+        "description": "Consumer group for LogForwarder. Created when Use_Existing_Event_Hub=No and not $Default; must already exist when Yes."
+      }
+    },
+    "Use_Existing_Event_Hub": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Yes = reuse an existing Event Hub/consumer group (do not create them). No = create namespace, hub, and consumer group in the LM logs resource group."
+      }
+    },
+    "Existing_Event_Hub_Resource_Group": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Existing_Event_Hub=Yes. Resource group containing the existing Event Hub namespace."
+      }
+    },
+    "Existing_Event_Hub_Namespace": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Existing_Event_Hub=Yes. Existing Event Hub namespace name."
+      }
+    },
+    "Existing_Event_Hub_Authorization_Rule": {
+      "type": "string",
+      "defaultValue": "listener",
+      "metadata": {
+        "description": "Listen-only authorization rule for the Function connection string. Prefer a hub-level listener rule (default). Do not use RootManageSharedAccessKey unless required."
+      }
+    },
+    "Existing_Event_Hub_Auth_Rule_Scope": {
+      "type": "string",
+      "defaultValue": "EventHub",
+      "allowedValues": [
+        "Namespace",
+        "EventHub"
+      ],
+      "metadata": {
+        "description": "Scope of Existing_Event_Hub_Authorization_Rule. Default EventHub matches a typical hub-level listener rule."
+      }
+    },
+    "Existing_Event_Hub_Send_Authorization_Rule": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Existing_Event_Hub=Yes and Enable_Activity_Logs=Yes. Send-capable rule on the existing namespace/hub for subscription Activity Logs. Leave empty to disable Activity Logs wiring in reuse mode (and set Enable_Activity_Logs=No)."
+      }
+    },
+    "Existing_Event_Hub_Send_Auth_Rule_Scope": {
+      "type": "string",
+      "defaultValue": "Namespace",
+      "allowedValues": [
+        "Namespace",
+        "EventHub"
+      ],
+      "metadata": {
+        "description": "Scope of Existing_Event_Hub_Send_Authorization_Rule. Namespace is typical for Activity Logs."
+      }
     }
-
-
   },
   "resources": [
     {
@@ -157,7 +246,7 @@
           "Include_Metadata_keys": {
             "value": "[parameters('Include_Metadata_keys')]"
           },
-          "LM_Tenant_Id" : {
+          "LM_Tenant_Id": {
             "value": "[parameters('LM_Tenant_Id')]"
           },
           "TLSVersionStorageAccount": {
@@ -165,6 +254,27 @@
           },
           "TLSVersionFunctionApp": {
             "value": "[parameters('TLSVersionFunctionApp')]"
+          },
+          "Event_Hub_Name": {
+            "value": "[parameters('Event_Hub_Name')]"
+          },
+          "Event_Hub_Consumer_Group": {
+            "value": "[parameters('Event_Hub_Consumer_Group')]"
+          },
+          "Use_Existing_Event_Hub": {
+            "value": "[parameters('Use_Existing_Event_Hub')]"
+          },
+          "Existing_Event_Hub_Resource_Group": {
+            "value": "[parameters('Existing_Event_Hub_Resource_Group')]"
+          },
+          "Existing_Event_Hub_Namespace": {
+            "value": "[parameters('Existing_Event_Hub_Namespace')]"
+          },
+          "Existing_Event_Hub_Authorization_Rule": {
+            "value": "[parameters('Existing_Event_Hub_Authorization_Rule')]"
+          },
+          "Existing_Event_Hub_Auth_Rule_Scope": {
+            "value": "[parameters('Existing_Event_Hub_Auth_Rule_Scope')]"
           }
         }
       },
@@ -173,12 +283,42 @@
       ]
     },
     {
-      "condition": "[equals(parameters('Enable_Activity_Logs'), 'Yes')]",
+      "condition": "[variables('activityLogsMisconfigured')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "validate-activity-logs-send-rule",
+      "location": "[parameters('Resource_Group_Region')]",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "variables": {
+            "configError": "Use_Existing_Event_Hub=Yes with Enable_Activity_Logs=Yes requires Existing_Event_Hub_Send_Authorization_Rule (Send). Set Enable_Activity_Logs=No, or provide a Send rule. The Function Listen rule is not used for Activity Logs."
+          },
+          "resources": [],
+          "outputs": {
+            "parameterCheck": {
+              "type": "string",
+              "value": "[int(variables('configError'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/resourceGroups/', variables('deploymentResourceGroupName'))]"
+      ]
+    },
+    {
+      "condition": "[variables('deployActivityLogs')]",
       "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2017-05-01-preview",
       "name": "[variables('deploymentResourceGroupName')]",
       "properties": {
-        "eventHubAuthorizationRuleId": "[variables('eventHubAuthorizationRuleId')]",
+        "eventHubAuthorizationRuleId": "[variables('activityLogsAuthRuleId')]",
         "eventHubName": "[variables('eventhubLogsName')]",
         "logs": [
           {
@@ -217,9 +357,19 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Resources/resourceGroups/', variables('deploymentResourceGroupName'))]",
-        "linkedTemplatedeployment"
+        "linkedTemplatedeployment",
+        "validate-activity-logs-send-rule"
       ]
     }
   ],
-  "outputs": {}
+  "outputs": {
+    "useExistingEventHub": {
+      "type": "bool",
+      "value": "[variables('useExistingEventHub')]"
+    },
+    "eventHubAuthorizationRuleId": {
+      "type": "string",
+      "value": "[variables('activityLogsAuthRuleId')]"
+    }
+  }
 }

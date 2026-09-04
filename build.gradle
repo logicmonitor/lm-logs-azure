@@ -1,6 +1,6 @@
 plugins {
     id "java"
-    id "com.microsoft.azure.azurefunctions" version "1.4.0"
+    id "com.microsoft.azure.azurefunctions" version "1.16.1"
 }
 
 group "com.logicmonitor"
@@ -12,13 +12,15 @@ def junitVersion = "5.6.2"
 compileJava.options.encoding = "UTF-8"
 
 repositories {
-    jcenter()
     maven {
         credentials {
             username = System.getenv("GITHUB_USERNAME")
             password = System.getenv("GITHUB_TOKEN")
         }
         url "https://maven.pkg.github.com/logicmonitor/lm-data-sdk-java"
+        content {
+            includeModule("com.logicmonitor", "lm-data-sdk")
+        }
     }
     mavenCentral()
 
@@ -44,13 +46,15 @@ dependencies {
             "com.github.stefanbirkner:system-lambda:1.0.0",
             "org.mockito:mockito-core:3.4.4",
             "org.glassfish.jersey.test-framework:jersey-test-framework-core:${jerseyVersion}",
-            "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:${jerseyVersion}"
+            "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:${jerseyVersion}",
+            "org.glassfish.jersey.inject:jersey-hk2:${jerseyVersion}"
     )
     testCompileOnly(
             "junit:junit:4.12"
     )
     testRuntimeOnly(
-            "org.junit.vintage:junit-vintage-engine:${junitVersion}"
+            "org.junit.vintage:junit-vintage-engine:${junitVersion}",
+            "org.glassfish.jaxb:jaxb-runtime:2.3.3"
     )
 }
 
@@ -103,3 +107,62 @@ task copyPackage(type: Copy) {
 
 copyPackage.dependsOn azureFunctionsPackageZip
 build.finalizedBy copyPackage
+
+// Default zip uses literal log-hub / $Default so existing Function Apps keep binding without
+// new app settings. -PeventHubAppSettings=true rewrites to %EventHubName% / %EventHubConsumerGroup%
+// for a custom consumer group on the Function itself (requires those app settings).
+def useEventHubAppSettings = project.hasProperty('eventHubAppSettings')
+
+tasks.named('azureFunctionsPackage').configure {
+    doLast {
+        def functionJson = file("${buildDir}/azure-functions/${rootProject.name}/LogForwarder/function.json")
+        if (!functionJson.exists()) {
+            return
+        }
+        if (useEventHubAppSettings) {
+            functionJson.text = functionJson.text
+                .replaceAll(/"eventHubName"\s*:\s*"[^"]*"/, '"eventHubName" : "%EventHubName%"')
+                .replaceAll(/"consumerGroup"\s*:\s*"[^"]*"/, '"consumerGroup" : "%EventHubConsumerGroup%"')
+            if (!functionJson.text.contains('"consumerGroup"')) {
+                functionJson.text = functionJson.text.replace(
+                    '"eventHubName" : "%EventHubName%"',
+                    '"eventHubName" : "%EventHubName%",\n    "consumerGroup" : "%EventHubConsumerGroup%"'
+                )
+            }
+        } else {
+            def defaultConsumerGroup = "\"consumerGroup\" : \"\$Default\""
+            functionJson.text = functionJson.text
+                .replaceAll(/"eventHubName"\s*:\s*"[^"]*"/, '"eventHubName" : "log-hub"')
+                .replaceAll(/"consumerGroup"\s*:\s*"[^"]*"/, defaultConsumerGroup)
+            if (!functionJson.text.contains('"consumerGroup"')) {
+                functionJson.text = functionJson.text.replace(
+                    '"eventHubName" : "log-hub"',
+                    '"eventHubName" : "log-hub",\n    ' + defaultConsumerGroup
+                )
+            }
+        }
+    }
+}
+
+tasks.register('verifyFunctionBindings') {
+    dependsOn azureFunctionsPackageZip
+    doLast {
+        def packageZip = file("${buildDir}/azure-functions/${rootProject.name}.zip")
+        def functionJson = zipTree(packageZip).matching {
+            include "LogForwarder/function.json"
+        }.singleFile.text
+        if (useEventHubAppSettings) {
+            if (!functionJson.contains('"eventHubName" : "%EventHubName%"')
+                || !functionJson.contains('"consumerGroup" : "%EventHubConsumerGroup%"')) {
+                throw new GradleException(
+                    "Packaged function.json is missing %EventHubName% / %EventHubConsumerGroup%")
+            }
+        } else if (!functionJson.contains('"eventHubName" : "log-hub"')
+            || !functionJson.contains("\"consumerGroup\" : \"\$Default\"")) {
+                throw new GradleException(
+                    'Packaged function.json must bind log-hub / $Default for zip-safe upgrades')
+            }
+    }
+}
+
+check.dependsOn verifyFunctionBindings
