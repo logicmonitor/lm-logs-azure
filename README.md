@@ -52,7 +52,31 @@ In reuse mode the template does **not** create Event Hub resources. It validates
 
 The Function trigger resolves hub/CG from app settings `EventHubName` and `EventHubConsumerGroup`. ARM/TF set these from `Event_Hub_Name` / `Event_Hub_Consumer_Group` (defaults `log-hub` / `$Default`).
 
-**Before** installing this package on an older Function App that only has `LogsEventHubConnectionString`, add the same defaults (preserves today’s behavior):
+**Before** installing this package on an older Function App that only has `LogsEventHubConnectionString`, add the same defaults (preserves today’s behavior). This is **not automatic** (a restart or new zip pull will fail with `%EventHubName% does not resolve to a value` until the settings exist).
+
+**Option A — one-time migration script**
+
+macOS / Linux (bash or zsh) — use the `.sh` file, not `.ps1`:
+
+```bash
+chmod +x scripts/Add-LmLogsEventHubAppSettings.sh
+
+./scripts/Add-LmLogsEventHubAppSettings.sh \
+  -g '<function-rg>' -n '<function-app-name>' --what-if
+
+./scripts/Add-LmLogsEventHubAppSettings.sh \
+  -g '<function-rg>' -n '<function-app-name>' --restart
+```
+
+Windows PowerShell / `pwsh`:
+
+```powershell
+pwsh ./scripts/Add-LmLogsEventHubAppSettings.ps1 -ResourceGroupName '<function-rg>' -FunctionAppName '<function-app-name>' -Restart
+```
+
+The script only **adds** missing settings (`log-hub` / `$Default`). It does **not** overwrite a custom hub/CG already on the Function App.
+
+**Option B — Azure CLI (same effect):**
 
 ```bash
 az functionapp config appsettings set \
@@ -61,7 +85,7 @@ az functionapp config appsettings set \
   --settings EventHubName=log-hub EventHubConsumerGroup='$Default'
 ```
 
-Custom hub/CG: set ARM `Event_Hub_Name` / `Event_Hub_Consumer_Group` (or the app settings above) to your names. New ARM/TF deploys do this automatically.
+ARM/TF redeploy also writes these settings. Custom hub/CG: set ARM `Event_Hub_Name` / `Event_Hub_Consumer_Group` (or the app settings) to your names.
 
 Optional: `LM_FAIL_CLOSED_ON_INGEST=true` fails the Function on incomplete LM ingest so Event Hub retries (possible duplicates). Default `false` keeps prior behavior (log and checkpoint; possible loss).
 
@@ -113,7 +137,9 @@ Then they can be observed using [Azure CLI webapp log tail](https://docs.microso
 ## Forwarding Azure logs to Event Hub
 
 After the deployment is complete, the Azure function listens for logs from the Event Hub. We need to redirect them there from resources.
-For most of them, this can be done by [creating diagnostic settings](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings). If the function was deployed using Terraform or ARM in **create** mode, send logs to the configured Event Hub (default name `log-hub`) in namespace `lm-logs-<LM company name>-<Azure region>`. In **reuse** mode, send logs to the existing Event Hub / namespace you configured.
+For most of them, this can be done by [creating diagnostic settings](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings). If the function was deployed using Terraform or ARM in **create** mode, send logs to the configured Event Hub (parameter `Event_Hub_Name`, default `log-hub`) in namespace `lm-logs-<LM company name>-<Azure region>`. In **reuse** mode, send logs to the existing Event Hub / namespace you configured.
+
+If you change `Event_Hub_Name` (default ↔ custom) via `deployRGParent.json`, subscription **Activity Logs** retarget on that redeploy. **Resource** diagnostic settings deployed via `deploymentParentScript.json` must be re-run with the same `Event_Hub_Name` (and reuse Send rule fields if applicable) so policies remediate to the new hub; the script also syncs hub name from the Function App `EventHubName` setting when the template still has the default.
 
 ### Linux Virtual Machines (using Linux Diagnostic Extension (LAD))
 
