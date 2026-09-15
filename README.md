@@ -18,6 +18,8 @@ It's implemented as [Azure Function](https://azure.microsoft.com/en-us/services/
 
 Each Azure region requires a separate deployment. This is because devices can only send logs to Event Hubs within the same region.
 
+The new ARM/TF templates use `package/lm-logs-azure-1.0.zip` (custom Event Hub name and consumer group); existing deployments keep `package/lm-logs-azure.zip` from the previous template — do not replace `deploy.tf` or redeploy the new template onto an old stack if you must stay on the old zip.
+
 ### Deploying using Terraform
 
 * Download [deploy.tf file](https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/deploy.tf)
@@ -52,31 +54,7 @@ In reuse mode the template does **not** create Event Hub resources. It validates
 
 The Function trigger resolves hub/CG from app settings `EventHubName` and `EventHubConsumerGroup`. ARM/TF set these from `Event_Hub_Name` / `Event_Hub_Consumer_Group` (defaults `log-hub` / `$Default`).
 
-**Before** installing this package on an older Function App that only has `LogsEventHubConnectionString`, add the same defaults (preserves today’s behavior). This is **not automatic** (a restart or new zip pull will fail with `%EventHubName% does not resolve to a value` until the settings exist).
-
-**Option A — one-time migration script**
-
-macOS / Linux (bash or zsh) — use the `.sh` file, not `.ps1`:
-
-```bash
-chmod +x scripts/Add-LmLogsEventHubAppSettings.sh
-
-./scripts/Add-LmLogsEventHubAppSettings.sh \
-  -g '<function-rg>' -n '<function-app-name>' --what-if
-
-./scripts/Add-LmLogsEventHubAppSettings.sh \
-  -g '<function-rg>' -n '<function-app-name>' --restart
-```
-
-Windows PowerShell / `pwsh`:
-
-```powershell
-pwsh ./scripts/Add-LmLogsEventHubAppSettings.ps1 -ResourceGroupName '<function-rg>' -FunctionAppName '<function-app-name>' -Restart
-```
-
-The script only **adds** missing settings (`log-hub` / `$Default`). It does **not** overwrite a custom hub/CG already on the Function App.
-
-**Option B — Azure CLI (same effect):**
+**Before** installing this package on an older Function App that only has `LogsEventHubConnectionString`, add the same defaults (preserves today’s behavior):
 
 ```bash
 az functionapp config appsettings set \

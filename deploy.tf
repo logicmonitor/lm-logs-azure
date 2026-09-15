@@ -321,7 +321,7 @@ resource "azurerm_function_app" "lm_logs" {
   }
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME     = "java"
-    FUNCTIONS_EXTENSION_VERSION  = "~4"
+    FUNCTIONS_EXTENSION_VERSION  = "~3"
     WEBSITE_RUN_FROM_PACKAGE     = "https://github.com/logicmonitor/lm-logs-azure/raw/master/package/lm-logs-azure-1.0.zip"
     # EventHubName / EventHubConsumerGroup are required by %EventHubName% / %EventHubConsumerGroup%
     # bindings. Defaults match Event_Hub_Name / Event_Hub_Consumer_Group (log-hub / $Default).
