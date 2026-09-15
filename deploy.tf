@@ -305,7 +305,7 @@ resource "azurerm_function_app" "lm_logs" {
   storage_account_access_key = azurerm_storage_account.lm_logs.primary_access_key
   os_type                    = "linux"
   https_only                 = true
-  version                    = "~3"
+  version                    = "~4"
   tags                       = local.tags
   depends_on = concat(
     azurerm_eventhub_consumer_group.lm_logs,
@@ -321,7 +321,7 @@ resource "azurerm_function_app" "lm_logs" {
   }
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME     = "java"
-    FUNCTIONS_EXTENSION_VERSION  = "~3"
+    FUNCTIONS_EXTENSION_VERSION  = "~4"
     WEBSITE_RUN_FROM_PACKAGE     = "https://github.com/logicmonitor/lm-logs-azure/raw/master/package/lm-logs-azure-1.0.zip"
     # EventHubName / EventHubConsumerGroup are required by %EventHubName% / %EventHubConsumerGroup%
     # bindings. Defaults match Event_Hub_Name / Event_Hub_Consumer_Group (log-hub / $Default).
