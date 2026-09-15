@@ -29,6 +29,34 @@
         "description": "region for deployment script"
       },
       "defaultValue": "West US"
+    },
+    "Event_Hub_Name": {
+      "type": "string",
+      "defaultValue": "log-hub",
+      "metadata": {
+        "description": "Same as deployRGParent Event_Hub_Name. Resource diagnostic settings send to this hub. Re-run this template after changing Event Hub on the main LM logs deploy."
+      }
+    },
+    "Existing_Event_Hub_Resource_Group": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Reuse only: resource group of the Event Hub namespace. Leave empty for LM-created namespace."
+      }
+    },
+    "Existing_Event_Hub_Namespace": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Reuse only: Event Hub namespace name. Leave empty for LM-created namespace."
+      }
+    },
+    "Existing_Event_Hub_Send_Authorization_Rule": {
+      "type": "string",
+      "defaultValue": "RootManageSharedAccessKey",
+      "metadata": {
+        "description": "Namespace Send rule for diagnostic settings. Create mode: RootManageSharedAccessKey. Reuse: your namespace Send rule."
+      }
     }
   },
   "resources": [
@@ -66,6 +94,18 @@
           },
           "deploymentLocation": {
             "value": "[parameters('deploymentLocation')]"
+          },
+          "Event_Hub_Name": {
+            "value": "[parameters('Event_Hub_Name')]"
+          },
+          "Existing_Event_Hub_Resource_Group": {
+            "value": "[parameters('Existing_Event_Hub_Resource_Group')]"
+          },
+          "Existing_Event_Hub_Namespace": {
+            "value": "[parameters('Existing_Event_Hub_Namespace')]"
+          },
+          "Existing_Event_Hub_Send_Authorization_Rule": {
+            "value": "[parameters('Existing_Event_Hub_Send_Authorization_Rule')]"
           }
         }
       },

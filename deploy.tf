@@ -38,6 +38,12 @@ variable "azure_client_id" {
   description = "Azure Application Client ID"
 }
 
+variable "use_existing_event_hub" {
+  type        = bool
+  description = "If true, reuse an existing Event Hub instead of creating namespace/hub/consumer group."
+  default     = false
+}
+
 variable "event_hub_name" {
   type        = string
   description = "Event Hub name for log ingestion. Created when use_existing_event_hub=false; must already exist when true."
@@ -48,12 +54,6 @@ variable "event_hub_consumer_group" {
   type        = string
   description = "Event Hub consumer group for the Function trigger. Created when use_existing_event_hub=false and not $Default; must already exist when true."
   default     = "$Default"
-}
-
-variable "use_existing_event_hub" {
-  type        = bool
-  description = "If true, reuse an existing Event Hub instead of creating namespace/hub/consumer group."
-  default     = false
 }
 
 variable "existing_event_hub_resource_group" {
@@ -87,25 +87,14 @@ variable "existing_event_hub_auth_rule_scope" {
 
 variable "enable_activity_logs" {
   type        = bool
-  description = "Enable subscription Activity Logs to the Event Hub. Create mode uses LM namespace RootManageSharedAccessKey. Reuse mode requires existing_event_hub_send_authorization_rule."
-  default     = true
+  description = "Reserved for parity with ARM. Terraform does not create subscription Activity Log diagnostic settings yet; leave false. Use ARM parent template for Activity Logs."
+  default     = false
 }
 
 variable "existing_event_hub_send_authorization_rule" {
   type        = string
-  description = "Required when use_existing_event_hub=true and enable_activity_logs=true. Send-capable rule for Activity Logs. Not stored on the Function App."
+  description = "Namespace-level Send rule name for Activity Logs when using ARM. Unused by Terraform until Activity Logs parity is added."
   default     = ""
-}
-
-variable "existing_event_hub_send_auth_rule_scope" {
-  type        = string
-  description = "Namespace or EventHub scope for existing_event_hub_send_authorization_rule."
-  default     = "Namespace"
-
-  validation {
-    condition     = contains(["Namespace", "EventHub"], var.existing_event_hub_send_auth_rule_scope)
-    error_message = "existing_event_hub_send_auth_rule_scope must be Namespace or EventHub."
-  }
 }
 
 variable "tags" {
@@ -164,11 +153,11 @@ resource "null_resource" "validate_existing_event_hub_inputs" {
   }
 }
 
-resource "null_resource" "validate_activity_logs_send_rule" {
-  count = var.use_existing_event_hub && var.enable_activity_logs && var.existing_event_hub_send_authorization_rule == "" ? 1 : 0
+resource "null_resource" "validate_activity_logs_unsupported_in_tf" {
+  count = var.enable_activity_logs ? 1 : 0
 
   provisioner "local-exec" {
-    command = "echo 'ERROR: use_existing_event_hub=true with enable_activity_logs=true requires existing_event_hub_send_authorization_rule (Send). Set enable_activity_logs=false or provide a Send rule. The Function Listen rule is not used for Activity Logs.' && exit 1"
+    command = "echo 'ERROR: enable_activity_logs=true is not supported in deploy.tf yet (no diagnostic setting resource). Set enable_activity_logs=false and use ARM deployRGParent.json for Activity Logs, or wait for TF parity.' && exit 1"
   }
 }
 
@@ -316,7 +305,7 @@ resource "azurerm_function_app" "lm_logs" {
   storage_account_access_key = azurerm_storage_account.lm_logs.primary_access_key
   os_type                    = "linux"
   https_only                 = true
-  version                    = "~3"
+  version                    = "~4"
   tags                       = local.tags
   depends_on = concat(
     azurerm_eventhub_consumer_group.lm_logs,
@@ -332,10 +321,10 @@ resource "azurerm_function_app" "lm_logs" {
   }
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME     = "java"
-    FUNCTIONS_EXTENSION_VERSION  = "~3"
-    WEBSITE_RUN_FROM_PACKAGE     = "https://github.com/logicmonitor/lm-logs-azure/raw/master/package/lm-logs-azure.zip"
-    # EventHubName / EventHubConsumerGroup are required by the package bindings. Keep them in
-    # app_settings so terraform apply migrates existing Function Apps before/with package updates.
+    FUNCTIONS_EXTENSION_VERSION  = "~4"
+    WEBSITE_RUN_FROM_PACKAGE     = "https://github.com/logicmonitor/lm-logs-azure/raw/master/package/lm-logs-azure-1.0.zip"
+    # EventHubName / EventHubConsumerGroup are required by %EventHubName% / %EventHubConsumerGroup%
+    # bindings. Defaults match Event_Hub_Name / Event_Hub_Consumer_Group (log-hub / $Default).
     LogsEventHubConnectionString = local.event_hub_connection_string
     EventHubName                 = local.event_hub_name
     EventHubConsumerGroup        = local.event_hub_consumer_group

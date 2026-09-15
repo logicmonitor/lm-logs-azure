@@ -169,22 +169,21 @@ public class LogEventForwarder {
      */
     public static final String PARAMETER_INCLUDE_METADATA_KEYS = "Include_Metadata_keys";
     /**
-     * Parameter: Event Hub name. Optional app setting; packaged trigger defaults to
-     * {@link #DEFAULT_EVENT_HUB_NAME}. A hub-level connection string EntityPath overrides the
-     * trigger name at runtime.
+     * Parameter: Event Hub name. Resolved from app setting {@code EventHubName}
+     * (ARM/TF map {@code Event_Hub_Name}; default {@link #DEFAULT_EVENT_HUB_NAME}).
      */
     public static final String PARAMETER_EVENT_HUB_NAME = "EventHubName";
     /**
-     * Default Event Hub name in the published trigger (zip-safe without app settings).
+     * Default Event Hub name when ARM/TF leave {@code Event_Hub_Name} unset.
      */
     public static final String DEFAULT_EVENT_HUB_NAME = "log-hub";
     /**
-     * Parameter: Event Hub consumer group. Optional app setting used only when the package is
-     * built with {@code -PeventHubAppSettings=true}.
+     * Parameter: Event Hub consumer group. Resolved from app setting {@code EventHubConsumerGroup}
+     * (ARM/TF map {@code Event_Hub_Consumer_Group}; default {@link #DEFAULT_EVENT_HUB_CONSUMER_GROUP}).
      */
     public static final String PARAMETER_EVENT_HUB_CONSUMER_GROUP = "EventHubConsumerGroup";
     /**
-     * Default Event Hub consumer group in the published trigger (zip-safe without app settings).
+     * Default consumer group when ARM/TF leave {@code Event_Hub_Consumer_Group} unset.
      */
     public static final String DEFAULT_EVENT_HUB_CONSUMER_GROUP = "$Default";
     /**
@@ -427,14 +426,18 @@ public class LogEventForwarder {
     /**
      * The main method of the Azure Log Forwarder, triggered by events consumed from the configured
      * Event Hub.
+     * <p>
+     * Hub and consumer group come from app settings {@code EventHubName} and
+     * {@code EventHubConsumerGroup}. ARM/TF set these from {@code Event_Hub_Name} /
+     * {@code Event_Hub_Consumer_Group} (defaults {@code log-hub} / {@code $Default}).
      *
      * @param logEvents list of JSON strings containing Azure events
      * @param context execution context
      */
     @FunctionName("LogForwarder")
     public void forward(
-        @EventHubTrigger(name = "logEvents", eventHubName = "log-hub",
-            consumerGroup = "$Default",
+        @EventHubTrigger(name = "logEvents", eventHubName = "%EventHubName%",
+            consumerGroup = "%EventHubConsumerGroup%",
             dataType = "string", cardinality = Cardinality.MANY,
             connection = "LogsEventHubConnectionString") List<String> logEvents,
         final ExecutionContext context
@@ -953,6 +956,8 @@ public class LogEventForwarder {
                 if (hasFailure()) {
                     return;
                 }
+                // Batch HTTP may merge many entries into one request, so success is
+                // "at least one success callback + queues drained + quiet", not 1:1 with entries.
                 if (isDrained(logsClient) && getSuccessCallbacks() > 0
                     && System.currentTimeMillis() - lastCallbackMs >= QUIET_PERIOD_MS) {
                     return;
@@ -963,7 +968,8 @@ public class LogEventForwarder {
                 return;
             }
             int completedCallbacks = getSuccessCallbacks();
-            if (completedCallbacks == 0 || !isDrained(logsClient)) {
+            if (completedCallbacks == 0 || !isDrained(logsClient)
+                || System.currentTimeMillis() - lastCallbackMs < QUIET_PERIOD_MS) {
                 throw new TimeoutException(
                     "Batch ingest of " + expectedEntries + " entries did not complete within "
                         + timeoutMs + "ms (successCallbacks=" + completedCallbacks
