@@ -26,7 +26,38 @@
     },
     "deploymentLocation": {
       "type": "string"
+    },
+    "Event_Hub_Name": {
+      "type": "string",
+      "defaultValue": "log-hub",
+      "metadata": {
+        "description": "Event Hub name for resource diagnostic settings. Must match deployRGParent Event_Hub_Name (default log-hub)."
+      }
+    },
+    "Existing_Event_Hub_Resource_Group": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Reuse only: RG of Event Hub namespace. Leave empty for LM create-mode namespace."
+      }
+    },
+    "Existing_Event_Hub_Namespace": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Reuse only: Event Hub namespace. Leave empty for LM create-mode namespace."
+      }
+    },
+    "Existing_Event_Hub_Send_Authorization_Rule": {
+      "type": "string",
+      "defaultValue": "RootManageSharedAccessKey",
+      "metadata": {
+        "description": "Namespace Send authorization rule used by diagnostic settings (default RootManageSharedAccessKey)."
+      }
     }
+  },
+  "variables": {
+    "eventHubAuthRule": "[if(empty(parameters('Existing_Event_Hub_Send_Authorization_Rule')), 'RootManageSharedAccessKey', parameters('Existing_Event_Hub_Send_Authorization_Rule'))]"
   },
   "resources": [
     {
@@ -46,7 +77,7 @@
         "forceUpdateTag": "[parameters('utcNow')]",
         "azPowerShellVersion": "5.6",
         "timeout": "PT1H",
-        "arguments": "[format(' -resourceGroup {0} -lmCompanyName {1} -subscriptionId {2} -location {3} -sourceCodeBranch {4}', parameters('resourceGroup'),parameters('LM_Company_name'), parameters('subscriptionId'), parameters('location'), parameters('sourceCodeBranch'))]",
+        "arguments": "[format(' -resourceGroup {0} -lmCompanyName {1} -subscriptionId {2} -location {3} -sourceCodeBranch {4} -eventHubName ''{5}'' -eventHubNamespace ''{6}'' -eventHubResourceGroup ''{7}'' -eventHubAuthorizationRule ''{8}''', parameters('resourceGroup'), parameters('LM_Company_name'), parameters('subscriptionId'), parameters('location'), parameters('sourceCodeBranch'), parameters('Event_Hub_Name'), parameters('Existing_Event_Hub_Namespace'), parameters('Existing_Event_Hub_Resource_Group'), variables('eventHubAuthRule'))]",
         "primaryScriptURI": "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',parameters('sourceCodeBranch'),'/diagnostic-settings-scripts/policyCreationAndRemediationTemplate.ps1')]",
         "supportingScriptUris": [
           "[concat('https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/',parameters('sourceCodeBranch'),'/diagnostic-settings-scripts/policyAssignment.ps1')]",
