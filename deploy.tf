@@ -139,8 +139,16 @@ locals {
 }
 
 ### Providers ###
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 2.0.0"
+    }
+  }
+}
+
 provider "azurerm" {
-  version = ">= 2.0.0"
   features {}
 }
 
@@ -307,13 +315,14 @@ resource "azurerm_function_app" "lm_logs" {
   https_only                 = true
   version                    = "~4"
   tags                       = local.tags
-  depends_on = concat(
+  depends_on = [
     azurerm_eventhub_consumer_group.lm_logs,
+    azurerm_eventhub_authorization_rule.lm_logs_listener,
     data.azurerm_eventhub_consumer_group.existing,
     data.azurerm_eventhub.existing,
     data.azurerm_eventhub_namespace_authorization_rule.existing_namespace,
     data.azurerm_eventhub_authorization_rule.existing_hub,
-  )
+  ]
   site_config {
     always_on                    = true
     linux_fx_version             = "java|11"
