@@ -41,17 +41,6 @@
     "TLSVersionFunctionApp": {
       "type": "string"
     },
-    "Use_Existing_Event_Hub": {
-      "type": "string",
-      "defaultValue": "No",
-      "allowedValues": [
-        "Yes",
-        "No"
-      ],
-      "metadata": {
-        "description": "Yes = reuse an existing Event Hub (do not create namespace/hub/CG). No = create them in this deployment."
-      }
-    },
     "Event_Hub_Name": {
       "type": "string",
       "defaultValue": "log-hub",
@@ -64,6 +53,17 @@
       "defaultValue": "$Default",
       "metadata": {
         "description": "Consumer group for LogForwarder. Created when Use_Existing_Event_Hub=No and not $Default; must already exist when Yes."
+      }
+    },
+    "Use_Existing_Event_Hub": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Yes = reuse an existing Event Hub (do not create namespace/hub/CG). No = create them in this deployment."
       }
     },
     "Existing_Event_Hub_Resource_Group": {
@@ -356,7 +356,7 @@
             },
             {
               "name": "WEBSITE_RUN_FROM_PACKAGE",
-              "value": "[concat('https://github.com/logicmonitor/lm-logs-azure/raw/',parameters('sourceCodeBranch'),'/package/lm-logs-azure-1.0.zip')]"
+              "value": "[concat('https://github.com/logicmonitor/lm-logs-azure/raw/',parameters('sourceCodeBranch'),'/package/lm-logs-azure.zip')]"
             },
             {
               "name": "AzureWebJobsStorage",
@@ -437,8 +437,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', variables('functionServerfarms'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('lmAppStorageAccounts'))]",
-        "resolve-eventhub-connection",
-        "[resourceId('Microsoft.EventHub/namespaces/eventhubs/consumergroups', variables('createdEventHubNamespace'), variables('eventhubLogsName'), variables('ConsumergroupsLogsName'))]"
+        "resolve-eventhub-connection"
       ]
     },
     {
@@ -521,7 +520,7 @@
     },
     "eventHubAuthorizationRuleId": {
       "type": "string",
-      "value": "[variables('activeAuthRuleId')]"
+      "value": "[if(variables('useExistingEventHub'), variables('existingAuthRuleId'), resourceId('Microsoft.EventHub/namespaces/authorizationRules', variables('createdEventHubNamespace'), 'RootManageSharedAccessKey'))]"
     }
   }
 }

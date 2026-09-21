@@ -18,14 +18,12 @@ It's implemented as [Azure Function](https://azure.microsoft.com/en-us/services/
 
 Each Azure region requires a separate deployment. This is because devices can only send logs to Event Hubs within the same region.
 
-The new ARM/TF templates use `package/lm-logs-azure-1.0.zip` (custom Event Hub name and consumer group); existing deployments keep `package/lm-logs-azure.zip` from the previous template — do not replace `deploy.tf` or redeploy the new template onto an old stack if you must stay on the old zip.
-
 ### Deploying using Terraform
 
 * Download [deploy.tf file](https://raw.githubusercontent.com/logicmonitor/lm-logs-azure/master/deploy.tf)
 * Choose Event Hub mode:
   * **Create (default):** leave `use_existing_event_hub=false`. Optionally set `event_hub_name` / `event_hub_consumer_group` (defaults: `log-hub`, `$Default`).
-  * **Reuse existing:** set `use_existing_event_hub=true` and provide `existing_event_hub_resource_group`, `existing_event_hub_namespace`, `event_hub_name`, `event_hub_consumer_group`, and `existing_event_hub_authorization_rule` (default `listener` at `EventHub` scope). Activity Logs are not created by Terraform yet (`enable_activity_logs` must stay `false`; use ARM for Activity Logs).
+  * **Reuse existing:** set `use_existing_event_hub=true` and provide `existing_event_hub_resource_group`, `existing_event_hub_namespace`, `event_hub_name`, `event_hub_consumer_group`, and `existing_event_hub_authorization_rule` (default `listener` at `EventHub` scope). For Activity Logs, set `enable_activity_logs=true` and `existing_event_hub_send_authorization_rule` (Send). Deployment fails if required resources/params are missing.
 * (optional) Update `app_settings` in the file to set the optional parameters
 * Exceute `terraform init`
 * Execute `terraform plan --var-file terraform.tfvars -out tf.plan`
@@ -40,30 +38,23 @@ Parent template: `arm-template-deployment/deployRGParent.json`.
 
 * **Create (default):** `Use_Existing_Event_Hub=No`. Creates namespace `lm-logs-<company>-<region>`, hub `Event_Hub_Name`, and consumer group when not `$Default`.
 * **Reuse existing:** `Use_Existing_Event_Hub=Yes` and set:
-  * `Event_Hub_Name`
-  * `Event_Hub_Consumer_Group`
   * `Existing_Event_Hub_Resource_Group`
   * `Existing_Event_Hub_Namespace`
+  * `Event_Hub_Name`
+  * `Event_Hub_Consumer_Group`
   * `Existing_Event_Hub_Authorization_Rule` (default `listener`, Listen only)
   * `Existing_Event_Hub_Auth_Rule_Scope` (default `EventHub`)
-  * For Activity Logs: set `Existing_Event_Hub_Send_Authorization_Rule` (namespace Send, e.g. `RootManageSharedAccessKey`). If Send rule is empty, Activity Logs are **skipped** (deploy succeeds). Activity Logs do **not** use the Function Listen rule.
+  * For Activity Logs: set `Enable_Activity_Logs=Yes` **and** `Existing_Event_Hub_Send_Authorization_Rule` (Send). Activity Logs do **not** use the Function Listen rule and do **not** assume `RootManageSharedAccessKey`.
 
 In reuse mode the template does **not** create Event Hub resources. It validates the namespace, hub, consumer group, and auth rule via `reference`/`listKeys`. Missing resources or incomplete parameters fail the deployment. Function settings `LogsEventHubConnectionString`, `EventHubName`, and `EventHubConsumerGroup` are wired to the existing hub.
 
 ### Upgrading an existing Function App
 
-The Function trigger resolves hub/CG from app settings `EventHubName` and `EventHubConsumerGroup`. ARM/TF set these from `Event_Hub_Name` / `Event_Hub_Consumer_Group` (defaults `log-hub` / `$Default`).
+The published zip binds `log-hub` / `$Default` (same as today). Existing apps that only have `LogsEventHubConnectionString` **keep working** when the zip is updated — no new app settings required.
 
-**Before** installing this package on an older Function App that only has `LogsEventHubConnectionString`, add the same defaults (preserves today’s behavior):
+Custom Event Hub **name**: use a **hub-level** Listen connection string (`EntityPath=...`). Azure overrides the trigger hub name from the connection string. Create mode and reuse-with-`listener` already do this. A namespace-level connection string has no EntityPath; the Function stays on `log-hub`.
 
-```bash
-az functionapp config appsettings set \
-  --resource-group <function-rg> \
-  --name <function-app-name> \
-  --settings EventHubName=log-hub EventHubConsumerGroup='$Default'
-```
-
-ARM/TF redeploy also writes these settings. Custom hub/CG: set ARM `Event_Hub_Name` / `Event_Hub_Consumer_Group` (or the app settings) to your names.
+Custom **consumer group on the Function**: the default zip always uses `$Default` (it still receives the same events as any other group). To make the Function itself join a named group, rebuild with `./gradlew azureFunctionsPackageZip -PeventHubAppSettings=true` and set `EventHubName` / `EventHubConsumerGroup` before deploying that zip.
 
 Optional: `LM_FAIL_CLOSED_ON_INGEST=true` fails the Function on incomplete LM ingest so Event Hub retries (possible duplicates). Default `false` keeps prior behavior (log and checkpoint; possible loss).
 
@@ -74,8 +65,8 @@ Optional: `LM_FAIL_CLOSED_ON_INGEST=true` fails the Function on incomplete LM in
 Gradle plugin can only build the function package and deploy it to Azure. Before it can be used, you need to create an [Event Hub](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-create) and [Function App](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-app-portal).
 The runtime stack should be set to Java version 11. The function uses the following [Application settings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-how-to-use-azure-function-app-settings#settings)
 * `LogsEventHubConnectionString` - Event Hub [connection string](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-get-connection-string)
-* `EventHubName` - **Required.** Hub to listen to. ARM/TF: from `Event_Hub_Name` (default `log-hub`).
-* `EventHubConsumerGroup` - **Required.** Consumer group. ARM/TF: from `Event_Hub_Consumer_Group` (default `$Default`).
+* `EventHubName` - Optional. ARM/TF set this; the default zip trigger is `log-hub`. A hub-level connection string EntityPath overrides the trigger name.
+* `EventHubConsumerGroup` - Optional. The default zip trigger is `$Default`. Named Function consumer groups require `-PeventHubAppSettings=true`.
 * `LogicMonitorCompanyName` - Company in the target URL '{company}.logicmonitor.com'
 * `LogicMonitorAccessId` - LogicMonitor access ID
 * `LogicMonitorAccessKey` - LogicMonitor access key
@@ -86,7 +77,7 @@ The runtime stack should be set to Java version 11. The function uses the follow
 * `LogRegexScrub` (optional) - regex pattern for removing text from the log messages
 * `LM_FAIL_CLOSED_ON_INGEST` (optional) - true/false (default false). See upgrade section above.
 
-Existing Function Apps must have `EventHubName` and `EventHubConsumerGroup` before installing this package (see upgrade section).
+The default zip does not require `EventHubName` / `EventHubConsumerGroup`. See the upgrade section above.
 
 #### Deployment
 
@@ -115,9 +106,7 @@ Then they can be observed using [Azure CLI webapp log tail](https://docs.microso
 ## Forwarding Azure logs to Event Hub
 
 After the deployment is complete, the Azure function listens for logs from the Event Hub. We need to redirect them there from resources.
-For most of them, this can be done by [creating diagnostic settings](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings). If the function was deployed using Terraform or ARM in **create** mode, send logs to the configured Event Hub (parameter `Event_Hub_Name`, default `log-hub`) in namespace `lm-logs-<LM company name>-<Azure region>`. In **reuse** mode, send logs to the existing Event Hub / namespace you configured.
-
-If you change `Event_Hub_Name` (default ↔ custom) via `deployRGParent.json`, subscription **Activity Logs** retarget on that redeploy. **Resource** diagnostic settings deployed via `deploymentParentScript.json` must be re-run with the same `Event_Hub_Name` (and reuse Send rule fields if applicable) so policies remediate to the new hub; the script also syncs hub name from the Function App `EventHubName` setting when the template still has the default.
+For most of them, this can be done by [creating diagnostic settings](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings). If the function was deployed using Terraform or ARM in **create** mode, send logs to the configured Event Hub (default name `log-hub`) in namespace `lm-logs-<LM company name>-<Azure region>`. In **reuse** mode, send logs to the existing Event Hub / namespace you configured.
 
 ### Linux Virtual Machines (using Linux Diagnostic Extension (LAD))
 
