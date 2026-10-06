@@ -117,6 +117,42 @@
         "description": "Provide an appropriate TLS version for function app. Format - X.X"
       }
     },
+    "Use_Custom_Storage_Account_Name": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Yes = create the storage account with StorageAccountName. No = keep the generated storage account name. The Function App storage connection uses whichever name is created."
+      }
+    },
+    "StorageAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Custom_Storage_Account_Name=Yes. Ignored when No. Globally unique. 3-24 characters, lowercase letters and numbers only."
+      }
+    },
+    "Use_Custom_Function_App_Name": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Yes = create the Function App with FunctionAppName. No = keep the generated Function App name lm-logs-<company>-<region>."
+      }
+    },
+    "FunctionAppName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Custom_Function_App_Name=Yes. Ignored when No. Globally unique. 2-60 characters; letters, numbers, and hyphens; cannot start or end with a hyphen."
+      }
+    },
     "Use_Existing_Event_Hub": {
       "type": "string",
       "defaultValue": "No",
@@ -242,6 +278,18 @@
           },
           "TLSVersionFunctionApp": {
             "value": "[parameters('TLSVersionFunctionApp')]"
+          },
+          "Use_Custom_Storage_Account_Name": {
+            "value": "[parameters('Use_Custom_Storage_Account_Name')]"
+          },
+          "StorageAccountName": {
+            "value": "[parameters('StorageAccountName')]"
+          },
+          "Use_Custom_Function_App_Name": {
+            "value": "[parameters('Use_Custom_Function_App_Name')]"
+          },
+          "FunctionAppName": {
+            "value": "[parameters('FunctionAppName')]"
           },
           "Use_Existing_Event_Hub": {
             "value": "[parameters('Use_Existing_Event_Hub')]"

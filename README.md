@@ -38,6 +38,8 @@ The new ARM/TF templates use `package/lm-logs-azure-1.0.zip` (custom Event Hub n
 
 Parent template: `arm-template-deployment/deployRGParent.json`.
 
+* **Storage account name:** `Use_Custom_Storage_Account_Name=No` (default) keeps the generated storage account name. `Yes` creates it as `StorageAccountName`, and the Function App storage connection uses that name.
+* **Function App name:** `Use_Custom_Function_App_Name=No` (default) keeps `lm-logs-<company>-<region>`. `Yes` creates the Function App as `FunctionAppName`.
 * **Create (default):** `Use_Existing_Event_Hub=No`. Creates namespace `lm-logs-<company>-<region>`, hub `Event_Hub_Name`, and consumer group when not `$Default`.
 * **Reuse existing:** `Use_Existing_Event_Hub=Yes` and set:
   * `Event_Hub_Name`

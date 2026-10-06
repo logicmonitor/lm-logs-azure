@@ -38,6 +38,30 @@ variable "azure_client_id" {
   description = "Azure Application Client ID"
 }
 
+variable "use_custom_storage_account_name" {
+  type        = bool
+  description = "If true, create the storage account with storage_account_name. If false, keep the generated storage account name."
+  default     = false
+}
+
+variable "storage_account_name" {
+  type        = string
+  description = "Required when use_custom_storage_account_name=true. Ignored when false. Globally unique. 3-24 characters, lowercase letters and numbers only."
+  default     = ""
+}
+
+variable "use_custom_function_app_name" {
+  type        = bool
+  description = "If true, create the Function App with function_app_name. If false, keep the generated Function App name."
+  default     = false
+}
+
+variable "function_app_name" {
+  type        = string
+  description = "Required when use_custom_function_app_name=true. Ignored when false. Globally unique. 2-60 characters; letters, numbers, and hyphens; cannot start or end with a hyphen."
+  default     = ""
+}
+
 variable "use_existing_event_hub" {
   type        = bool
   description = "If true, reuse an existing Event Hub instead of creating namespace/hub/consumer group."
@@ -127,6 +151,9 @@ locals {
   )
   event_hub_name = var.event_hub_name
   event_hub_consumer_group = var.event_hub_consumer_group
+  generated_storage_account_name = length(local.storage) > 24 ? substr(local.storage, length(local.storage) - 24, 24) : local.storage
+  storage_account_name = var.use_custom_storage_account_name ? var.storage_account_name : local.generated_storage_account_name
+  function_app_name = var.use_custom_function_app_name ? var.function_app_name : local.namespace
   event_hub_connection_string = (
     var.use_existing_event_hub
     ? (
@@ -150,6 +177,22 @@ resource "null_resource" "validate_existing_event_hub_inputs" {
 
   provisioner "local-exec" {
     command = "echo 'ERROR: use_existing_event_hub=true requires existing_event_hub_resource_group, existing_event_hub_namespace, event_hub_name, and existing_event_hub_authorization_rule.' && exit 1"
+  }
+}
+
+resource "null_resource" "validate_custom_storage_account_name" {
+  count = var.use_custom_storage_account_name && var.storage_account_name == "" ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "echo 'ERROR: use_custom_storage_account_name=true requires storage_account_name.' && exit 1"
+  }
+}
+
+resource "null_resource" "validate_custom_function_app_name" {
+  count = var.use_custom_function_app_name && var.function_app_name == "" ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "echo 'ERROR: use_custom_function_app_name=true requires function_app_name.' && exit 1"
   }
 }
 
@@ -273,12 +316,14 @@ resource "azurerm_eventhub_authorization_rule" "lm_logs_listener" {
 
 ## Storage Account ##
 resource "azurerm_storage_account" "lm_logs" {
-  name                     = length(local.storage) > 24 ? substr(local.storage, length(local.storage) - 24, 24) : local.storage
+  name                     = local.storage_account_name
   resource_group_name      = azurerm_resource_group.lm_logs.name
   location                 = var.azure_region
   account_tier             = "Standard"
   account_replication_type = "LRS"
   tags                     = local.tags
+
+  depends_on = [null_resource.validate_custom_storage_account_name]
 }
 
 ## App Service Plan ##
@@ -297,7 +342,7 @@ resource "azurerm_app_service_plan" "lm_logs" {
 
 ## Function App ##
 resource "azurerm_function_app" "lm_logs" {
-  name                       = local.namespace
+  name                       = local.function_app_name
   resource_group_name        = azurerm_resource_group.lm_logs.name
   location                   = var.azure_region
   app_service_plan_id        = azurerm_app_service_plan.lm_logs.id
@@ -308,6 +353,7 @@ resource "azurerm_function_app" "lm_logs" {
   version                    = "~4"
   tags                       = local.tags
   depends_on = concat(
+    null_resource.validate_custom_function_app_name,
     azurerm_eventhub_consumer_group.lm_logs,
     data.azurerm_eventhub_consumer_group.existing,
     data.azurerm_eventhub.existing,

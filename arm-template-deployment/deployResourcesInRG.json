@@ -41,6 +41,42 @@
     "TLSVersionFunctionApp": {
       "type": "string"
     },
+    "Use_Custom_Storage_Account_Name": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Yes = create the storage account with StorageAccountName. No = keep the generated storage account name."
+      }
+    },
+    "StorageAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Custom_Storage_Account_Name=Yes. Ignored when No. Globally unique. 3-24 characters, lowercase letters and numbers only."
+      }
+    },
+    "Use_Custom_Function_App_Name": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Yes = create the Function App with FunctionAppName. No = keep the generated Function App name."
+      }
+    },
+    "FunctionAppName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Custom_Function_App_Name=Yes. Ignored when No. Globally unique. 2-60 characters; letters, numbers, and hyphens; cannot start or end with a hyphen."
+      }
+    },
     "Use_Existing_Event_Hub": {
       "type": "string",
       "defaultValue": "No",
@@ -125,9 +161,67 @@
     "existingEventHubAuthRuleId": "[resourceId(variables('safeExistingRg'), 'Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('safeExistingNamespace'), variables('safeExistingHub'), variables('safeExistingRule'))]",
     "existingAuthRuleId": "[if(equals(parameters('Existing_Event_Hub_Auth_Rule_Scope'), 'EventHub'), variables('existingEventHubAuthRuleId'), variables('existingNamespaceAuthRuleId'))]",
     "createdListenerAuthRuleId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('createdEventHubNamespace'), variables('eventhubLogsName'), variables('listener'))]",
-    "activeAuthRuleId": "[if(variables('useExistingEventHub'), variables('existingAuthRuleId'), variables('createdListenerAuthRuleId'))]"
+    "activeAuthRuleId": "[if(variables('useExistingEventHub'), variables('existingAuthRuleId'), variables('createdListenerAuthRuleId'))]",
+    "useCustomStorageAccountName": "[equals(parameters('Use_Custom_Storage_Account_Name'), 'Yes')]",
+    "useCustomFunctionAppName": "[equals(parameters('Use_Custom_Function_App_Name'), 'Yes')]",
+    "customStorageAccountNameConfigured": "[not(empty(parameters('StorageAccountName')))]",
+    "customFunctionAppNameConfigured": "[not(empty(parameters('FunctionAppName')))]",
+    "effectiveLmAppStorageAccounts": "[if(variables('useCustomStorageAccountName'), parameters('StorageAccountName'), variables('lmAppStorageAccounts'))]",
+    "effectiveLogsFunctionAppName": "[if(variables('useCustomFunctionAppName'), parameters('FunctionAppName'), variables('logsFunctionAppName'))]"
   },
   "resources": [
+    {
+      "condition": "[and(variables('useCustomStorageAccountName'), not(variables('customStorageAccountNameConfigured')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "validate-custom-storage-account-name",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "variables": {
+            "configError": "Use_Custom_Storage_Account_Name=Yes requires StorageAccountName."
+          },
+          "resources": [],
+          "outputs": {
+            "parameterCheck": {
+              "type": "string",
+              "value": "[int(variables('configError'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[and(variables('useCustomFunctionAppName'), not(variables('customFunctionAppNameConfigured')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "validate-custom-function-app-name",
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "variables": {
+            "configError": "Use_Custom_Function_App_Name=Yes requires FunctionAppName."
+          },
+          "resources": [],
+          "outputs": {
+            "parameterCheck": {
+              "type": "string",
+              "value": "[int(variables('configError'))]"
+            }
+          }
+        }
+      }
+    },
     {
       "condition": "[and(variables('useExistingEventHub'), not(variables('existingHubFullyConfigured')))]",
       "type": "Microsoft.Resources/deployments",
@@ -279,7 +373,7 @@
         "tier": "Standard"
       },
       "kind": "StorageV2",
-      "name": "[variables('lmAppStorageAccounts')]",
+      "name": "[variables('effectiveLmAppStorageAccounts')]",
       "apiVersion": "2019-06-01",
       "location": "[resourceGroup().location]",
       "properties": {
@@ -296,7 +390,9 @@
           "keySource": "Microsoft.Storage"
         }
       },
-      "dependsOn": []
+      "dependsOn": [
+        "validate-custom-storage-account-name"
+      ]
     },
     {
       "type": "Microsoft.Web/serverfarms",
@@ -319,7 +415,7 @@
     {
       "type": "Microsoft.Web/sites",
       "kind": "functionapp,linux",
-      "name": "[variables('logsFunctionAppName')]",
+      "name": "[variables('effectiveLogsFunctionAppName')]",
       "apiVersion": "2020-06-01",
       "location": "[resourceGroup().location]",
       "properties": {
@@ -360,7 +456,7 @@
             },
             {
               "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('lmAppStorageAccounts'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('lmAppStorageAccounts')),'2019-06-01').keys[0].value)]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('effectiveLmAppStorageAccounts'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('effectiveLmAppStorageAccounts')),'2019-06-01').keys[0].value)]"
             },
             {
               "name": "LogsEventHubConnectionString",
@@ -436,7 +532,8 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', variables('functionServerfarms'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('lmAppStorageAccounts'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('effectiveLmAppStorageAccounts'))]",
+        "validate-custom-function-app-name",
         "resolve-eventhub-connection",
         "[resourceId('Microsoft.EventHub/namespaces/eventhubs/consumergroups', variables('createdEventHubNamespace'), variables('eventhubLogsName'), variables('ConsumergroupsLogsName'))]"
       ]
