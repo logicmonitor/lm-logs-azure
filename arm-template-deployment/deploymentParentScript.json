@@ -57,6 +57,20 @@
       "metadata": {
         "description": "Namespace Send rule for diagnostic settings. Create mode: RootManageSharedAccessKey. Reuse: your namespace Send rule."
       }
+    },
+    "FunctionAppName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Function App to read EventHubName from. Empty uses lm-logs-<company>-<region>. Set this when Use_Existing_Function_App or Use_Custom_Function_App_Name was Yes."
+      }
+    },
+    "FunctionAppResourceGroup": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Resource group of FunctionAppName. Empty uses the LM logs resource group. Set this when Use_Existing_Function_App=Yes."
+      }
     }
   },
   "resources": [
@@ -106,6 +120,12 @@
           },
           "Existing_Event_Hub_Send_Authorization_Rule": {
             "value": "[parameters('Existing_Event_Hub_Send_Authorization_Rule')]"
+          },
+          "FunctionAppName": {
+            "value": "[parameters('FunctionAppName')]"
+          },
+          "FunctionAppResourceGroup": {
+            "value": "[parameters('FunctionAppResourceGroup')]"
           }
         }
       },

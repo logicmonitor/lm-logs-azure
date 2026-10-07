@@ -125,14 +125,32 @@
         "No"
       ],
       "metadata": {
-        "description": "Yes = create the storage account with StorageAccountName. No = keep the generated storage account name. The Function App storage connection uses whichever name is created."
+        "description": "Yes = create a new storage account named StorageAccountName in the LM logs resource group. No = use the generated name. Ignored when Use_Existing_Storage_Account=Yes."
       }
     },
     "StorageAccountName": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "Required when Use_Custom_Storage_Account_Name=Yes. Ignored when No. Globally unique. 3-24 characters, lowercase letters and numbers only."
+        "description": "Example: acmeeastus (company acme, region eastus). Required when Use_Custom_Storage_Account_Name=Yes or Use_Existing_Storage_Account=Yes. Ignored when both are No. 3-24 characters, lowercase letters and numbers only."
+      }
+    },
+    "Use_Existing_Storage_Account": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Yes = use the storage account StorageAccountName in Existing_Storage_Account_Resource_Group. The account must already exist in that resource group in this subscription; otherwise the deployment fails. No = create a storage account in the LM logs resource group."
+      }
+    },
+    "Existing_Storage_Account_Resource_Group": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Existing_Storage_Account=Yes. Resource group of the existing storage account. Same subscription as this deployment."
       }
     },
     "Use_Custom_Function_App_Name": {
@@ -143,14 +161,32 @@
         "No"
       ],
       "metadata": {
-        "description": "Yes = create the Function App with FunctionAppName. No = keep the generated Function App name lm-logs-<company>-<region>."
+        "description": "Yes = create a new Function App named FunctionAppName in the LM logs resource group. No = use the generated name. Ignored when Use_Existing_Function_App=Yes."
       }
     },
     "FunctionAppName": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "Required when Use_Custom_Function_App_Name=Yes. Ignored when No. Globally unique. 2-60 characters; letters, numbers, and hyphens; cannot start or end with a hyphen."
+        "description": "Example: lm-logs-acme-eastus (company acme, region eastus). Required when Use_Custom_Function_App_Name=Yes or Use_Existing_Function_App=Yes. Ignored when both are No. 2-60 characters; letters, numbers, and hyphens; cannot start or end with a hyphen."
+      }
+    },
+    "Use_Existing_Function_App": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Yes = use the Function App FunctionAppName in Existing_Function_App_Resource_Group. It must already exist in that resource group in this subscription; otherwise the deployment fails. The deployment replaces that Function App's application settings with the LM Logs settings. No = create a Function App in the LM logs resource group."
+      }
+    },
+    "Existing_Function_App_Resource_Group": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Required when Use_Existing_Function_App=Yes. Resource group of the existing Function App. Same subscription as this deployment."
       }
     },
     "Use_Existing_Event_Hub": {
@@ -290,6 +326,18 @@
           },
           "FunctionAppName": {
             "value": "[parameters('FunctionAppName')]"
+          },
+          "Use_Existing_Storage_Account": {
+            "value": "[parameters('Use_Existing_Storage_Account')]"
+          },
+          "Existing_Storage_Account_Resource_Group": {
+            "value": "[parameters('Existing_Storage_Account_Resource_Group')]"
+          },
+          "Use_Existing_Function_App": {
+            "value": "[parameters('Use_Existing_Function_App')]"
+          },
+          "Existing_Function_App_Resource_Group": {
+            "value": "[parameters('Existing_Function_App_Resource_Group')]"
           },
           "Use_Existing_Event_Hub": {
             "value": "[parameters('Use_Existing_Event_Hub')]"

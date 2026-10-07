@@ -38,8 +38,16 @@ The new ARM/TF templates use `package/lm-logs-azure-1.0.zip` (custom Event Hub n
 
 Parent template: `arm-template-deployment/deployRGParent.json`.
 
-* **Storage account name:** `Use_Custom_Storage_Account_Name=No` (default) keeps the generated storage account name. `Yes` creates it as `StorageAccountName`, and the Function App storage connection uses that name.
-* **Function App name:** `Use_Custom_Function_App_Name=No` (default) keeps `lm-logs-<company>-<region>`. `Yes` creates the Function App as `FunctionAppName`.
+* **Storage account:** `Use_Custom_Storage_Account_Name` and `Use_Existing_Storage_Account` are independent. They do not have to be opposites, and both default to `No`. `No` / `No` creates the generated name, for example `acmeeastus` when the company is `acme` and the region is `eastus`. Custom `Yes` creates `StorageAccountName` in the LM logs resource group. Existing `Yes` uses `StorageAccountName` in `Existing_Storage_Account_Resource_Group` and fails if that account is not already there. A value in `StorageAccountName` is ignored when both switches are `No`. The Function App storage connection uses the account this deployment resolved.
+
+  | Custom | Existing | Result |
+  |---|---|---|
+  | No | No | Create the generated storage account name |
+  | Yes | No | Create a new account named `StorageAccountName` in the LM logs resource group |
+  | No | Yes | Reuse `StorageAccountName` in `Existing_Storage_Account_Resource_Group` |
+  | Yes | Yes | Reuse wins. Nothing is created, and the custom-create switch is ignored |
+
+* **Function App:** `Use_Custom_Function_App_Name` and `Use_Existing_Function_App` follow the same rule and also default to `No` / `No`. The generated name looks like `lm-logs-acme-eastus`. Custom `Yes` with Existing `No` creates `FunctionAppName` in the LM logs resource group. Existing `Yes` uses `FunctionAppName` in `Existing_Function_App_Resource_Group`, fails if that Function App is not already there, and replaces its application settings with the LM Logs settings. If both are `Yes`, reuse wins. A value in `FunctionAppName` is ignored when both switches are `No`.
 * **Create (default):** `Use_Existing_Event_Hub=No`. Creates namespace `lm-logs-<company>-<region>`, hub `Event_Hub_Name`, and consumer group when not `$Default`.
 * **Reuse existing:** `Use_Existing_Event_Hub=Yes` and set:
   * `Event_Hub_Name`
