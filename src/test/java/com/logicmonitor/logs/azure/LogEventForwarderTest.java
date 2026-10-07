@@ -16,23 +16,68 @@ package com.logicmonitor.logs.azure;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.logicmonitor.sdk.data.Configuration;
+import com.logicmonitor.sdk.data.api.Logs;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 public class LogEventForwarderTest {
 
     protected static final String TEST_AZURE_CLIENT_ID = "testClientId";
+
+    @org.junit.jupiter.api.Test
+    public void testEventHubBindingDefaults() {
+        assertEquals("EventHubName", LogEventForwarder.PARAMETER_EVENT_HUB_NAME);
+        assertEquals("log-hub", LogEventForwarder.DEFAULT_EVENT_HUB_NAME);
+        assertEquals("EventHubConsumerGroup",
+            LogEventForwarder.PARAMETER_EVENT_HUB_CONSUMER_GROUP);
+        assertEquals("$Default", LogEventForwarder.DEFAULT_EVENT_HUB_CONSUMER_GROUP);
+        assertEquals("LM_FAIL_CLOSED_ON_INGEST",
+            LogEventForwarder.PARAMETER_FAIL_CLOSED_ON_INGEST);
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testFailClosedOnIngestDefaultsFalse() throws Exception {
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_FAIL_CLOSED_ON_INGEST, null)
+            .execute(() -> assertFalse(LogEventForwarder.isFailClosedOnIngest()));
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_FAIL_CLOSED_ON_INGEST, "true")
+            .execute(() -> assertTrue(LogEventForwarder.isFailClosedOnIngest()));
+        withEnvironmentVariable(LogEventForwarder.PARAMETER_FAIL_CLOSED_ON_INGEST, "false")
+            .execute(() -> assertFalse(LogEventForwarder.isFailClosedOnIngest()));
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testBatchCallbackBeforeWaitIsRetained() {
+        LogEventForwarder.BatchIngestTracker tracker =
+            new LogEventForwarder.BatchIngestTracker();
+        Logs logs = mock(Logs.class);
+        when(logs.getQueueLock()).thenReturn(new Object());
+        when(logs.getCacheLock()).thenReturn(new Object());
+        when(logs.getRawRequest()).thenReturn(new LinkedList<>());
+        when(logs.getLogPayloadCache()).thenReturn(new ArrayList<>());
+
+        tracker.begin(1);
+        tracker.recordSuccess(202);
+
+        assertDoesNotThrow(() -> tracker.awaitCompletion(logs, 1000));
+        assertEquals(1, tracker.getSuccessCallbacks());
+    }
 
     @ParameterizedTest
     @CsvSource({

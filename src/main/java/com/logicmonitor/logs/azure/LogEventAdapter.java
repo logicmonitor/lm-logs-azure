@@ -172,7 +172,11 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
     public List<LogEntry> apply(String jsonString) {
         List<LogEntry> validLogEntries = new ArrayList<>();
         try {
-            JsonObject log = (JsonObject) GSON.fromJson(parseJsonSafely(jsonString), JsonObject.class);
+            JsonObject log =
+                (JsonObject) GSON.fromJson(parseJsonSafely(jsonString), JsonObject.class);
+            if (log == null || log.size() == 0) {
+                return validLogEntries;
+            }
             Optional.ofNullable(log.get(AZURE_RECORDS_PROPERTY))
                 .filter(JsonElement::isJsonArray)
                 .map(JsonElement::getAsJsonArray)
@@ -184,7 +188,8 @@ public class LogEventAdapter implements Function<String, List<LogEntry>> {
                 .map(this::createEntry)
                 .forEach(validLogEntries::add);
         } catch (JsonSyntaxException e) {
-            log(Level.INFO, "Error while processing Json and applying log transformation: " + e.getMessage());
+            log(Level.SEVERE,
+                "Error while processing Json and applying log transformation: " + e.getMessage());
         }
         return validLogEntries;
     }

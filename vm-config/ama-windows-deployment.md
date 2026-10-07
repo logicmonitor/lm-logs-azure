@@ -33,7 +33,7 @@ vmNames=("vm1" "vm2") #name of the windows vms from which you want to collect th
 workspaceName="" #name of the Log Analytics Workspace that will be created.
 location="" #region of the resources to be created in. Note - the region should be same as the vm and the deployment resources in step 1.
 namespace="" #eventhub namespace created as a part of the deployment in step 1.
-eventhubName="log-hub" #name of the event hub created as a part of the deployment in step 1. ie. log-hub
+eventhubName="log-hub" #name of the event hub created as a part of the deployment in step 1. ie. custom-event-hub
 dataExportRuleName="" #name of the export rule which will be created in the LAW
 ```
 
