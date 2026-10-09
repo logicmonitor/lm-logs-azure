@@ -143,7 +143,7 @@
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "Set this when using an existing storage account or a custom name. Use_Existing_Storage_Account=Yes: exact name of the account in Existing_Storage_Account_Resource_Group. If that name is not in that resource group, the deployment fails. Use_Custom_Storage_Account_Name=Yes: name of the new account created in the LM logs resource group. Ignored when both are No. Example: acmeeastus (company acme, region eastus). 3-24 characters, lowercase letters and numbers only."
+        "description": "Set this when using an existing storage account or a custom name. Use lowercase letters and numbers. If the value is not lowercase, the template converts it to lowercase. An empty name fails the deployment when Use_Custom_Storage_Account_Name=Yes or Use_Existing_Storage_Account=Yes. Use_Existing_Storage_Account=Yes: exact name of the account in Existing_Storage_Account_Resource_Group. If that name is not in that resource group, the deployment fails. Use_Custom_Storage_Account_Name=Yes: name of the new account created in the LM logs resource group. Ignored when both are No. Example: acmeeastus (company acme, region eastus). 3-24 characters."
       }
     },
     "Existing_Storage_Account_Resource_Group": {
@@ -179,7 +179,7 @@
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "Set this when using an existing Function App or a custom name. Use_Existing_Function_App=Yes: exact name of the Function App in Existing_Function_App_Resource_Group. If that name is not a Function App in that resource group, the deployment fails. Use_Custom_Function_App_Name=Yes: name of the new Function App created in the LM logs resource group. Ignored when both are No. Example: lm-logs-acme-eastus (company acme, region eastus). 2-60 characters; letters, numbers, and hyphens; cannot start or end with a hyphen."
+        "description": "Set this when using an existing Function App or a custom name. An empty name fails the deployment when Use_Custom_Function_App_Name=Yes or Use_Existing_Function_App=Yes. Use_Existing_Function_App=Yes: exact name of the Function App in Existing_Function_App_Resource_Group. If that name is not a Function App in that resource group, the deployment fails. Use_Custom_Function_App_Name=Yes: name of the new Function App created in the LM logs resource group. Ignored when both are No. Example: lm-logs-acme-eastus (company acme, region eastus). 2-60 characters; letters, numbers, and hyphens; cannot start or end with a hyphen."
       }
     },
     "Existing_Function_App_Resource_Group": {
