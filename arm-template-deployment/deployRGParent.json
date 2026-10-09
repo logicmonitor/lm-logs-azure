@@ -128,13 +128,6 @@
         "description": "Yes = create a new storage account named StorageAccountName in the LM logs resource group. No = use the generated name. Ignored when Use_Existing_Storage_Account=Yes."
       }
     },
-    "StorageAccountName": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Example: acmeeastus (company acme, region eastus). Required when Use_Custom_Storage_Account_Name=Yes or Use_Existing_Storage_Account=Yes. Ignored when both are No. 3-24 characters, lowercase letters and numbers only."
-      }
-    },
     "Use_Existing_Storage_Account": {
       "type": "string",
       "defaultValue": "No",
@@ -143,7 +136,14 @@
         "No"
       ],
       "metadata": {
-        "description": "Yes = use the storage account StorageAccountName in Existing_Storage_Account_Resource_Group. The account must already exist in that resource group in this subscription; otherwise the deployment fails. No = create a storage account in the LM logs resource group."
+        "description": "Yes = use the storage account named StorageAccountName in Existing_Storage_Account_Resource_Group. No = create a storage account in the LM logs resource group."
+      }
+    },
+    "StorageAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Set this when using an existing storage account or a custom name. Use_Existing_Storage_Account=Yes: exact name of the account in Existing_Storage_Account_Resource_Group. If that name is not in that resource group, the deployment fails. Use_Custom_Storage_Account_Name=Yes: name of the new account created in the LM logs resource group. Ignored when both are No. Example: acmeeastus (company acme, region eastus). 3-24 characters, lowercase letters and numbers only."
       }
     },
     "Existing_Storage_Account_Resource_Group": {
@@ -164,13 +164,6 @@
         "description": "Yes = create a new Function App named FunctionAppName in the LM logs resource group. No = use the generated name. Ignored when Use_Existing_Function_App=Yes."
       }
     },
-    "FunctionAppName": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Example: lm-logs-acme-eastus (company acme, region eastus). Required when Use_Custom_Function_App_Name=Yes or Use_Existing_Function_App=Yes. Ignored when both are No. 2-60 characters; letters, numbers, and hyphens; cannot start or end with a hyphen."
-      }
-    },
     "Use_Existing_Function_App": {
       "type": "string",
       "defaultValue": "No",
@@ -179,7 +172,14 @@
         "No"
       ],
       "metadata": {
-        "description": "Yes = use the Function App FunctionAppName in Existing_Function_App_Resource_Group. It must already exist in that resource group in this subscription; otherwise the deployment fails. The deployment replaces that Function App's application settings with the LM Logs settings. No = create a Function App in the LM logs resource group."
+        "description": "Yes = use the Function App named FunctionAppName in Existing_Function_App_Resource_Group. The deployment replaces that Function App's application settings with the LM Logs settings. No = create a Function App in the LM logs resource group."
+      }
+    },
+    "FunctionAppName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Set this when using an existing Function App or a custom name. Use_Existing_Function_App=Yes: exact name of the Function App in Existing_Function_App_Resource_Group. If that name is not a Function App in that resource group, the deployment fails. Use_Custom_Function_App_Name=Yes: name of the new Function App created in the LM logs resource group. Ignored when both are No. Example: lm-logs-acme-eastus (company acme, region eastus). 2-60 characters; letters, numbers, and hyphens; cannot start or end with a hyphen."
       }
     },
     "Existing_Function_App_Resource_Group": {
