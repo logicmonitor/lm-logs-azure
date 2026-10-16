@@ -328,10 +328,10 @@
         "reserved": true,
         "httpsOnly": true,
         "siteConfig": {
-          "linuxFxVersion": "Java|11",
+          "linuxFxVersion": "Java|25",
           "use32BitWorkerProcess": false,
           "alwaysOn": true,
-          "javaVersion": "11",
+          "javaVersion": "25",
           "cors": {
             "allowedOrigins": [
               "*"
