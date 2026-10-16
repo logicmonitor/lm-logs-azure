@@ -102,22 +102,6 @@ Gradle can be also run the function locally for debugging purposes.
 * execute `./gradlew azureFunctionsRun`
 * you can use remote debugging on port 5005 (it can be modified in `build.gradle` file, setting `localDebug`)
 
-## Migrating existing deployments from Java 11 to Java 25
-
-Existing Function Apps can be upgraded in place. Event Hub, storage, and diagnostic settings do not need to be recreated.
-
-1. Deploy or point `WEBSITE_RUN_FROM_PACKAGE` at a Java 25–built `lm-logs-azure` package (version 2.1.0 or later).
-2. Confirm the Functions host is on v4: `FUNCTIONS_EXTENSION_VERSION=~4` (already the default in current Terraform/ARM).
-3. Set the runtime stack to Java 25 (Linux Dedicated / App Service plan):
-   - Portal: Function App → Configuration → General settings → Java version **25**
-   - CLI: `az functionapp config set --name <function-app> --resource-group <rg> --linux-fx-version "Java|25"`
-4. If you manage the app with Terraform or ARM, apply the updated templates (Java 25).
-5. Restart the Function App and confirm logs are still flowing to LogicMonitor.
-
-**Notes**
-- Hosting plan: the default Dedicated (S1) template supports Java 25. Classic Linux Consumption only supports up to Java 21; move those apps to Dedicated, Premium, or Flex Consumption before upgrading to Java 25.
-- Keep required `EventHubName` / `EventHubConsumerGroup` app settings when upgrading the package (see upgrade section above).
-
 ## Logging
 
 Logging type and level can be configured using [Azure CLI webapp log config](https://docs.microsoft.com/en-us/cli/azure/webapp/log?view=azure-cli-latest#az-webapp-log-config) command, for example:
