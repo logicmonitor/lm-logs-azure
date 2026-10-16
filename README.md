@@ -72,7 +72,7 @@ Optional: `LM_FAIL_CLOSED_ON_INGEST=true` fails the Function on incomplete LM in
 #### Azure configuration
 
 Gradle plugin can only build the function package and deploy it to Azure. Before it can be used, you need to create an [Event Hub](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-create) and [Function App](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-app-portal).
-The runtime stack should be set to Java version 11. The function uses the following [Application settings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-how-to-use-azure-function-app-settings#settings)
+The runtime stack should be set to Java version 25, and the Functions host should use extension version `~4`. The function uses the following [Application settings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-how-to-use-azure-function-app-settings#settings)
 * `LogsEventHubConnectionString` - Event Hub [connection string](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-get-connection-string)
 * `EventHubName` - **Required.** Hub to listen to. ARM/TF: from `Event_Hub_Name` (default `log-hub`).
 * `EventHubConsumerGroup` - **Required.** Consumer group. ARM/TF: from `Event_Hub_Consumer_Group` (default `$Default`).
