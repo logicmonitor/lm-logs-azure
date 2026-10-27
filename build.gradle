@@ -58,6 +58,7 @@ dependencies {
             "junit:junit:4.12"
     )
     testRuntimeOnly(
+            "org.junit.platform:junit-platform-launcher",
             "org.junit.vintage:junit-vintage-engine:${junitVersion}",
             "org.glassfish.jaxb:jaxb-runtime:2.3.3"
     )
@@ -69,6 +70,11 @@ clean {
 
 test {
     useJUnitPlatform()
+    // System Lambda mutates ProcessEnvironment via reflection; required on Java 17+
+    jvmArgs = [
+            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED'
+    ]
     testLogging {
         events "passed", "skipped", "failed"
     }
