@@ -42,7 +42,8 @@ public class TestJsonUtils {
     }
 
     public static List<String> getJsonStringList(String resourceName) {
-        return StreamSupport.stream(getArray(resourceName).spliterator(), true)
+        // sequential: JsonArray spliterator is unordered; parallel find/collect is flaky on Java 25+
+        return StreamSupport.stream(getArray(resourceName).spliterator(), false)
              .filter(JsonElement::isJsonObject)
              .map(JsonElement::getAsJsonObject)
              .map(TestJsonUtils::toString)
@@ -50,7 +51,7 @@ public class TestJsonUtils {
     }
 
     protected static JsonObject getFirstObject(String resourceName) {
-        return StreamSupport.stream(getArray(resourceName).spliterator(), true)
+        return StreamSupport.stream(getArray(resourceName).spliterator(), false)
             .filter(JsonElement::isJsonObject)
             .findFirst()
             .map(JsonElement::getAsJsonObject)
