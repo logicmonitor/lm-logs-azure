@@ -26,7 +26,12 @@ param
     [string]$eventHubResourceGroup = "",
 
     [Parameter(Mandatory = $False)]
-    [string]$eventHubAuthorizationRule = "RootManageSharedAccessKey"
+    [string]$eventHubAuthorizationRule = "RootManageSharedAccessKey",
+
+    # Optional. Empty keeps lm-logs-<company>-<region> in the LM logs resource group.
+    [string]$functionAppName = "",
+
+    [string]$functionAppResourceGroup = ""
 )
 
 Write-Host $resourceGroup
@@ -67,7 +72,8 @@ catch
 
 $lmResourceGroup = 'lm-logs-' + $lmCompanyName + '-' + $location + '-group'
 $lmEventHubNamespace = $lmResourceGroup.Replace('-group','')
-$functionAppName = $lmEventHubNamespace
+if ([string]::IsNullOrWhiteSpace($functionAppName)) { $functionAppName = $lmEventHubNamespace }
+if ([string]::IsNullOrWhiteSpace($functionAppResourceGroup)) { $functionAppResourceGroup = $lmResourceGroup }
 
 if ([string]::IsNullOrWhiteSpace($eventHubName)) { $eventHubName = "log-hub" }
 if ([string]::IsNullOrWhiteSpace($eventHubAuthorizationRule)) { $eventHubAuthorizationRule = "RootManageSharedAccessKey" }
@@ -82,7 +88,7 @@ if ($notPresent) {
 $faHubName = $null
 $faNamespace = $null
 try {
-    $appSettingsResource = Get-AzResource -ResourceType "Microsoft.Web/sites/config" -ResourceGroupName $lmResourceGroup -Name "$functionAppName/appsettings" -ApiVersion "2022-03-01" -ErrorAction SilentlyContinue
+    $appSettingsResource = Get-AzResource -ResourceType "Microsoft.Web/sites/config" -ResourceGroupName $functionAppResourceGroup -Name "$functionAppName/appsettings" -ApiVersion "2022-03-01" -ErrorAction SilentlyContinue
     if ($appSettingsResource -and $appSettingsResource.Properties) {
         $props = $appSettingsResource.Properties
         if ($props.EventHubName) { $faHubName = [string]$props.EventHubName }
